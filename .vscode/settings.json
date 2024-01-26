@@ -1,0 +1,8 @@
+{
+  "rust-analyzer.linkedProjects": [
+    ".\\interpreter\\Cargo.toml",
+    ".\\lead\\Cargo.toml",
+    ".\\packages\\core\\Cargo.toml",
+    ".\\packages\\std\\Cargo.toml"
+  ]
+}
