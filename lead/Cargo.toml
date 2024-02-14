@@ -1,10 +1,16 @@
 [package]
-name = "lead"
-version = "0.1.0"
+name = "lead_cli"
+version = "0.0.1"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "lead"
+path = "./src/main.rs"
 
 [dependencies]
-interpreter = { path = "../interpreter" }
-core = { path = "../packages/core" }
+lead_lang_interpreter = { path = "../interpreter" }
+inquire = "0.6.2"
+clap = { version = "4.4.18", features = ["derive"] }
+serde = { version = "1.0.195", features = ["derive"] }
+serde_json = "1.0.111"
+libloading = "0.8.1"

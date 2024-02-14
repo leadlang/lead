@@ -1,9 +1,15 @@
 [package]
-name = "core"
-version = "0.1.0"
+name = "lead_lang_core"
+version = "0.0.3"
 edition = "2021"
+description = "Core Package of the Lead Programming Language"
+license = "MIT"
+
+[lib]
+name = "lead_core"
+crate-type = ["cdylib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-interpreter = { path = "../../interpreter" }
+lead_lang_interpreter = { path = "../../interpreter" }

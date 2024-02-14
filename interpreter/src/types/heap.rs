@@ -1,4 +1,7 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{
+  collections::HashMap,
+  ops::{Deref, DerefMut},
+};
 
 use super::BufValue;
 
@@ -52,36 +55,72 @@ impl Heap {
     Some(())
   }
 
-  pub fn get(&self, key: &String) -> Option<&BufValue> {
-    let (ky, typ) = if key.starts_with("*") {
+  fn get_ptr<'a>(&'a self, key: &'a String) -> Option<(&'a String, &'a BufKeyVal)> {
+    if key.starts_with("*") {
       let ptr = self.pointer.get(key)?;
-      (&ptr.key, &ptr.val)
+      Some((&ptr.key, &ptr.val))
     } else {
-      (key, &BufKeyVal::None)
-    };
+      Some((key, &BufKeyVal::None))
+    }
+  }
 
+  pub fn get(&self, key: &String) -> Option<&BufValue> {
+    let key = key.replacen("->", "", 1).replacen("&", "", 1);
+
+    let (ky, typ) = self.get_ptr(&key)?;
     let val = self.data.get(ky)?;
 
     if let BufKeyVal::None = typ {
       Some(val)
     } else {
       match (val, typ) {
-        (BufValue::Array(val), BufKeyVal::Array(index)) => Some(&val[*index]),
-        (BufValue::Object(val), BufKeyVal::Map(key)) => {
-          val.get(key).map_or_else(|| None, |x| Some(x.deref()))
-        }
+        (BufValue::Array(val), BufKeyVal::Array(index)) => val.get(*index),
+        (BufValue::Object(val), BufKeyVal::Map(key)) => Some(Box::deref(val.get(key)?)),
         _ => None,
       }
     }
   }
 
-  pub fn remove(&mut self, key: String) -> Option<()> {
+  pub fn get_mut(&mut self, key: &String) -> Option<&mut BufValue> {
+    if !key.starts_with("->") && !key.starts_with("->&") {
+      return None;
+    };
+
+    let key = key.replacen("->", "", 1).replacen("&", "", 1);
+
+    let (ky, typ) = if key.starts_with("*") {
+      let ptr = self.pointer.get(&key)?;
+      (&ptr.key, &ptr.val)
+    } else {
+      (&key, &BufKeyVal::None)
+    };
+    let val = self.data.get_mut(ky)?;
+
+    if let BufKeyVal::None = typ {
+      Some(val)
+    } else {
+      match (val, typ) {
+        (BufValue::Array(val), BufKeyVal::Array(index)) => val.get_mut(*index),
+        (BufValue::Object(val), BufKeyVal::Map(key)) => val
+          .get_mut(key)
+          .map_or_else(|| None, |x| Some(Box::deref_mut(x))),
+        _ => None,
+      }
+    }
+  }
+
+  pub fn remove(&mut self, key: &String) -> Option<Option<BufValue>> {
+    if key.starts_with("->&") || key.starts_with("&") {
+      return None;
+    };
+
+    let key = key.replacen("->", "", 1);
+
     if key.starts_with("*") {
       self.pointer.remove(&key);
-      return Some(());
+      return Some(None);
     } else if key.starts_with("$") {
-      self.data.remove(&key);
-      return Some(());
+      return Some(self.data.remove(&key));
     }
     None
   }

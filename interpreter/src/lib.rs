@@ -3,23 +3,27 @@
 
 use std::{collections::HashMap, fs, process};
 
+#[macro_use]
+pub mod macros;
+
 mod ipreter;
 #[macro_use]
 pub mod package;
 pub mod types;
 pub mod val;
 
-use chalk_rs::Chalk;
 pub use package::*;
-use types::{DynMethodRes, Heap, LanguagePackages, MethodRes};
+use types::{DynMethodRes, Heap, LanguagePackages, MethodRes, PackageCallback};
 pub use val::*;
+
+pub use chalk_rs::Chalk;
 
 pub static NUMBER: u8 = 0;
 pub static STRING: u8 = 1;
 pub static BOOLEAN: u8 = 2;
 
 pub trait Package {
-  fn name(&self) -> &'static str;
+  fn name(&self) -> &'static [u8];
   fn methods(&self) -> MethodRes {
     &[]
   }
@@ -49,8 +53,29 @@ impl<'a> Application<'a> {
     }
   }
 
-  pub fn add_pkg<T: Package + 'static>(&mut self, package: T) -> &mut Self {
+  pub fn add_file(&mut self, name: String, file: String) -> &mut Self {
+    self.code.insert(name, file);
+    self
+  }
+
+  pub fn add_pkg<T: Package>(&mut self, package: T) -> &mut Self {
     self.pkg.import(package);
+    self
+  }
+
+  pub fn add_pkg_raw(
+    &mut self,
+    name: &'static [u8],
+    methods: &'static [(&'static str, PackageCallback)],
+    dyn_methods: DynMethodRes,
+  ) -> &mut Self {
+    let mut pkg = ImplPackage::new();
+    pkg.name = name;
+    pkg.methods = methods;
+    pkg.dyn_methods = dyn_methods;
+
+    self.pkg.import(pkg);
+
     self
   }
 

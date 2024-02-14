@@ -26,13 +26,14 @@ impl<'a> LanguagePackages<'a> {
     }
   }
 
-  pub fn import<T: Package + 'static>(&mut self, func: T) -> &mut Self {
-    let name = func.name();
+  pub fn import<T: Package>(&mut self, func: T) -> &mut Self {
+    let name = String::from_utf8_lossy(func.name());
+    let name: &'static mut str = name.to_string().leak::<'static>();
     for (key, val) in func.methods() {
-      self.inner.insert(key, MethodData::Static(&name, *val));
+      self.inner.insert(key, MethodData::Static(name, *val));
     }
     for (k, v) in func.dyn_methods() {
-      self.inner.insert(k, MethodData::Static(&name, v));
+      self.inner.insert(k, MethodData::Static(name, v));
     }
     self
   }

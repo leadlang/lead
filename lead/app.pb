@@ -1,9 +1,5 @@
-:coll
-:coll
-:coll
-:coll
-:coll
+malloc $data string Hello World
+array::malloc $data2
+array::push $data2 $data
 
-# Check if works
-:print
-:test
+print $data $data2

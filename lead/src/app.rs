@@ -1,0 +1,94 @@
+use interpreter::types::{DynMethodRes, MethodRes};
+use interpreter::{error, Application};
+
+use libloading::{library_filename, Library};
+use serde::{Deserialize, Serialize};
+use serde_json::from_str;
+use std::collections::HashMap;
+use std::fs::{self, read_to_string};
+
+use std::process::Command;
+
+static mut LIBS: Option<Box<HashMap<u8, Library>>> = None;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PbJSON {
+  pub dev: PbExec,
+  pub prod: PbExec,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PbExec {
+  pub cmd: String,
+  pub args: Vec<String>,
+}
+
+pub fn run(dir: String, prod: bool) {
+  let pb_json = read_to_string(format!("{}/pb.json", &dir)).unwrap_or_else(|_| {
+    error("Invalid dir provided");
+  });
+
+  let pb_json: PbJSON = from_str::<PbJSON>(&pb_json).unwrap_or_else(|_| {
+    error("Invalid pb.json file / No pb.json file found!");
+  });
+
+  let file = if prod { pb_json.prod } else { pb_json.dev };
+
+  if &file.cmd == "%native" {
+    let file = &file.args[0];
+    run_inner(file, prod)
+  } else {
+    Command::new(file.cmd)
+      .args(file.args)
+      .spawn()
+      .unwrap()
+      .wait()
+      .unwrap();
+  }
+}
+
+fn run_inner(file: &String, prod: bool) {
+  let mut app = Application::new(file.clone());
+  let mut dll: Vec<Library> = vec![];
+
+  unsafe { LIBS = Some(Box::new(HashMap::new())) }
+
+  for entry in fs::read_dir("./lib").unwrap() {
+    let entry = entry.unwrap();
+
+    let path = entry.path();
+    let path = path.to_string_lossy();
+    let name = entry.file_name();
+    let name = name.to_string_lossy();
+
+    let name = library_filename(format!("{}/{}", &path, &name));
+
+    let lib = unsafe { Library::new(name) }.unwrap();
+    dll.push(lib);
+  }
+
+  let mut index = 0u8;
+  for lib in dll {
+    index += 1;
+    let map = unsafe { LIBS.as_mut().unwrap() };
+
+    map.insert(index, lib);
+
+    let lib = map.get_mut(&index).unwrap();
+    let func =
+      unsafe { lib.get::<fn() -> Vec<(&'static [u8], MethodRes, DynMethodRes)>>(b"modules") }
+        .unwrap();
+
+    let fun = func();
+
+    for f in fun {
+      app.add_pkg_raw(f.0, f.1, f.2);
+    }
+  }
+
+  if !prod {
+    app.list_cmds();
+  }
+
+  app.run();
+}

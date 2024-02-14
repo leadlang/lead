@@ -1,29 +1,39 @@
-use core::Core;
+#![feature(slice_ptr_len)]
+mod app;
 
-use interpreter::{package, Application, ImplPackage};
+use clap::{arg, Parser, Subcommand};
 
-static mut DATA: String = String::new();
+#[derive(Clone, Subcommand, Debug)]
+pub enum Command {
+  /// Run a Lead app
+  Run {
+    /// Should it be production?
+    #[arg(short, long)]
+    prod: bool,
+    #[arg(short, long)]
+    dir: Option<String>,
+  },
+  /// Create a new Lead app project
+  New { dir: String },
+}
+
+#[derive(Parser)]
+pub struct Arguments {
+  #[clap(subcommand)]
+  cmd: Option<Command>,
+}
 
 fn main() {
-  let mut app = Application::new("app.pb".into());
-  app.add_pkg(Core);
+  let subcommand: Command = Arguments::parse().cmd.unwrap_or(Command::Run {
+    prod: false,
+    dir: None,
+  });
 
-  app.add_pkg(
-    ImplPackage::new()
-      .add_method(":coll", |_, _, _| unsafe {
-        DATA.push_str("test");
-      })
-      .add_method(":print", |_, _, _| {
-        println!("{}", unsafe { DATA.as_str() });
-      }),
-  );
-
-  app.add_pkg(package!(":test", |_, _, _| {
-    println!("Test");
-  }));
-
-  #[cfg(debug_assertions)]
-  app.list_cmds();
-
-  app.run();
+  match subcommand {
+    Command::Run { prod, dir } => {
+      let dir = dir.unwrap_or(".".into());
+      app::run(dir, prod);
+    }
+    _ => todo!(),
+  }
 }

@@ -1,14 +1,17 @@
 use interpreter::{
-  error,
-  types::{BufValue, Heap},
+  error, generate,
+  types::{BufKeyVal, BufValue, Heap},
   Package,
 };
+
+mod array;
+pub use array::Array;
 
 pub struct Core;
 
 impl Package for Core {
-  fn name(&self) -> &'static str {
-    "📦 Lead Programming Language / Core"
+  fn name(&self) -> &'static [u8] {
+    "📦 Lead Programming Language / Core".as_bytes()
   }
 
   fn methods(
@@ -18,32 +21,52 @@ impl Package for Core {
     for<'a, 'b, 'c> fn(&'a Vec<String>, &'b mut Heap, &'c mut bool),
   )] {
     &[
-      (":malloc", malloc),
-      (":array::malloc", |args, val, _| {
-        let [_, a] = &args[..] else {
+      ("malloc", malloc),
+      ("drop", |args, heap, _| {
+        let [_, var] = &args[..] else {
           error(
-            r#"Invalid arguments in :array::malloc
-        Format ---
-        - :array::malloc $1"#,
-          )
+            r#"Invalid arguments in :drop
+          Format ---
+          - drop $in"#,
+          );
         };
 
-        val.set(a.clone(), BufValue::Array(vec![]));
+        heap.remove(var);
       }),
-      (":comp", |args, val, _| {
-        let [_, a, f, b, _, resp] = &args[..] else {
+      ("typeof", |args, heap, _| {
+        let [_, var, set] = &args[..] else {
+          error(
+            r#"Invalid arguments in :typeof
+          Format ---
+          - typeof $in $result"#,
+          );
+        };
+
+        match heap.get(var) {
+          Some(v) => {
+            let _ = heap.set(set.clone(), BufValue::Str(v.type_of()));
+          }
+          None => error(&format!("Variable {} not found", var)),
+        }
+      }),
+      ("comp", |args, val, _| {
+        let [_, a, f, b, pipe, resp] = &args[..] else {
           error(
             r#"Invalid arguments in :comp
         Format ---
-        - :comp $1 = $2 @ $res
-        - :comp $1 != $2 @ res
-        - :comp $1 < $2 @ $res (only if $1 $2 = number)
-        - :comp $1 <= $2 @ $res (only if $1 $2 = number)
-        - :comp $1 > $2 @ $res (only if $1 $2 = number)
-        - :comp $1 >= $2 @ $res (only if $1 $2 = number)
+        - comp $1 = $2 > $res
+        - comp $1 != $2 > res
+        - comp $1 < $2 > $res (only if $1 $2 = number)
+        - comp $1 <= $2 > $res (only if $1 $2 = number)
+        - comp $1 > $2 > $res (only if $1 $2 = number)
+        - comp $1 >= $2 > $res (only if $1 $2 = number)
       "#,
           );
         };
+
+        if pipe != ">" {
+          error("Invalid pipe operator");
+        }
 
         let a = val.get(a).expect("Unable to get value of 1st variable");
         let b = val.get(b).expect("Unable to get value of 2nd variable");
@@ -61,6 +84,37 @@ impl Package for Core {
           }),
         );
       }),
+      ("mkptr", |args, heap, _| {
+        let [_, var, point, p, pointer] = &args[..] else {
+          error(
+            r#"Invalid syntax
+          
+          Format ---
+          - mkptr $arr 0 > *ptr
+          - mkptr $map "test" > *ptr"#,
+          );
+        };
+
+        if p != ">" {
+          error("Invalid pipe operator");
+        }
+
+        match heap
+          .get(var)
+          .unwrap_or_else(|| error("Unable to get variable"))
+        {
+          BufValue::Array(_) => {
+            let ptr = point.parse::<usize>().unwrap_or_else(|_| {
+              error("Unable to convert to a pointing");
+            });
+            heap.set_ptr(pointer.clone(), BufKeyVal::Array(ptr));
+          }
+          BufValue::Object(_) => {
+            let _ = heap.set_ptr(pointer.into(), BufKeyVal::Map(point.clone()));
+          }
+          _ => error("Only ARRAY / OBJECT can be pointered"),
+        }
+      }),
     ]
   }
 }
@@ -70,12 +124,13 @@ fn malloc<'a, 'b, 'c>(args: &'a Vec<String>, val: &'b mut Heap, _: &'c mut bool)
     error(
       r#"Invalid arguments in :malloc
 Format ---
-- :malloc $var type data
+- malloc $var type data
 
 Types ---
-- 0 f64 i.e. float
-- 1 String
-- 2 Boolean; data can only be `true` / `false`
+- bool i.e. boolean
+- int Integer (not Decimal)
+- float Floating point number (eg. 1.04)
+- string String (eg. "Hello World")
 "#,
     );
   };
@@ -101,3 +156,5 @@ Types ---
     },
   );
 }
+
+generate!(Core, Array);

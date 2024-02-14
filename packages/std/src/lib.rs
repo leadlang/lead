@@ -1,14 +1,8 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+mod fs;
+use fs::*;
+mod io;
+use io::*;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+use interpreter::generate;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+generate!(FS, IO);

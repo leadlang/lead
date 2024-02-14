@@ -12,7 +12,7 @@ pub fn interpret(file: &str, mut app: &mut Application) {
         let piece = piece.replacen("!", "", 1);
         tok_parse(&piece, &mut app);
       }
-    } else if piece.starts_with(":") {
+    } else if !piece.starts_with("#") {
       tok_parse(piece, &mut app);
     }
   });
