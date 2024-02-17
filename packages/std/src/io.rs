@@ -7,7 +7,7 @@ module!(
     function! {
       "os::name",
       |args, heap, _| {
-        parse!(heap + args: drop test, > val);
+        parse!(heap + args: > val);
 
         if cfg!(windows) {
           heap.set(val.clone(), BufValue::Str("Win32".into()));

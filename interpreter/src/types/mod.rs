@@ -32,6 +32,13 @@ impl BufValue {
     }
   }
 
+  pub fn get_vec_mut(&mut self) -> Option<&mut Vec<BufValue>> {
+    match self {
+      BufValue::Array(a) => Some(a),
+      _ => None,
+    }
+  }
+
   pub fn gt(&self, other: &BufValue) -> bool {
     match (self, other) {
       (BufValue::Int(a), BufValue::Int(b)) => a > b,

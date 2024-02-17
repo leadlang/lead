@@ -82,7 +82,7 @@ impl Heap {
   }
 
   pub fn get_mut(&mut self, key: &String) -> Option<&mut BufValue> {
-    if !key.starts_with("->") && !key.starts_with("->&") {
+    if !key.starts_with("->&$") {
       return None;
     };
 
@@ -110,9 +110,9 @@ impl Heap {
   }
 
   pub fn remove(&mut self, key: &String) -> Option<Option<BufValue>> {
-    if key.starts_with("->&") || key.starts_with("&") {
+    if !key.starts_with("->$") {
       return None;
-    };
+    }
 
     let key = key.replacen("->", "", 1);
 

@@ -81,12 +81,6 @@ macro_rules! modify {
     };
   };
 
-  ($heap:ident: mut $y:ident) => {
-    let Some($y) = $heap.get_mut($y) else {
-      interpreter::error("Invalid Format or Varible not found!");
-    };
-  };
-
   ($heap:ident: > $y:ident) => {
     if !$y.starts_with("$") && !$y.starts_with("*") {
       interpreter::error("Invalid Variable provided!\nNote: Mutable / Moved values may not be provided to what expects piped (`>`) values");
@@ -97,5 +91,20 @@ macro_rules! modify {
   ($heap:ident: drop $y:ident) => {
     let $y: Vec<Option<String>> = vec![];
     drop($y);
+  };
+}
+
+#[macro_export]
+macro_rules! get_mut {
+  ($heap:ident: mut $y:ident) => {
+    let Some($y) = $heap.get_mut($y) else {
+      interpreter::error("Invalid Format or Varible not found!");
+    };
+  };
+
+  ($heap:ident: $ty:ident $y:ident) => {
+    let Some(interpreter::types::BufValue::$ty($y)) = $heap.get_mut($y) else {
+      interpreter::error("Invalid Format or Varible not found!");
+    };
   };
 }

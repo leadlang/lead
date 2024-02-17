@@ -5,9 +5,12 @@ use libloading::{library_filename, Library};
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use std::collections::HashMap;
-use std::fs::{self, read_to_string};
+use std::env::current_exe;
+use std::ffi::OsString;
+use std::fs::{self, read_to_string, DirEntry};
 
 use std::process::Command;
+use std::str::FromStr;
 
 static mut LIBS: Option<Box<HashMap<u8, Library>>> = None;
 
@@ -53,18 +56,34 @@ fn run_inner(file: &String, prod: bool) {
 
   unsafe { LIBS = Some(Box::new(HashMap::new())) }
 
-  for entry in fs::read_dir("./lib").unwrap() {
-    let entry = entry.unwrap();
+  let mut file = current_exe().unwrap();
+  file.pop();
+  file.push("lib");
 
+  let mut load = |entry: DirEntry, exe_dir: bool| {
     let path = entry.path();
     let path = path.to_string_lossy();
     let name = entry.file_name();
     let name = name.to_string_lossy();
 
-    let name = library_filename(format!("{}/{}", &path, &name));
+    let name = if exe_dir {
+      OsString::from_str(&path).unwrap()
+    } else {
+      library_filename(format!("{}/{}", &path, &name))
+    };
 
     let lib = unsafe { Library::new(name) }.unwrap();
     dll.push(lib);
+  };
+
+  for file in fs::read_dir(file).unwrap() {
+    let entry = file.unwrap();
+    load(entry, true);
+  }
+
+  for entry in fs::read_dir("./lib").unwrap() {
+    let entry = entry.unwrap();
+    load(entry, false);
   }
 
   let mut index = 0u8;

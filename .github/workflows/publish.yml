@@ -1,0 +1,59 @@
+name: Build & Publish
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  publish_cargo:
+    name: Publish to cargo
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Initial Commit
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+
+      - name: Publish
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
+
+  build:
+    name: Launch
+
+    strategy:
+      matrix:
+        build-os:
+          - windows-latest
+          - ubuntu-latest
+
+    runs-on: ${{ matrix.build-os }}
+
+    steps:
+      - name: Initial Commit
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+
+      - name: Install ZIP (Linux)
+        if: ${{ runner.os }} == 'Linux'
+        run: sudo apt install zip
+
+      - name: Package stuff
+        run: cargo +nightly run
+
+      - name: Publish
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./build.zip
+          asset_name: binaries_${{ runner.os }}.zip
