@@ -46,7 +46,7 @@ jobs:
           toolchain: nightly
 
       - name: Install ZIP (Linux)
-        if: ${{ runner.os }} == 'Linux'
+        if: ${{ matrix.build-os }} == 'ubuntu-latest'
         run: sudo apt install zip
 
       - name: Package stuff

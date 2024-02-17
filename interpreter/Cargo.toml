@@ -4,6 +4,7 @@ version = "0.0.4"
 edition = "2021"
 description = "Interpreter of the Lead Programming Language"
 license = "MIT"
+repository = "https://github.com/AHQ-Softwares/lead"
 
 [lib]
 name = "interpreter"
