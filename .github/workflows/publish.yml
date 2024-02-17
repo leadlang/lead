@@ -22,6 +22,7 @@ jobs:
 
       - name: Publish
         run: cargo publish
+        working-directory: interpreter
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
 
@@ -46,7 +47,7 @@ jobs:
           toolchain: nightly
 
       - name: Install ZIP (Linux)
-        if: ${{ matrix.build-os }} == 'ubuntu-latest'
+        if: matrix.build-os == 'ubuntu-latest'
         run: sudo apt install zip
 
       - name: Package stuff

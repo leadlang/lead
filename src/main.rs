@@ -84,7 +84,7 @@ fn main() {
 
   #[cfg(not(windows))]
   Command::new("zip")
-    .args(["-r", "./build.zip", "./build/*, ./templates"])
+    .args(["-r ./build.zip", "-i ./build/*, ./templates"])
     .spawn()
     .unwrap()
     .wait()
