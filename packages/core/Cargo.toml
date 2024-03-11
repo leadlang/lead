@@ -1,6 +1,6 @@
 [package]
 name = "lead_lang_core"
-version = "0.0.3"
+version = "0.0.5"
 edition = "2021"
 description = "Core Package of the Lead Programming Language"
 license = "MIT"
