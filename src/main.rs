@@ -83,8 +83,16 @@ fn main() {
     .unwrap();
 
   #[cfg(not(windows))]
+  Command::new("cp")
+    .args(["-r", "templates", "./build/templates/"])
+    .spawn()
+    .unwrap()
+    .wait()
+    .unwrap();
+
+  #[cfg(not(windows))]
   Command::new("zip")
-    .args(["-r", "./build.zip", "-i", "./build/*", "-i", "./templates"])
+    .args(["./build.zip", "./build/*"])
     .spawn()
     .unwrap()
     .wait()
