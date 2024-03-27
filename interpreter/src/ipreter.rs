@@ -1,4 +1,4 @@
-use crate::{types::{MethodData, Options}, Application};
+use crate::{error, types::{MethodData, Options}, Application};
 
 pub fn interpret(file: &str, mut app: &mut Application) {
   let file_name = if file == ":entry" {
@@ -16,10 +16,10 @@ pub fn interpret(file: &str, mut app: &mut Application) {
         app.next_marker = false;
       } else {
         let piece = piece.replacen("!", "", 1);
-        tok_parse(format!("{}:{}", &file_name, line), &piece, &mut app);
+        tok_parse(format!("{}:{}", &file_name, line + 1), &piece, &mut app);
       }
     } else if !piece.starts_with("#") {
-      tok_parse(format!("{}:{}", &file_name, line), piece, &mut app);
+      tok_parse(format!("{}:{}", &file_name, line + 1), piece, &mut app);
     }
   });
 }
@@ -61,6 +61,8 @@ fn tok_parse(file: String, piece: &str, app: &mut Application) {
         let _ = app.heap.set(to_set, opt.r_val.unwrap());
       }
     },
-    _ => {}
+    _ => if &caller != &"" {
+      error(&format!("Unexpected `{}`", &caller), &file);
+    }
   }
 }

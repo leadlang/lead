@@ -1,6 +1,6 @@
 [package]
 name = "pack"
-version = "0.0.6"
+version = "0.0.0-dev-lead-lang"
 edition = "2021"
 description = "Pack into zip"
 license = "MIT"

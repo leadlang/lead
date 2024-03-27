@@ -25,8 +25,26 @@ pub fn warn<T: Display>(msg: T) {
   println!("{}{msg}", *WARN);
 }
 
+fn gen_build() -> usize {
+  let [major, minor, patch] = env!("CARGO_PKG_VERSION").split(".").collect::<Vec<_>>()[..] else {
+    return 0;
+  };
+
+  let major = major.parse::<usize>().unwrap_or(0);
+  let minor = minor.parse::<usize>().unwrap_or(0);
+  let patch = patch.parse::<usize>().unwrap_or(0);
+
+  (major * 1000) + (minor * 100) + patch
+}
+
 pub fn error<T: Display>(msg: T, file: T) -> ! {
   println!("{}{msg}", *ERROR);
-  println!("{}{file}", *ERROR);
+  println!("{}--------    TRACE    --------", *ERROR);
+  println!("{} File: {file}", *ERROR);
+  println!("{} Edition {}", *ERROR, env!("CARGO_PKG_VERSION").split_at(1).0);
+  println!("{} Lead v{}", *ERROR, env!("CARGO_PKG_VERSION"));
+  println!("{} Build #{}", *ERROR, gen_build());
+  println!("{} Compiled with Rust Nightly", *ERROR);
+  println!("{}-----------------------------", *ERROR);
   process::exit(1);
 }

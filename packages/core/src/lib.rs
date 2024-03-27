@@ -27,14 +27,13 @@ impl Package for Core {
     &[
       function! {
         "unwrap",
-        |args, heap, file, _| {
-          parse!(file + heap + args: > nval, -> val);
+        |args, heap, file, opt| {
+          parse!(file + heap + args: -> val);
 
           match val {
             BufValue::Faillable(val) => match val {
               Ok(val) => {
-                let _ = heap.set(
-                  nval.into(),
+                opt.set_return_val(
                   *val
                 );
               }
@@ -58,48 +57,43 @@ impl Package for Core {
 
         heap.remove(var);
       }),
-      ("typeof", |args, heap, file, _| {
-        let [_, var, set] = &args[..] else {
+      ("typeof", |args, heap, file, opt| {
+        let [_, var,] = &args[..] else {
           error(
             r#"Invalid arguments in :typeof
           Format ---
-          - typeof $in $result"#,
+          - typeof $input"#,
             file,
           );
         };
 
         match heap.get(var) {
           Some(v) => {
-            let _ = heap.set(set.clone(), BufValue::Str(v.type_of()));
+            opt.set_return_val(BufValue::Str(v.type_of()));
           }
           None => error(&format!("Variable {} not found", var), file),
         }
       }),
-      ("comp", |args, val, file, _| {
-        let [_, a, f, b, pipe, resp] = &args[..] else {
+      ("comp", |args, val, file, opt| {
+        let [_, a, f, b] = &args[..] else {
           error(
             r#"Invalid arguments in :comp
         Format ---
-        - comp $1 = $2 > $res
-        - comp $1 != $2 > res
-        - comp $1 < $2 > $res (only if $1 $2 = number)
-        - comp $1 <= $2 > $res (only if $1 $2 = number)
-        - comp $1 > $2 > $res (only if $1 $2 = number)
-        - comp $1 >= $2 > $res (only if $1 $2 = number)
+        - comp $1 = $2
+        - comp $1 != $2
+        - comp $1 < $2 (only if $1 $2 = number)
+        - comp $1 <= $2 (only if $1 $2 = number)
+        - comp $1 > $2 (only if $1 $2 = number)
+        - comp $1 >= $2 (only if $1 $2 = number)
       "#,
             file,
           );
         };
 
-        if pipe != ">" {
-          error("Invalid pipe operator", file);
-        }
-
         let a = val.get(a).expect("Unable to get value of 1st variable");
         let b = val.get(b).expect("Unable to get value of 2nd variable");
 
-        val.set(
-          resp.into(),
+        opt.set_return_val(
           BufValue::Bool(match f.as_str() {
             "=" => a == b,
             "!=" => a != b,
@@ -149,21 +143,21 @@ impl Package for Core {
 
 fn malloc<'a, 'b, 'c, 'd>(
   args: &'a Vec<String>,
-  val: &'b mut Heap,
+  _: &'b mut Heap,
   file: &'c String,
-  _: &'d mut Options,
+  opt: &'d mut Options,
 ) {
-  let [_, var, typ, ..] = &args[..] else {
+  let [_, typ, ..] = &args[..] else {
     error(
       r#"Invalid arguments in :malloc
 Format ---
-- malloc $var type data
+- malloc type data
 
 Types ---
-- bool i.e. boolean
-- int Integer (not Decimal)
+- bool Boolean (eg. true)
+- int Integer (eg. 3)
 - float Floating point number (eg. 1.04)
-- string String (eg. "Hello World")
+- string String (eg. Hello World)
 "#,
       file,
     );
@@ -171,8 +165,7 @@ Types ---
 
   let data = args[3..].join(" ");
 
-  val.set(
-    var.into(),
+  opt.set_return_val(
     match typ.as_str() {
       "bool" => BufValue::Bool(&data == "true"),
       "int" => BufValue::Int(
@@ -186,7 +179,7 @@ Types ---
           .map_or_else(|_| error("Unable to convert to FLOAT", file), |x| x),
       ),
       "string" => BufValue::Str(data),
-      _ => error("Invalid type", file),
+      e => error(&format!("Invalid type, {e}"), file),
     },
   );
 }

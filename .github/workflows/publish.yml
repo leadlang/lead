@@ -16,33 +16,45 @@ jobs:
       - name: Initial Commit
         uses: actions/checkout@v3
 
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+
+      - name: Add Version Info
+        run: node ver.js
+
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: nightly
 
       - name: Publish
-        run: cargo publish
+        run: cargo publish --allow-dirty
         working-directory: interpreter
         continue-on-error: true
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
 
   build:
-    name: Launch
+    name: Release & Publish
 
     strategy:
       fail-fast: false
       matrix:
         build-os:
-          - windows-latest
-          - ubuntu-latest
+          - windows
+          - ubuntu
 
-    runs-on: ${{ matrix.build-os }}
+    runs-on: ${{ matrix.build-os }}-latest
 
     steps:
       - name: Initial Commit
         uses: actions/checkout@v3
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+
+      - name: Add Version Info
+        run: node ver.js
 
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -56,9 +68,29 @@ jobs:
       - name: Package stuff
         run: cargo +nightly run
 
+      - name: Run Installer
+        run: cargo +nightly build --release
+        working-directory: lead_init
+
+      - name: Publish
+        uses: svenstaro/upload-release-action@v2
+        if: matrix.build-os == 'ubuntu'
+        with:
+          file: ./lead_init/target/release/lead_init
+          asset_name: lead_init_${{ matrix.build-os }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Windows Bin
+        uses: svenstaro/upload-release-action@v2
+        if: matrix.build-os == 'windows'
+        with:
+          file: ./lead_init/target/release/lead_init.exe
+          asset_name: lead_init_${{ matrix.build-os }}.exe
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish
         uses: svenstaro/upload-release-action@v2
         with:
           file: ./build.zip
-          asset_name: binaries_${{ runner.os }}.zip
+          asset_name: binaries_${{ matrix.build-os }}.zip
           repo_token: ${{ secrets.GITHUB_TOKEN }}
