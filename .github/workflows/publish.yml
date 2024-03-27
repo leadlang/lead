@@ -72,7 +72,7 @@ jobs:
         run: cargo +nightly build --release
         working-directory: lead_init
 
-      - name: Publish
+      - name: Publish Linux Bin
         uses: svenstaro/upload-release-action@v2
         if: matrix.build-os == 'ubuntu'
         with:
