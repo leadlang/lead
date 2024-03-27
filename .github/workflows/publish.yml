@@ -66,7 +66,7 @@ jobs:
         run: sudo apt install zip
 
       - name: Package stuff
-        run: cargo +nightly run
+        run: cargo +nightly run --release
 
       - name: Run Installer
         run: cargo +nightly build --release
