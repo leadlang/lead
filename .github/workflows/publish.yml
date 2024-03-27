@@ -54,7 +54,7 @@ jobs:
         run: sudo apt install zip
 
       - name: Package stuff
-        run: cargo +nightly run
+        run: cargo +nightly run --release
 
       - name: Publish
         uses: svenstaro/upload-release-action@v2
