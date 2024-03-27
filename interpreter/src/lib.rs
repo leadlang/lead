@@ -35,13 +35,14 @@ pub trait Package {
 pub struct Application<'a> {
   code: HashMap<String, String>,
   pkg: LanguagePackages<'a>,
+  entry: &'a str,
   next_marker: bool,
   heap: Heap,
 }
 
 impl<'a> Application<'a> {
-  pub fn new(file: String) -> Self {
-    let main = fs::read_to_string(file).unwrap();
+  pub fn new(file: &'a str) -> Self {
+    let main = fs::read_to_string(&file).unwrap();
 
     let mut code = HashMap::new();
     code.insert(":entry".to_string(), main);
@@ -49,6 +50,7 @@ impl<'a> Application<'a> {
       code,
       pkg: LanguagePackages::new(),
       heap: Heap::new(),
+      entry: &file,
       next_marker: false,
     }
   }

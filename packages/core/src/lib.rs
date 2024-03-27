@@ -1,11 +1,15 @@
+#![feature(vec_push_within_capacity)]
+
 use interpreter::{
-  error, generate,
-  types::{BufKeyVal, BufValue, Heap},
+  error, function, generate, parse,
+  types::{BufKeyVal, BufValue, Heap, Options},
   Package,
 };
 
 mod array;
-pub use array::Array;
+mod type_conv;
+pub use array::*;
+pub use type_conv::*;
 
 pub struct Core;
 
@@ -18,27 +22,49 @@ impl Package for Core {
     &self,
   ) -> &'static [(
     &'static str,
-    for<'a, 'b, 'c> fn(&'a Vec<String>, &'b mut Heap, &'c mut bool),
+    for<'a, 'b, 'c, 'd> fn(&'a Vec<String>, &'b mut Heap, &'c String, &'d mut Options),
   )] {
     &[
+      function! {
+        "unwrap",
+        |args, heap, file, _| {
+          parse!(file + heap + args: > nval, -> val);
+
+          match val {
+            BufValue::Faillable(val) => match val {
+              Ok(val) => {
+                let _ = heap.set(
+                  nval.into(),
+                  *val
+                );
+              }
+              Err(err) => {
+                error(&format!("{}", err), file);
+              }
+            }
+            _ => error("Expected Faillable(Result<T, E>) in `-> val`", file)
+          }
+        }
+      },
       ("malloc", malloc),
-      ("drop", |args, heap, _| {
+      ("drop", |args, heap, file, _| {
         let [_, var] = &args[..] else {
           error(
             r#"Invalid arguments in :drop
           Format ---
-          - drop $in"#,
+          - drop $in"#,file
           );
         };
 
         heap.remove(var);
       }),
-      ("typeof", |args, heap, _| {
+      ("typeof", |args, heap, file, _| {
         let [_, var, set] = &args[..] else {
           error(
             r#"Invalid arguments in :typeof
           Format ---
           - typeof $in $result"#,
+            file,
           );
         };
 
@@ -46,10 +72,10 @@ impl Package for Core {
           Some(v) => {
             let _ = heap.set(set.clone(), BufValue::Str(v.type_of()));
           }
-          None => error(&format!("Variable {} not found", var)),
+          None => error(&format!("Variable {} not found", var), file),
         }
       }),
-      ("comp", |args, val, _| {
+      ("comp", |args, val, file, _| {
         let [_, a, f, b, pipe, resp] = &args[..] else {
           error(
             r#"Invalid arguments in :comp
@@ -61,11 +87,12 @@ impl Package for Core {
         - comp $1 > $2 > $res (only if $1 $2 = number)
         - comp $1 >= $2 > $res (only if $1 $2 = number)
       "#,
+            file,
           );
         };
 
         if pipe != ">" {
-          error("Invalid pipe operator");
+          error("Invalid pipe operator", file);
         }
 
         let a = val.get(a).expect("Unable to get value of 1st variable");
@@ -80,11 +107,11 @@ impl Package for Core {
             "<=" => a.lt(&b) || a == b,
             ">" => a.gt(&b) || a == b,
             ">=" => a.gt(&b) || a == b,
-            e => error(&format!("Invalid operator {} in :comp", e)),
+            e => error(&format!("Invalid operator {} in :comp", e), file),
           }),
         );
       }),
-      ("mkptr", |args, heap, _| {
+      ("mkptr", |args, heap, file, _| {
         let [_, var, point, p, pointer] = &args[..] else {
           error(
             r#"Invalid syntax
@@ -92,34 +119,40 @@ impl Package for Core {
           Format ---
           - mkptr $arr 0 > *ptr
           - mkptr $map "test" > *ptr"#,
+            file,
           );
         };
 
         if p != ">" {
-          error("Invalid pipe operator");
+          error("Invalid pipe operator", file);
         }
 
         match heap
           .get(var)
-          .unwrap_or_else(|| error("Unable to get variable"))
+          .unwrap_or_else(|| error("Unable to get variable", file))
         {
           BufValue::Array(_) => {
             let ptr = point.parse::<usize>().unwrap_or_else(|_| {
-              error("Unable to convert to a pointing");
+              error("Unable to convert to a pointing", file);
             });
             heap.set_ptr(pointer.clone(), BufKeyVal::Array(ptr));
           }
           BufValue::Object(_) => {
             let _ = heap.set_ptr(pointer.into(), BufKeyVal::Map(point.clone()));
           }
-          _ => error("Only ARRAY / OBJECT can be pointered"),
+          _ => error("Only ARRAY / OBJECT can be pointered", file),
         }
       }),
     ]
   }
 }
 
-fn malloc<'a, 'b, 'c>(args: &'a Vec<String>, val: &'b mut Heap, _: &'c mut bool) {
+fn malloc<'a, 'b, 'c, 'd>(
+  args: &'a Vec<String>,
+  val: &'b mut Heap,
+  file: &'c String,
+  _: &'d mut Options,
+) {
   let [_, var, typ, ..] = &args[..] else {
     error(
       r#"Invalid arguments in :malloc
@@ -132,6 +165,7 @@ Types ---
 - float Floating point number (eg. 1.04)
 - string String (eg. "Hello World")
 "#,
+      file,
     );
   };
 
@@ -144,17 +178,17 @@ Types ---
       "int" => BufValue::Int(
         data
           .parse()
-          .map_or_else(|_| error("Unable to convert to INTEGER"), |x| x),
+          .map_or_else(|_| error("Unable to convert to INTEGER", file), |x| x),
       ),
       "float" => BufValue::Float(
         data
           .parse()
-          .map_or_else(|_| error("Unable to convert to FLOAT"), |x| x),
+          .map_or_else(|_| error("Unable to convert to FLOAT", file), |x| x),
       ),
       "string" => BufValue::Str(data),
-      _ => error("Invalid type"),
+      _ => error("Invalid type", file),
     },
   );
 }
 
-generate!(Core, Array);
+generate!(Core, Array, Types);

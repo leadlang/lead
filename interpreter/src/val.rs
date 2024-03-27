@@ -25,7 +25,8 @@ pub fn warn<T: Display>(msg: T) {
   println!("{}{msg}", *WARN);
 }
 
-pub fn error<T: Display>(msg: T) -> ! {
+pub fn error<T: Display>(msg: T, file: T) -> ! {
   println!("{}{msg}", *ERROR);
+  println!("{}{file}", *ERROR);
   process::exit(1);
 }

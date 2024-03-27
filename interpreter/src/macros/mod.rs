@@ -57,54 +57,65 @@ macro_rules! function {
 
 #[macro_export]
 macro_rules! parse {
-  ($heap:ident + $args:ident: $($x:tt $y:ident),*) => {
+  ($file:ident + $heap:ident + $args:ident: $($x:tt $y:ident),*) => {
     #[allow(unused_variables)]
     let [_, $($y),*] = &$args[..] else {
-      interpreter::error("Invalid Format!");
+      interpreter::error("Invalid Format!", $file);
     };
 
-    $(interpreter::modify!($heap: $x $y);)*;
+    $(interpreter::modify!($file + $heap: $x $y);)*;
   };
 }
 
 #[macro_export]
 macro_rules! modify {
-  ($heap:ident: -> $y:ident) => {
+  ($file:ident + $heap:ident: -> $y:ident) => {
     let Some(Some($y)) = $heap.remove($y) else {
-      interpreter::error("Invalid Format or Varible not found!");
+      interpreter::error("Invalid Format or Varible not found!", $file);
     };
   };
 
-  ($heap:ident: & $y:ident) => {
+  ($file:ident + $heap:ident: & $y:ident) => {
     let Some($y) = $heap.get($y) else {
-      interpreter::error("Invalid Format or Varible not found!");
+      interpreter::error("Invalid Format or Varible not found!", $file);
     };
   };
 
-  ($heap:ident: > $y:ident) => {
+  ($file:ident + $heap:ident: > $y:ident) => {
+    interpreter::warn("WARN: Deprecated library feature `>`, use the $: syntax instead!");
     if !$y.starts_with("$") && !$y.starts_with("*") {
-      interpreter::error("Invalid Variable provided!\nNote: Mutable / Moved values may not be provided to what expects piped (`>`) values");
+      interpreter::error("Invalid Variable provided!\nNote: Mutable / Moved values may not be provided to what expects piped (`>`) values", $file);
     }
   };
-  ($heap:ident: str $y:ident) => {};
+  ($file:ident + $heap:ident: str $y:ident) => {};
 
-  ($heap:ident: drop $y:ident) => {
+  ($file:ident + $heap:ident: drop $y:ident) => {
     let $y: Vec<Option<String>> = vec![];
     drop($y);
   };
 }
 
 #[macro_export]
+macro_rules! get_as {
+  ($file:ident + $heap:ident: $ty:ident $y:ident) => {
+    let interpreter::types::BufValue::$ty($y) = $y else {
+      interpreter::error("Invalid Format or Varible not found!", $file);
+    };
+  };
+}
+
+
+#[macro_export]
 macro_rules! get_mut {
-  ($heap:ident: mut $y:ident) => {
+  ($file:ident + $heap:ident: mut $y:ident) => {
     let Some($y) = $heap.get_mut($y) else {
-      interpreter::error("Invalid Format or Varible not found!");
+      interpreter::error("Invalid Format or Varible not found!", $file);
     };
   };
 
-  ($heap:ident: $ty:ident $y:ident) => {
+  ($file:ident + $heap:ident: $ty:ident $y:ident) => {
     let Some(interpreter::types::BufValue::$ty($y)) = $heap.get_mut($y) else {
-      interpreter::error("Invalid Format or Varible not found!");
+      interpreter::error("Invalid Format or Varible not found!", $file);
     };
   };
 }

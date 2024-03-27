@@ -2,11 +2,11 @@ use crate::Package;
 use chalk_rs::Chalk;
 use std::collections::HashMap;
 
-use super::Heap;
+use super::{Heap, Options};
 
 //pub trait DynPackageCallback = FnMut(&Args, &mut Heap, &mut bool);
 pub type Args = Vec<String>;
-pub type PackageCallback = fn(&Args, &mut Heap, &mut bool) -> ();
+pub type PackageCallback = fn(&Args, &mut Heap, &String, &mut Options) -> ();
 
 pub type DynMethodRes = Vec<(&'static str, PackageCallback)>;
 pub type MethodRes = &'static [(&'static str, PackageCallback)];

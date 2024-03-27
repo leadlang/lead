@@ -1,70 +1,59 @@
-use interpreter::{function, get_mut, methods, module, parse, pkg_name, types::BufValue};
+use interpreter::{error, function, get_as, get_mut, methods, module, parse, pkg_name, types::BufValue};
 
 module!(
   Array,
   pkg_name! { "📦 Core / Array" }
   methods! {
-    function!("array::malloc", |args, heap, _| {
-      parse!(heap + args: > array);
-
-      let _ = heap.set(array.into(), BufValue::Array(vec![]));
+    function!("array::malloc", |_, _, _, opt| {
+      opt.set_return_val(BufValue::Array(vec![]));
     }),
-    function!("array::push", |args, heap, _| {
-      parse!(heap + args: str arr, -> value);
+    function!("array::push", |args, heap, file, _| {
+      parse!(file + heap + args: str arr, -> value);
 
-      get_mut!(heap: Array arr);
+      get_mut!(file + heap: Array arr);
+
+      if arr.len() as i64 == i64::MAX {
+        error("Array length reached 9223372036854775807 (number overflow)", file);
+      }
 
       arr.push(value);
-    })
+    }),
+    function!("array::push_if_cap_available", |args, heap, file, _| {
+      parse!(file + heap + args: str arr, -> value);
+
+      get_mut!(file + heap: Array arr);
+
+      let _ = arr.push_within_capacity(value);
+    }),
+    function!("array::pop", |args, heap, file, opt| {
+      parse!(file + heap + args: str arr);
+
+      get_mut!(file + heap: Array arr);
+
+      if let Some(x) = arr.pop() {
+        opt.set_return_val(x)
+      }
+    }),
+    function!("array::len", |args, heap, file, opt| {
+      parse!(file + heap + args: & arr);
+
+      get_as!(file + heap: Array arr);
+
+      opt.set_return_val(BufValue::Int(arr.len() as i64))
+    }),
+    function!("array::capacity", |args, heap, file, opt| {
+      parse!(file + heap + args: & arr);
+
+      get_as!(file + heap: Array arr);
+
+      opt.set_return_val(BufValue::Int(arr.capacity() as i64))
+    }),
+    function!("array::clear", |args, heap, file, _| {
+      parse!(file + heap + args: str arr);
+
+      get_mut!(file + heap: Array arr);
+
+      arr.clear();
+    }),
   }
 );
-
-// use interpreter::types::BufValue;
-// use interpreter::val::error;
-// use interpreter::{types::MethodRes, Package};
-
-// pub struct Array;
-
-// impl Package for Array {
-//   fn name(&self) -> &'static [u8] {
-//     "📦 Lead Programming Language / Core / Array".as_bytes()
-//   }
-
-//   fn methods(&self) -> MethodRes {
-//     &[
-//       ("array::malloc", |args, val, _| {
-//         let [_, a] = &args[..] else {
-//           error(
-//             r#"Invalid arguments in :array::malloc
-//       Format ---
-//       - array::malloc $1"#,
-//           )
-//         };
-
-//         val.set(a.clone(), BufValue::Array(vec![]));
-//       }),
-//       ("array::push", |args, heap, _| {
-//         let [_, arr, val] = &args[..] else {
-//           error(
-//             r#"Invalid arguments in array::malloc
-//       Format ---
-//       - array::push $arr $myval"#,
-//           )
-//         };
-
-//         let val = heap
-//           .remove(val)
-//           .unwrap_or_else(|| error("Invalid value provided"))
-//           .unwrap_or_else(|| error("Pointer / Invalid variable"));
-
-//         heap.get_mut(arr).map_or_else(
-//           || error("Invalid array"),
-//           |x| match x {
-//             BufValue::Array(arr) => arr.push(val),
-//             _ => error("Not an array!"),
-//           },
-//         );
-//       }),
-//     ]
-//   }
-// }

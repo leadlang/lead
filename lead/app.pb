@@ -1,5 +1,3 @@
-malloc $data string Hello World
-array::malloc $data2
-array::push ->&$data2 ->$data
+$1: os::name $1
 
-print $data $data2
+print $1

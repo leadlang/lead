@@ -1,9 +1,47 @@
 mod fns;
 mod heap;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
 pub use fns::*;
 pub use heap::*;
+
+pub struct Options {
+  pub marker: bool,
+  pub r_val: Option<BufValue>,
+  pub r_ptr: BufKeyVal,
+}
+
+impl Debug for Options {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.write_fmt(format_args!("Options {{ marker: {:?}, r_val: {:?}, r_ptr: {} }}", &self.marker, &self.r_val, match &self.r_ptr {
+      BufKeyVal::None => "None",
+      BufKeyVal::Array(_) => "Pending<Array>",
+      BufKeyVal::Map(_) => "Pending<Object>",
+    }))
+  }
+}
+
+impl Options {
+  pub fn new() -> Self {
+    Self {
+      marker: false,
+      r_ptr: BufKeyVal::None,
+      r_val: None
+    }
+  }
+
+  pub fn set_marker(&mut self) {
+    self.marker = true;
+  }
+
+  pub fn set_return_val(&mut self, val: BufValue) {
+    self.r_val = Some(val);
+  }
+
+  pub fn set_return_ptr(&mut self, ptr: BufKeyVal) {
+    self.r_ptr = ptr;
+  }
+}
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum BufValue {

@@ -5,12 +5,15 @@ use libloading::{library_filename, Library};
 use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use std::collections::HashMap;
-use std::env::current_exe;
 use std::ffi::OsString;
 use std::fs::{self, read_to_string, DirEntry};
 
+use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;
+
+#[cfg(not(debug_assertions))]
+use std::env::current_exe;
 
 static mut LIBS: Option<Box<HashMap<u8, Library>>> = None;
 
@@ -28,11 +31,11 @@ pub struct PbExec {
 
 pub fn run(dir: String, prod: bool) {
   let pb_json = read_to_string(format!("{}/pb.json", &dir)).unwrap_or_else(|_| {
-    error("Invalid dir provided");
+    error("Invalid dir provided", "core:00");
   });
 
   let pb_json: PbJSON = from_str::<PbJSON>(&pb_json).unwrap_or_else(|_| {
-    error("Invalid pb.json file / No pb.json file found!");
+    error("Invalid pb.json file / No pb.json file found!", "core:00");
   });
 
   let file = if prod { pb_json.prod } else { pb_json.dev };
@@ -51,13 +54,16 @@ pub fn run(dir: String, prod: bool) {
 }
 
 fn run_inner(file: &String, prod: bool) {
-  let mut app = Application::new(file.clone());
+  let mut app = Application::new(file.as_str());
   let mut dll: Vec<Library> = vec![];
 
   unsafe { LIBS = Some(Box::new(HashMap::new())) }
 
-  let mut file = current_exe().unwrap();
+  #[cfg(not(debug_assertions))]
+  let mut file: PathBuf = current_exe().unwrap();
+  #[cfg(not(debug_assertions))]
   file.pop();
+  #[cfg(not(debug_assertions))]
   file.push("lib");
 
   let mut load = |entry: DirEntry, exe_dir: bool| {
@@ -76,6 +82,7 @@ fn run_inner(file: &String, prod: bool) {
     dll.push(lib);
   };
 
+  #[cfg(not(debug_assertions))]
   for file in fs::read_dir(file).unwrap() {
     let entry = file.unwrap();
     load(entry, true);

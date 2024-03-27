@@ -1,8 +1,10 @@
 use std::{fs, path::PathBuf, process::Command, str::FromStr};
 
 fn main() {
+  #[cfg(not(debug_assertions))]
   fs::remove_dir_all("./build").unwrap_or(());
   fs::remove_file("./build.zip").unwrap_or(());
+  #[cfg(not(debug_assertions))]
   fs::create_dir_all("./build/lib").unwrap();
 
   #[cfg(windows)]
@@ -32,6 +34,7 @@ fn main() {
         "nightly",
         "cargo",
         "build",
+        #[cfg(not(debug_assertions))]
         "--release",
         "--manifest-path",
         cargo_path,
@@ -45,11 +48,17 @@ fn main() {
       panic!("Failed to build");
     }
 
+    #[cfg(not(debug_assertions))]
+    let typ = "release";
+
+    #[cfg(debug_assertions)]
+    let typ = "debug";
+
     #[cfg(windows)]
-    let fs_dir = format!("{}\\target\\release", path.to_string_lossy());
+    let fs_dir = format!("{}\\target\\{}", path.to_string_lossy(), &typ);
 
     #[cfg(not(windows))]
-    let fs_dir = format!("{}/target/release", path.to_string_lossy());
+    let fs_dir = format!("{}/target/{}", path.to_string_lossy(), &typ);
 
     for file in fs::read_dir(fs_dir).unwrap() {
       let file = file.unwrap();
@@ -62,13 +71,13 @@ fn main() {
         fs::copy(&path, format!("./build/{}", name)).unwrap();
       }
 
-      #[cfg(windows)]
-      if name.ends_with(".dll") {
-        fs::copy(&path, format!("./build/lib/{}", name)).unwrap();
-      }
+      if name.ends_with(".dll") || name.ends_with(".so") {
+        #[cfg(debug_assertions)]
+        fs::create_dir_all(format!("./build/lib/{}", &name.split_once(".").unwrap().0)).unwrap();
+        #[cfg(debug_assertions)]
+        fs::copy(&path, format!("./build/lib/{}/{}", &name.split_once(".").unwrap().0, name)).unwrap();
 
-      #[cfg(not(windows))]
-      if name.ends_with(".so") {
+        #[cfg(not(debug_assertions))]
         fs::copy(&path, format!("./build/lib/{}", name)).unwrap();
       }
     }
@@ -92,7 +101,8 @@ fn main() {
 
   #[cfg(not(windows))]
   Command::new("zip")
-    .args(["-r", "./build.zip", "./build/"])
+    .args(["-r", "../build.zip", "./"])
+    .current_dir("./build")
     .spawn()
     .unwrap()
     .wait()
