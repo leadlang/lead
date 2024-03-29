@@ -1,10 +1,10 @@
-use interpreter::{function, methods, module, pkg_name, types::BufValue, Chalk};
+use interpreter::{document, function, methods, module, pkg_name, types::BufValue, Chalk};
 
 module! {
   Fs,
   pkg_name! { "📦 Lead Programming Language / IO" }
   methods! {
-    function!("print", |args, heap, _, _| {
+    function!("print", document!(), |args, heap, _, _| {
       let args = &args[1..];
       let args = args
         .iter()

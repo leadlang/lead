@@ -1,4 +1,4 @@
-use interpreter::{function, methods, module, pkg_name, types::BufValue};
+use interpreter::{document, function, methods, module, pkg_name, types::BufValue};
 
 module!(
   IO,
@@ -6,6 +6,7 @@ module!(
   methods! {
     function! {
       "os::name",
+      document!(""),
       |_, _, _, opt| {
         opt.set_return_val(if cfg!(windows) {
           BufValue::Str("Win32".into())

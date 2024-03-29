@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::ffi::OsString;
 use std::fs::{self, read_to_string, DirEntry};
 
+#[cfg(not(debug_assertions))]
 use std::path::PathBuf;
 use std::process::Command;
 use std::str::FromStr;

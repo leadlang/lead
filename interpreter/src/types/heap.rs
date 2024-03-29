@@ -44,14 +44,14 @@ impl Heap {
     Some(())
   }
 
-  pub fn set_ptr(&mut self, key: String, val: BufKeyVal) -> Option<()> {
+  pub fn set_ptr(&mut self, key: String, ptr_target: String, val: BufKeyVal) -> Option<()> {
     if !key.starts_with("*") {
       return None;
     }
     if let BufKeyVal::None = val {
       return None;
     }
-    self.pointer.insert(key.clone(), PtrType { key, val });
+    self.pointer.insert(key, PtrType { key: ptr_target, val });
     Some(())
   }
 

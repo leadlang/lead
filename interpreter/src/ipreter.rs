@@ -56,7 +56,7 @@ fn tok_parse(file: String, piece: &str, app: &mut Application) {
       }
 
       if val_type == "*" {
-        let _ = app.heap.set_ptr(to_set, opt.r_ptr);
+        let _ = app.heap.set_ptr(to_set, opt.r_ptr_target, opt.r_ptr);
       } else if val_type == "$" && opt.r_val.is_some() {
         let _ = app.heap.set(to_set, opt.r_val.unwrap());
       }

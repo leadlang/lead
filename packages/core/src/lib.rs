@@ -1,9 +1,8 @@
 #![feature(vec_push_within_capacity)]
+#![feature(concat_idents)]
 
 use interpreter::{
-  error, function, generate, parse,
-  types::{BufKeyVal, BufValue, Heap, Options},
-  Package,
+  document, error, function, generate, parse, types::{BufKeyVal, BufValue, Heap, Options}, Package
 };
 
 mod array;
@@ -22,11 +21,13 @@ impl Package for Core {
     &self,
   ) -> &'static [(
     &'static str,
+    &'static str,
     for<'a, 'b, 'c, 'd> fn(&'a Vec<String>, &'b mut Heap, &'c String, &'d mut Options),
   )] {
     &[
       function! {
         "unwrap",
+        document!(""),
         |args, heap, file, opt| {
           parse!(file + heap + args: -> val);
 
@@ -45,8 +46,8 @@ impl Package for Core {
           }
         }
       },
-      ("malloc", malloc),
-      ("drop", |args, heap, file, _| {
+      ("malloc", document!(""), malloc),
+      ("drop", document!(""), |args, heap, file, _| {
         let [_, var] = &args[..] else {
           error(
             r#"Invalid arguments in :drop
@@ -57,7 +58,7 @@ impl Package for Core {
 
         heap.remove(var);
       }),
-      ("typeof", |args, heap, file, opt| {
+      ("typeof", document!(""), |args, heap, file, opt| {
         let [_, var,] = &args[..] else {
           error(
             r#"Invalid arguments in :typeof
@@ -74,12 +75,12 @@ impl Package for Core {
           None => error(&format!("Variable {} not found", var), file),
         }
       }),
-      ("comp", |args, val, file, opt| {
+      ("comp", document!(""), |args, val, file, opt| {
         let [_, a, f, b] = &args[..] else {
           error(
             r#"Invalid arguments in :comp
         Format ---
-        - comp $1 = $2
+        - comp $1 == $2
         - comp $1 != $2
         - comp $1 < $2 (only if $1 $2 = number)
         - comp $1 <= $2 (only if $1 $2 = number)
@@ -95,17 +96,17 @@ impl Package for Core {
 
         opt.set_return_val(
           BufValue::Bool(match f.as_str() {
-            "=" => a == b,
-            "!=" => a != b,
+            "==" => a.eq(b),
+            "!=" => !a.eq(b),
             "<" => a.lt(&b),
-            "<=" => a.lt(&b) || a == b,
-            ">" => a.gt(&b) || a == b,
-            ">=" => a.gt(&b) || a == b,
+            "<=" => a.lt(&b) || a.eq(b),
+            ">" => a.gt(&b),
+            ">=" => a.gt(&b) || a.eq(b),
             e => error(&format!("Invalid operator {} in :comp", e), file),
           }),
         );
       }),
-      ("mkptr", |args, heap, file, _| {
+      ("mkptr", document!(""), |args, heap, file, _| {
         let [_, var, point, p, pointer] = &args[..] else {
           error(
             r#"Invalid syntax
@@ -129,10 +130,10 @@ impl Package for Core {
             let ptr = point.parse::<usize>().unwrap_or_else(|_| {
               error("Unable to convert to a pointing", file);
             });
-            heap.set_ptr(pointer.clone(), BufKeyVal::Array(ptr));
+            heap.set_ptr(pointer.clone(), "".into(), BufKeyVal::Array(ptr));
           }
           BufValue::Object(_) => {
-            let _ = heap.set_ptr(pointer.into(), BufKeyVal::Map(point.clone()));
+            let _ = heap.set_ptr(pointer.into(), "".into(), BufKeyVal::Map(point.clone()));
           }
           _ => error("Only ARRAY / OBJECT can be pointered", file),
         }
@@ -155,7 +156,8 @@ Format ---
 
 Types ---
 - bool Boolean (eg. true)
-- int Integer (eg. 3)
+- int Integer (eg. -3, 3)
+- u_int Unsigned Integer (eg. 3)
 - float Floating point number (eg. 1.04)
 - string String (eg. Hello World)
 "#,
@@ -163,7 +165,7 @@ Types ---
     );
   };
 
-  let data = args[3..].join(" ");
+  let data = args[2..].join(" ");
 
   opt.set_return_val(
     match typ.as_str() {
@@ -172,6 +174,11 @@ Types ---
         data
           .parse()
           .map_or_else(|_| error("Unable to convert to INTEGER", file), |x| x),
+      ),
+      "u_int" => BufValue::U_Int(
+        data
+          .parse()
+          .map_or_else(|_| error("Unable to convert to UNSIGNED INTEGER", file), |x| x),
       ),
       "float" => BufValue::Float(
         data

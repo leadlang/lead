@@ -48,10 +48,20 @@ macro_rules! methods {
 }
 
 #[macro_export]
+macro_rules! document {
+  ($($x:tt)*) => {
+    stringify!($($x)*)
+  }
+}
+
+#[macro_export]
 macro_rules! function {
-  ($name:literal, $($x:tt)*) => {
-    ($name, $($x)*
-    )
+  ($name:literal, $docs:expr, $($x:tt)*) => {
+    {
+      const DOC: &'static str = $docs;
+      ($name, DOC, $($x)*
+      )
+    }
   };
 }
 
@@ -66,6 +76,7 @@ macro_rules! parse {
     $(interpreter::modify!($file + $heap: $x $y);)*;
   };
 }
+
 
 #[macro_export]
 macro_rules! modify {
@@ -82,7 +93,7 @@ macro_rules! modify {
   };
 
   ($file:ident + $heap:ident: > $y:ident) => {
-    interpreter::warn("WARN: Deprecated library feature `>`, use the $: syntax instead!");
+    interpreter::warn("WARN: Deprecated library feature `>`, migrate to the $: syntax instead!");
     if !$y.starts_with("$") && !$y.starts_with("*") {
       interpreter::error("Invalid Variable provided!\nNote: Mutable / Moved values may not be provided to what expects piped (`>`) values", $file);
     }

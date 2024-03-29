@@ -8,6 +8,7 @@ pub use heap::*;
 pub struct Options {
   pub marker: bool,
   pub r_val: Option<BufValue>,
+  pub r_ptr_target: String,
   pub r_ptr: BufKeyVal,
 }
 
@@ -26,6 +27,7 @@ impl Options {
     Self {
       marker: false,
       r_ptr: BufKeyVal::None,
+      r_ptr_target: "".to_string(),
       r_val: None
     }
   }
@@ -38,14 +40,17 @@ impl Options {
     self.r_val = Some(val);
   }
 
-  pub fn set_return_ptr(&mut self, ptr: BufKeyVal) {
+  pub fn set_return_ptr(&mut self, target: String, ptr: BufKeyVal) {
+    self.r_ptr_target = target;
     self.r_ptr = ptr;
   }
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum BufValue {
   Int(i64),
+  U_Int(u64),
   Float(f64),
   Str(String),
   Bool(bool),
@@ -61,12 +66,13 @@ impl BufValue {
       BufValue::Bool(_) => "bool".to_string(),
       BufValue::Float(_) => "float".to_string(),
       BufValue::Int(_) => "int".to_string(),
+      BufValue::U_Int(_) => "u_int".to_string(),
       BufValue::Object(_) => "object".to_string(),
       BufValue::Str(_) => "string".to_string(),
       BufValue::Faillable(res) => match res {
         Ok(t) => format!("<success {}>", t.type_of()),
         Err(t) => format!("<err {}>", &t),
-      },
+      }
     }
   }
 
@@ -80,6 +86,9 @@ impl BufValue {
   pub fn gt(&self, other: &BufValue) -> bool {
     match (self, other) {
       (BufValue::Int(a), BufValue::Int(b)) => a > b,
+      (BufValue::Int(a), BufValue::U_Int(b)) => (*a as i128) > (*b as i128),
+      (BufValue::U_Int(a), BufValue::U_Int(b)) => a > b,
+      (BufValue::U_Int(a), BufValue::Int(b)) => (*a as i128) > (*b as i128),
       (BufValue::Float(a), BufValue::Float(b)) => a > b,
       _ => false,
     }
@@ -88,8 +97,19 @@ impl BufValue {
   pub fn lt(&self, other: &BufValue) -> bool {
     match (self, other) {
       (BufValue::Int(a), BufValue::Int(b)) => a < b,
+      (BufValue::Int(a), BufValue::U_Int(b)) => (*a as i128) < (*b as i128),
+      (BufValue::U_Int(a), BufValue::U_Int(b)) => a < b,
+      (BufValue::U_Int(a), BufValue::Int(b)) => (*a as i128) < (*b as i128),
       (BufValue::Float(a), BufValue::Float(b)) => a < b,
       _ => false,
+    }
+  }
+
+  pub fn eq(&self, other: &BufValue) -> bool {
+    match (self, other) {
+      (BufValue::Int(a), BufValue::U_Int(b)) => (*a as i128) == (*b as i128),
+      (BufValue::U_Int(a), BufValue::Int(b)) => (*a as i128) == (*b as i128),
+      _ => self == other,
     }
   }
 }

@@ -1,0 +1,14 @@
+unwrap->./docs/1/1
+malloc->./docs/1/2
+drop->./docs/1/3
+typeof->./docs/1/4
+comp->./docs/1/5
+mkptr->./docs/1/6
+array::malloc->./docs/2/1
+array::push->./docs/2/2
+array::push_if_cap_available->./docs/2/3
+array::pop->./docs/2/4
+array::len->./docs/2/5
+array::capacity->./docs/2/6
+array::clear->./docs/2/7
+str::to_int->./docs/3/1

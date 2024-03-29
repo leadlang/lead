@@ -8,8 +8,8 @@ use super::{Heap, Options};
 pub type Args = Vec<String>;
 pub type PackageCallback = fn(&Args, &mut Heap, &String, &mut Options) -> ();
 
-pub type DynMethodRes = Vec<(&'static str, PackageCallback)>;
-pub type MethodRes = &'static [(&'static str, PackageCallback)];
+pub type DynMethodRes = Vec<(&'static str, &'static str, PackageCallback)>;
+pub type MethodRes = &'static [(&'static str, &'static str, PackageCallback)];
 
 pub enum MethodData<'a> {
   Static(&'a str, PackageCallback),
@@ -17,23 +17,27 @@ pub enum MethodData<'a> {
 
 pub struct LanguagePackages<'a> {
   pub inner: HashMap<&'static str, MethodData<'a>>,
+  pub docs: HashMap<&'static str, &'static str>,
 }
 
 impl<'a> LanguagePackages<'a> {
   pub fn new() -> Self {
     Self {
       inner: HashMap::new(),
+      docs: HashMap::new(),
     }
   }
 
   pub fn import<T: Package>(&mut self, func: T) -> &mut Self {
     let name = String::from_utf8_lossy(func.name());
     let name: &'static mut str = name.to_string().leak::<'static>();
-    for (key, val) in func.methods() {
+    for (key, doc, val) in func.methods() {
       self.inner.insert(key, MethodData::Static(name, *val));
+      self.docs.insert(key, doc);
     }
-    for (k, v) in func.dyn_methods() {
+    for (k, doc, v) in func.dyn_methods() {
       self.inner.insert(k, MethodData::Static(name, v));
+      self.docs.insert(k, doc);
     }
     self
   }

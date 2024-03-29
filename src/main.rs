@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, process::Command, str::FromStr};
+use std::{fs::{self, create_dir_all}, path::PathBuf, process::Command, str::FromStr};
 
 fn main() {
   #[cfg(not(debug_assertions))]
@@ -25,20 +25,16 @@ fn main() {
   dir.push(PathBuf::from_str("./lead").unwrap());
 
   for path in dir {
-    let cargo_path = path.join("Cargo.toml");
-    let cargo_path = cargo_path.to_str().unwrap();
-
     if !Command::new("rustup")
       .args([
         "run",
         "nightly",
         "cargo",
-        "build",
+        { if path.to_string_lossy().contains("lead") { "build" } else { "run" } },
         #[cfg(not(debug_assertions))]
-        "--release",
-        "--manifest-path",
-        cargo_path,
+        "--release"
       ])
+      .current_dir(&path)
       .spawn()
       .unwrap()
       .wait()
@@ -81,6 +77,23 @@ fn main() {
         fs::copy(&path, format!("./build/lib/{}", name)).unwrap();
       }
     }
+  }
+
+  let pkg_docs = [
+    ("./packages/core/docs/", "./build/docs/core"),
+    ("./packages/std/docs/", "./build/docs/std"),
+  ];
+
+  use fs_extra::dir::{copy, CopyOptions};
+
+  let mut options = CopyOptions::new();
+  options.overwrite = true;
+  options.content_only = true;
+  options.copy_inside = true;
+
+  for (pkg, out) in pkg_docs {
+    create_dir_all(&out).unwrap();
+    copy(&pkg, &out, &options).unwrap();
   }
 
   #[cfg(windows)]

@@ -1,5 +1,6 @@
 #![feature(fn_traits)]
 #![feature(trait_alias)]
+#![feature(concat_idents)]
 
 use std::{collections::HashMap, fs, process};
 
@@ -13,7 +14,7 @@ pub mod types;
 pub mod val;
 
 pub use package::*;
-use types::{DynMethodRes, Heap, LanguagePackages, MethodRes, PackageCallback};
+use types::{DynMethodRes, Heap, LanguagePackages, MethodRes};
 pub use val::*;
 
 pub use chalk_rs::Chalk;
@@ -68,7 +69,7 @@ impl<'a> Application<'a> {
   pub fn add_pkg_raw(
     &mut self,
     name: &'static [u8],
-    methods: &'static [(&'static str, PackageCallback)],
+    methods: MethodRes,
     dyn_methods: DynMethodRes,
   ) -> &mut Self {
     let mut pkg = ImplPackage::new();
