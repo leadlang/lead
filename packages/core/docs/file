@@ -9,6 +9,7 @@ array::push->./docs/2/2
 array::push_if_cap_available->./docs/2/3
 array::pop->./docs/2/4
 array::len->./docs/2/5
-array::capacity->./docs/2/6
+array::cap->./docs/2/6
 array::clear->./docs/2/7
+array::get->./docs/2/8
 str::to_int->./docs/3/1
