@@ -1,3 +1,4 @@
+workspace = { members = ["lead_docs"] }
 [package]
 name = "pack"
 version = "0.0.0-dev-lead-lang"

@@ -48,15 +48,8 @@ impl Package for Core {
       },
       ("malloc", document!(""), malloc),
       ("drop", document!(""), |args, heap, file, _| {
-        let [_, var] = &args[..] else {
-          error(
-            r#"Invalid arguments in :drop
-          Format ---
-          - drop $in"#,file
-          );
-        };
-
-        heap.remove(var);
+        parse!(file + heap + args: -> var);
+        drop(var);
       }),
       ("typeof", document!(""), |args, heap, file, opt| {
         let [_, var,] = &args[..] else {
@@ -105,39 +98,7 @@ impl Package for Core {
             e => error(&format!("Invalid operator {} in :comp", e), file),
           }),
         );
-      }),
-      ("mkptr", document!(""), |args, heap, file, _| {
-        let [_, var, point, p, pointer] = &args[..] else {
-          error(
-            r#"Invalid syntax
-          
-          Format ---
-          - mkptr $arr 0 > *ptr
-          - mkptr $map "test" > *ptr"#,
-            file,
-          );
-        };
-
-        if p != ">" {
-          error("Invalid pipe operator", file);
-        }
-
-        match heap
-          .get(var)
-          .unwrap_or_else(|| error("Unable to get variable", file))
-        {
-          BufValue::Array(_) => {
-            let ptr = point.parse::<usize>().unwrap_or_else(|_| {
-              error("Unable to convert to a pointing", file);
-            });
-            heap.set_ptr(pointer.clone(), "".into(), BufKeyVal::Array(ptr));
-          }
-          BufValue::Object(_) => {
-            let _ = heap.set_ptr(pointer.into(), "".into(), BufKeyVal::Map(point.clone()));
-          }
-          _ => error("Only ARRAY / OBJECT can be pointered", file),
-        }
-      }),
+      })
     ]
   }
 }
