@@ -1,11 +1,11 @@
-use crate::{error, types::{MethodData, Options}, Application};
+use crate::{
+  error,
+  types::{mkbuf, MethodData, Options},
+  Application,
+};
 
 pub fn interpret(file: &str, mut app: &mut Application) {
-  let file_name = if file == ":entry" {
-    app.entry
-  } else {
-    file
-  };
+  let file_name = if file == ":entry" { app.entry } else { file };
 
   let file = app.code.get(file).unwrap();
 
@@ -41,28 +41,36 @@ fn tok_parse(file: String, piece: &str, app: &mut Application) {
 
     to_set = tokens.remove(0);
     to_set = to_set.split_at(to_set.len() - 1).0.into();
-    
+
     caller = tokens[0].as_str();
   }
 
   let mut opt = Options::new();
 
-  match app.pkg.inner.get_mut(caller) {
-    Some(MethodData::Static(_, v)) => {
-      v(&tokens, &mut app.heap, &file, &mut opt);
+  if caller.starts_with("@") {
+    if val_type == "$" {
+      let _ = app.heap.set(to_set, mkbuf(&caller, &file));
+    }
+  } else {
+    match app.pkg.inner.get_mut(caller) {
+      Some(MethodData::Static(_, v)) => {
+        v(&tokens, &mut app.heap, &file, &mut opt);
 
-      if opt.marker {
-        app.next_marker = true;
-      }
+        if opt.marker {
+          app.next_marker = true;
+        }
 
-      if val_type == "*" {
-        let _ = app.heap.set_ptr(to_set, opt.r_ptr_target, opt.r_ptr);
-      } else if val_type == "$" && opt.r_val.is_some() {
-        let _ = app.heap.set(to_set, opt.r_val.unwrap());
+        if val_type == "*" {
+          let _ = app.heap.set_ptr(to_set, opt.r_ptr_target, opt.r_ptr);
+        } else if val_type == "$" && opt.r_val.is_some() {
+          let _ = app.heap.set(to_set, opt.r_val.unwrap());
+        }
       }
-    },
-    _ => if &caller != &"" {
-      error(&format!("Unexpected `{}`", &caller), &file);
+      _ => {
+        if &caller != &"" {
+          error(&format!("Unexpected `{}`", &caller), &file);
+        }
+      }
     }
   }
 }

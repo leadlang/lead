@@ -37,11 +37,15 @@ fn gen_build() -> usize {
   (major * 1000) + (minor * 100) + patch
 }
 
-pub fn error<T: Display>(msg: T, file: T) -> ! {
+pub fn error<T: Display, F: Display>(msg: T, file: F) -> ! {
   println!("{}{msg}", *ERROR);
   println!("{}--------    TRACE    --------", *ERROR);
   println!("{} File: {file}", *ERROR);
-  println!("{} Edition {}", *ERROR, env!("CARGO_PKG_VERSION").split_at(1).0);
+  println!(
+    "{} Edition {}",
+    *ERROR,
+    env!("CARGO_PKG_VERSION").split_at(1).0
+  );
   println!("{} Lead v{}", *ERROR, env!("CARGO_PKG_VERSION"));
   println!("{} Build #{}", *ERROR, gen_build());
   println!("{} Compiled with Rust Nightly", *ERROR);

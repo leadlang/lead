@@ -10,6 +10,17 @@ pub async fn postinstall(path: &str) {
 
   let env = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE).unwrap();
 
+  {
+    let path = OsString::from_str(&path).unwrap();
+    let raw_path = RegValue {
+      bytes: path.encode_wide()
+        .flat_map(|v| vec![v as u8, (v >> 8) as u8])
+        .collect(),
+      vtype: RegType::REG_EXPAND_SZ,
+    };
+    env.set_raw_value("LEAD_HOME", &raw_path).unwrap();
+  }
+
   if let Ok(x) = env.get_value::<String, &str>("PATH") {
     if !x.contains(path) {
       let val = format!("{};{}", &x, &path);

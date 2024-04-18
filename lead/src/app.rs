@@ -79,6 +79,8 @@ fn run_inner(file: &String, prod: bool) {
       library_filename(format!("{}/{}", &path, &name))
     };
 
+    dbg!("{:?}", &name);
+
     let lib = unsafe { Library::new(name) }.unwrap();
     dll.push(lib);
   };

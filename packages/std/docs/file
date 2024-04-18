@@ -1,2 +1,2 @@
-print->./docs/1/1
-os::name->./docs/2/1
+print->1->./docs/1/1
+os::name->2->./docs/2/1

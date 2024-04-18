@@ -1,7 +1,9 @@
+mod alloc;
 mod fns;
 mod heap;
 use std::{collections::HashMap, fmt::Debug};
 
+pub use alloc::*;
 pub use fns::*;
 pub use heap::*;
 
@@ -14,11 +16,16 @@ pub struct Options {
 
 impl Debug for Options {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.write_fmt(format_args!("Options {{ marker: {:?}, r_val: {:?}, r_ptr: {} }}", &self.marker, &self.r_val, match &self.r_ptr {
-      BufKeyVal::None => "None",
-      BufKeyVal::Array(_) => "Pending<Array>",
-      BufKeyVal::Map(_) => "Pending<Object>",
-    }))
+    f.write_fmt(format_args!(
+      "Options {{ marker: {:?}, r_val: {:?}, r_ptr: {} }}",
+      &self.marker,
+      &self.r_val,
+      match &self.r_ptr {
+        BufKeyVal::None => "None",
+        BufKeyVal::Array(_) => "Pending<Array>",
+        BufKeyVal::Map(_) => "Pending<Object>",
+      }
+    ))
   }
 }
 
@@ -28,7 +35,7 @@ impl Options {
       marker: false,
       r_ptr: BufKeyVal::None,
       r_ptr_target: "".to_string(),
-      r_val: None
+      r_val: None,
     }
   }
 
@@ -72,7 +79,7 @@ impl BufValue {
       BufValue::Faillable(res) => match res {
         Ok(t) => format!("<success {}>", t.type_of()),
         Err(t) => format!("<err {}>", &t),
-      }
+      },
     }
   }
 

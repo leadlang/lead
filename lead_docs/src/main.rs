@@ -1,3 +1,136 @@
+use std::{env::consts::{OS, ARCH}, fs, path::Path, process};
+
+use tao::{
+    dpi::LogicalSize, event::{Event, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::WindowBuilder
+};
+use wry::{http::{HeaderValue, Response}, WebViewBuilder, WebViewBuilderExtWindows};
+
+#[cfg(not(debug_assertions))]
+use include_dir::{include_dir, Dir};
+
+use crate::module::LeadModule;
+
+#[cfg(not(debug_assertions))]
+static FILES: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/ui/dist");
+
+mod module;
+
 fn main() {
-    println!("Hello, world!");
+    let app = EventLoop::new();
+
+    let window = WindowBuilder::new()
+        .with_maximized(true)
+        //.with_focused(true)
+        .with_title("Lead Lang Docs")
+        .with_min_inner_size(LogicalSize {
+            height: 500.0,
+            width: 800.0
+        })
+        .build(&app)
+        .unwrap();
+
+    let is_workspace = fs::read_dir("./lib").is_ok();
+
+    let webview = WebViewBuilder::new(&window)
+        .with_initialization_script(&format!("window.leadver = {:?}; window.os = {OS:?}; window.arch = {ARCH:?};\nwindow.workspace = {is_workspace}", env!("CARGO_PKG_VERSION")))
+        .with_asynchronous_custom_protocol("app".into(), |req, res| {
+            #[cfg(not(debug_assertions))]
+            {
+                let url = req.uri().to_string();
+                let path = url.replace("app://", "").replace("localhost/", "");
+
+                let file = FILES.get_file(&path).unwrap();
+                
+                let mut resp = Response::new(
+                    file.contents()
+                );
+
+                resp.headers_mut().append("Content-Type", HeaderValue::from_str({
+                    if path.ends_with(".html") {
+                        "text/html"
+                    } else if path.ends_with("js") {
+                        "text/javascript"
+                    } else if path.ends_with(".css") {
+                        "text/css"
+                    } else {
+                        ""
+                    }
+                }).unwrap());
+
+                res.respond(resp);
+            }
+        })
+        .with_asynchronous_custom_protocol("api".into(), |req, res| {
+            let url = req.uri();
+            let url = url.to_string();
+            let url = url.replace("api://", "").replace("localhost/", "");
+
+            if &url == "base_pkg" {
+                base_docs();
+            }
+            println!("{}", &url);
+        });
+
+    #[cfg(debug_assertions)]
+    let webview = webview.with_devtools(true).with_url("http://localhost:5173");
+
+    #[cfg(all(windows, not(debug_assertions)))]
+    let webview = webview.with_url("http://app.localhost/index.html");
+
+    #[cfg(all(not(windows), not(debug_assertions)))]
+    let webview = webview.with_url("app://localhost/index.html");
+    
+    let webview = webview.build()
+        .unwrap();
+
+    app.run(move |ev, _, control_flow| {
+        *control_flow = ControlFlow::Wait;
+
+        match ev {
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => {
+                *control_flow = ControlFlow::Exit
+            },
+            _ => {}
+        }
+    });
+}
+
+fn base_docs() {
+    use std::env::var;
+
+    let Ok(lead_home) = var("LEAD_HOME") else {
+        println!("ERR ** LEAD_HOME environment variable not set");
+        process::exit(1);
+    };
+    let path = Path::new(&lead_home);
+    let mut path = path.to_owned();
+
+    path.push("docs");
+
+    for pkg in fs::read_dir(&path).unwrap() {
+        let pkg = pkg.unwrap();
+
+        let own = pkg.file_name();
+        let own = own.to_str().unwrap_or("unknown");
+
+        let mut path = pkg.path();
+        path.push("pkg");
+
+        let packages = fs::read_to_string(&path).expect("Failed to read pkg entry");
+        let pkgs = packages.split("\n")
+            .filter(|x| x.contains("->"))
+            .collect::<Vec<_>>();
+
+        path.pop();
+        path.push("file");
+        let map_file = fs::read_to_string(&path).expect("File read failed somehow");
+        let refs = map_file.split("\n")
+            .filter(|x| x.contains("->"))
+            .collect::<Vec<_>>();
+
+        LeadModule::new(own, refs, pkgs, true);
+    }
 }

@@ -5,6 +5,7 @@
     ".\\lead\\Cargo.toml",
     ".\\packages\\core\\Cargo.toml",
     ".\\packages\\std\\Cargo.toml",
-    ".\\lead_init\\Cargo.toml"
+    ".\\lead_init\\Cargo.toml",
+    ".\\lead_docs\\Cargo.toml"
   ]
 }

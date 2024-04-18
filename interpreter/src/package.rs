@@ -120,7 +120,7 @@ macro_rules! doc {
         let mut mk_doc = |m_name: &str, doc: &str| {
           mem_len += 1;
           
-          map.write_all(format!("{}->{}/{}\n", &m_name, &path, mem_len).as_bytes()).unwrap();
+          map.write_all(format!("{}->{}->{}/{}\n", &m_name, &index, &path, mem_len).as_bytes()).unwrap();
 
           write(
             format!("{path}/{mem_len}.md"),

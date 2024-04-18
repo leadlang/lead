@@ -1,4 +1,3 @@
-#![feature(slice_ptr_len)]
 mod app;
 
 use clap::{arg, Parser, Subcommand};
