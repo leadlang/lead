@@ -7,11 +7,14 @@ pub use alloc::*;
 pub use fns::*;
 pub use heap::*;
 
+use crate::runtime::RuntimeValue;
+
 pub struct Options {
   pub marker: bool,
   pub r_val: Option<BufValue>,
   pub r_ptr_target: String,
   pub r_ptr: BufKeyVal,
+  pub r_runtime: Option<RuntimeValue>,
 }
 
 impl Debug for Options {
@@ -36,6 +39,7 @@ impl Options {
       r_ptr: BufKeyVal::None,
       r_ptr_target: "".to_string(),
       r_val: None,
+      r_runtime: None,
     }
   }
 
@@ -50,6 +54,10 @@ impl Options {
   pub fn set_return_ptr(&mut self, target: String, ptr: BufKeyVal) {
     self.r_ptr_target = target;
     self.r_ptr = ptr;
+  }
+
+  pub fn set_r_runtime(&mut self, val: RuntimeValue) {
+    self.r_runtime = Some(val);
   }
 }
 

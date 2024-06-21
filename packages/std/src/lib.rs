@@ -5,4 +5,4 @@ use io::*;
 
 use interpreter::generate;
 
-generate!(Fs, IO);
+generate!(Fs, IO, AHQ);

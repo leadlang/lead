@@ -1,4 +1,7 @@
-use crate::{types::{DynMethodRes, MethodRes, PackageCallback}, Package};
+use crate::{
+  types::{DynMethodRes, MethodRes, PackageCallback},
+  Package,
+};
 
 #[derive(Default)]
 pub struct ImplPackage {
@@ -20,7 +23,12 @@ impl ImplPackage {
     self
   }
 
-  pub fn add_method(mut self, name: &'static str, doc: &'static str, callback: PackageCallback) -> Self {
+  pub fn add_method(
+    mut self,
+    name: &'static str,
+    doc: &'static str,
+    callback: PackageCallback,
+  ) -> Self {
     self.dyn_methods.push((name, doc, callback));
     self
   }
@@ -42,9 +50,7 @@ impl Package for ImplPackage {
 
 #[macro_export]
 macro_rules! docs {
-  () => {
-
-  };
+  () => {};
 }
 
 #[macro_export]
@@ -84,8 +90,8 @@ macro_rules! doc {
   ($x:expr) => {
     fn main() {
       use std::{
-        fs::{File, create_dir_all, write},
-        io::Write
+        fs::{create_dir_all, write, File},
+        io::Write,
       };
       let modules = $x;
 
@@ -99,11 +105,13 @@ macro_rules! doc {
       for (name, s_method, dyn_method) in modules {
         index += 1;
         let name = String::from_utf8_lossy(name);
-        
+
         let path = format!("./docs/{index}");
         create_dir_all(&path).unwrap();
 
-        pkg.write_all(format!("{index}->{}/index.md\n", &path).as_bytes()).unwrap();
+        pkg
+          .write_all(format!("{index}->{}/index.md\n", &path).as_bytes())
+          .unwrap();
 
         write(
           format!("{path}/index.md"),
@@ -112,25 +120,27 @@ macro_rules! doc {
             &name,
             s_method.len(),
             dyn_method.len()
-          )
-        ).unwrap();
+          ),
+        )
+        .unwrap();
 
         let mut mem_len = 0;
 
         let mut mk_doc = |m_name: &str, doc: &str| {
           mem_len += 1;
-          
-          map.write_all(format!("{}->{}->{}/{}\n", &m_name, &index, &path, mem_len).as_bytes()).unwrap();
+
+          map
+            .write_all(format!("{}->{}->{}/{}\n", &m_name, &index, &path, mem_len).as_bytes())
+            .unwrap();
 
           write(
             format!("{path}/{mem_len}.md"),
             format!(
               "# {}\n- **From:** {}\n\n## Description\n{}",
-              &m_name,
-              &name,
-              &doc
-            )
-          ).unwrap();
+              &m_name, &name, &doc
+            ),
+          )
+          .unwrap();
         };
 
         for (m_name, doc, _) in s_method {

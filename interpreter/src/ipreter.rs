@@ -1,6 +1,6 @@
 use crate::{
   error,
-  types::{mkbuf, MethodData, Options},
+  types::{call_runtime_val, mkbuf, set_runtime_val, MethodData, Options},
   Application,
 };
 
@@ -51,6 +51,24 @@ fn tok_parse(file: String, piece: &str, app: &mut Application) {
     if val_type == "$" {
       let _ = app.heap.set(to_set, mkbuf(&caller, &file));
     }
+  } else if caller.starts_with("$") {
+    if let None = call_runtime_val(caller, &tokens, &mut app.heap, &file, &mut opt) {
+      if &caller != &"" {
+        error(&format!("Unexpected `{}`", &caller), &file);
+      }
+    } else {
+      if opt.marker {
+        app.next_marker = true;
+      }
+
+      if val_type == "*" {
+        let _ = app.heap.set_ptr(to_set, opt.r_ptr_target, opt.r_ptr);
+      } else if val_type == "$" && opt.r_val.is_some() {
+        let _ = app.heap.set(to_set, opt.r_val.unwrap());
+      } else if val_type == "$" && opt.r_runtime.is_some() {
+        let _ = set_runtime_val(to_set, opt.r_runtime.unwrap());
+      }
+    }
   } else {
     match app.pkg.inner.get_mut(caller) {
       Some(MethodData::Static(_, v)) => {
@@ -64,6 +82,8 @@ fn tok_parse(file: String, piece: &str, app: &mut Application) {
           let _ = app.heap.set_ptr(to_set, opt.r_ptr_target, opt.r_ptr);
         } else if val_type == "$" && opt.r_val.is_some() {
           let _ = app.heap.set(to_set, opt.r_val.unwrap());
+        } else if val_type == "$" && opt.r_runtime.is_some() {
+          let _ = set_runtime_val(to_set, opt.r_runtime.unwrap());
         }
       }
       _ => {

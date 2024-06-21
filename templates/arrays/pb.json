@@ -1,10 +1,10 @@
 {
   "dev": {
     "cmd": "%native",
-    "args": ["./app.pb"]
+    "args": ["./src/app.pb"]
   },
   "prod": {
     "cmd": "%native",
-    "args": ["./app.pb"]
+    "args": ["./src/app.pb"]
   }
 }

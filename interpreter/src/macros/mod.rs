@@ -77,7 +77,6 @@ macro_rules! parse {
   };
 }
 
-
 #[macro_export]
 macro_rules! modify {
   ($file:ident + $heap:ident: -> $y:ident) => {
@@ -114,7 +113,6 @@ macro_rules! get_as {
     };
   };
 }
-
 
 #[macro_export]
 macro_rules! get_mut {

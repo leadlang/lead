@@ -7,6 +7,8 @@ use std::{collections::HashMap, fs, process};
 #[macro_use]
 pub mod macros;
 
+pub mod runtime;
+
 mod ipreter;
 #[macro_use]
 pub mod package;

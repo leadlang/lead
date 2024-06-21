@@ -3,7 +3,9 @@ use std::{
   ops::{Deref, DerefMut},
 };
 
-use super::BufValue;
+use crate::runtime::RuntimeValue;
+
+use super::{BufValue, Options};
 
 pub enum BufKeyVal {
   None,
@@ -19,6 +21,29 @@ pub struct PtrType {
 pub type HeapInnerMap = HashMap<String, BufValue>;
 pub type Pointer = HashMap<String, PtrType>;
 
+pub static mut RUNTIME_VAL: Option<HashMap<String, RuntimeValue>> = None;
+
+fn get_ptr() -> &'static mut HashMap<String, RuntimeValue> {
+  unsafe { RUNTIME_VAL.as_mut().unwrap() }
+}
+
+pub fn set_runtime_val(key: String, val: RuntimeValue) {
+  let _ = get_ptr().insert(key, val);
+}
+
+pub fn call_runtime_val(
+  key: &str,
+  v: &Vec<String>,
+  a: &mut Heap,
+  c: &String,
+  o: &mut Options,
+) -> Option<()> {
+  let ptr = get_ptr();
+
+  let (key, caller) = key.split_once("::")?;
+  ptr.get_mut(key)?.call_ptr(caller, v, a, c, o)
+}
+
 pub struct Heap {
   data: HeapInnerMap,
   pointer: Pointer,
@@ -26,7 +51,9 @@ pub struct Heap {
 
 impl Heap {
   pub fn new() -> Self {
-    Heap {
+    unsafe { RUNTIME_VAL = Some(HashMap::new()) };
+
+    Self {
       data: HashMap::new(),
       pointer: HashMap::new(),
     }
@@ -51,7 +78,13 @@ impl Heap {
     if let BufKeyVal::None = val {
       return None;
     }
-    self.pointer.insert(key, PtrType { key: ptr_target, val });
+    self.pointer.insert(
+      key,
+      PtrType {
+        key: ptr_target,
+        val,
+      },
+    );
     Some(())
   }
 
