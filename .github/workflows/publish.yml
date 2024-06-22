@@ -3,8 +3,8 @@ name: Build & Publish
 permissions: write-all
 on:
   push:
-    tags:
-      - "*"
+    paths:
+      - .version
 
 jobs:
   publish_cargo:
@@ -89,6 +89,10 @@ jobs:
       - name: Build Lead Docs UI
         run: pnpm install; pnpm build
         working-directory: lead-docs/ui
+
+      - name: Get tag
+        run: ./publish
+        id: tag
 
       - name: Publish Linux Bin
         uses: svenstaro/upload-release-action@v2

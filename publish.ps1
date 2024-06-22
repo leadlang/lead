@@ -1,3 +1,5 @@
-$data = cat .version
+$v = cat .version
 
-git tag $data; git push origin $data
+echo PowerShell
+
+echo "TAG_NAME=$v" >> "$GITHUB_OUTPUT"
