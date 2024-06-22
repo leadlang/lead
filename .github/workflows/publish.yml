@@ -53,6 +53,9 @@ jobs:
       - name: Setup NodeJS
         uses: actions/setup-node@v4
 
+      - name: Setup pnpm
+        run: npm i -g pnpm
+
       - name: Add Version Info
         run: node ver.js
 
@@ -63,7 +66,18 @@ jobs:
 
       - name: Install ZIP (Linux)
         if: matrix.build-os == 'ubuntu-latest'
-        run: sudo apt install zip
+        run: |
+          sudo apt install zip
+          sudo apt update
+          sudo apt install libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
 
       - name: Package stuff
         run: cargo +nightly run --release
@@ -71,6 +85,10 @@ jobs:
       - name: Run Installer
         run: cargo +nightly build --release
         working-directory: lead_init
+
+      - name: Build Lead Docs UI
+        run: pnpm install; pnpm build
+        working-directory: lead-docs/ui
 
       - name: Publish Linux Bin
         uses: svenstaro/upload-release-action@v2
