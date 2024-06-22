@@ -1,7 +1,7 @@
 #[cfg(windows)]
 mod windows;
 
-#[cfg(target_os = "linux")]
+#[cfg(target_os="linux")]
 mod linux;
 
 use std::{io::Cursor, path::Path};

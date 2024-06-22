@@ -16,7 +16,7 @@ export default function App() {
   return (
     <div class="drawer lg:drawer-open">
       <input id="app-sidebar" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content flex flex-col p-2">
+      <div class="drawer-content h-screen w-full flex flex-col p-2">
         {/* App Content */}
         <div class="flex items-center text-center">
           <label for="app-sidebar" class="drawer-button lg:hidden btn btn-circle bg-base-200 hover:bg-base-100">
@@ -24,7 +24,10 @@ export default function App() {
           </label>
           <h1 class="mx-auto pr-[3rem] lg:pr-0">{version()}</h1>
         </div>
-        <Display {...{ pkg, doc }} />
+
+        <div class="bg-base-100 m-3 p-5 h-full rounded-md">
+          <Display {...{ pkg, doc }} />
+        </div>
       </div>
       <div class="drawer-side">
         <label for="app-sidebar" aria-label="close sidebar" class="drawer-overlay"></label>

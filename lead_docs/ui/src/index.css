@@ -16,5 +16,25 @@ body,
 }
 
 h1 {
-  @apply text-[1.6rem];
+  @apply text-[1.6rem] text-center;
+}
+
+.doc-page {
+  @apply h-full;
+}
+
+.doc-page h1 {
+  @apply text-[2rem];
+}
+
+.doc-page p {
+  @apply text-[1.25rem];
+}
+
+.doc-page h2 {
+  @apply text-[1.6rem] underline;
+}
+
+.doc-page pre {
+  @apply bg-base-300 p-6 rounded-md mt-2;
 }

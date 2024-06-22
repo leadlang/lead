@@ -3,7 +3,7 @@ use std::{env::consts::{OS, ARCH}, fs, path::Path, process};
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use tao::{
-    dpi::LogicalSize, event::{Event, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::WindowBuilder
+    dpi::LogicalSize, event::{Event, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::{Icon, WindowBuilder}
 };
 use wry::{http::{HeaderValue, Response, StatusCode}, WebViewBuilder};
 
@@ -28,6 +28,13 @@ fn main() {
             height: 500.0,
             width: 800.0
         })
+        .with_window_icon(Some({
+            let img = image::load_from_memory(include_bytes!("./icon.png")).unwrap();
+            let img = img.as_rgba8().unwrap();
+            let vect = img.to_vec();
+
+            Icon::from_rgba(vect, img.height(), img.width()).unwrap()
+        }))
         .build(&app)
         .unwrap();
 

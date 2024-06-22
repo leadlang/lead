@@ -10,7 +10,7 @@ interface NavProps {
 }
 
 export default function Sidebar({ doc, installed, setDoc }: NavProps) {
-  const active = "bg-neutral rounded-md";
+  const active = "bg-neutral text-neutral-content rounded-md";
 
   return <>
     <ul class="menu bg-base-200 rounded-box">

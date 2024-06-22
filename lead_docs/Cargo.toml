@@ -6,8 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+image = { version = "0.25.1", default-features = false, features = ["png"] }
 include_dir = "0.7.4"
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.117"
 tao = { version = "0.28", features = ["rwh_06"] }
 wry = "0.41"
+
+[target.'cfg(windows)'.build-dependencies]
+tauri-winres = "0.1.1"
+
+[package.metadata.tauri-winres]
+OriginalFilename = "lead_docs.exe"
+LegalCopyright = "Copyright © 2024 - The AHQ Softwares' Lead lang Team"
