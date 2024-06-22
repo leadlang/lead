@@ -14,7 +14,7 @@ const values = [
 
 for (const value of values) {
   const file = readFileSync(value).toString();
-  const parsed = file.replace("0.0.0-dev-lead-lang", version);
+  const parsed = file.replace('"0.0.0-dev-lead-lang"', '"' + version + '"');
 
   writeFileSync(value, parsed);
 }
