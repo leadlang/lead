@@ -5,7 +5,11 @@ use serde_json::to_string_pretty;
 use tao::{
     dpi::LogicalSize, event::{Event, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::WindowBuilder
 };
-use wry::{http::{HeaderValue, Response, StatusCode}, WebViewBuilder, WebViewBuilderExtWindows};
+use wry::{http::{HeaderValue, Response, StatusCode}, WebViewBuilder};
+
+#[allow(dead_code)]
+#[cfg(windows)]
+use wry::WebViewBuilderExtWindows;
 
 #[cfg(not(debug_assertions))]
 use include_dir::{include_dir, Dir};
