@@ -20,11 +20,11 @@ async fn main() {
 
     let bar = ProgressBar::new_spinner()
         .with_message("Fetching packages...");
-    bar.enable_steady_tick(Duration::from_millis(3));
-
-    tokio::time::sleep(Duration::from_secs(1)).await;
+    bar.enable_steady_tick(Duration::from_millis(1));
 
     let zip = utils::get_bin_zip().await;
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     let asset = zip.assets.into_iter()
         .find(|x| {

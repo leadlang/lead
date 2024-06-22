@@ -4,7 +4,7 @@ mod windows;
 #[cfg(target_os = "linux")]
 mod linux;
 
-use std::{io::Cursor, path::Path, time::Duration};
+use std::{io::Cursor, path::Path};
 
 use indicatif::ProgressBar;
 use reqwest::{Client, ClientBuilder};

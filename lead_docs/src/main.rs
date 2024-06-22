@@ -1,9 +1,11 @@
 use std::{env::consts::{OS, ARCH}, fs, path::Path, process};
 
+use serde::{Deserialize, Serialize};
+use serde_json::to_string_pretty;
 use tao::{
     dpi::LogicalSize, event::{Event, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::WindowBuilder
 };
-use wry::{http::{HeaderValue, Response}, WebViewBuilder, WebViewBuilderExtWindows};
+use wry::{http::{Response, StatusCode}, WebViewBuilder, WebViewBuilderExtWindows};
 
 #[cfg(not(debug_assertions))]
 use include_dir::{include_dir, Dir};
@@ -20,7 +22,7 @@ fn main() {
 
     let window = WindowBuilder::new()
         .with_maximized(true)
-        //.with_focused(true)
+        .with_focused(true)
         .with_title("Lead Lang Docs")
         .with_min_inner_size(LogicalSize {
             height: 500.0,
@@ -62,13 +64,21 @@ fn main() {
         })
         .with_asynchronous_custom_protocol("api".into(), |req, res| {
             let url = req.uri();
-            let url = url.to_string();
-            let url = url.replace("api://", "").replace("localhost/", "");
+            let pathname = url.path();
 
-            if &url == "base_pkg" {
-                base_docs();
+            let mut status = StatusCode::NOT_FOUND;
+            let mut body = String::new();
+            if pathname == "/base_pkg" {
+                status = StatusCode::OK;
+                body = to_string_pretty(&base_docs()).unwrap_or("".into());
             }
-            println!("{}", &url);
+
+            res.respond(Response::builder()
+                .status(status)
+                .header("Access-Control-Allow-Origin", "*")
+                .body(body.into_bytes())
+                .unwrap()
+            );
         });
 
     #[cfg(debug_assertions)]
@@ -80,7 +90,9 @@ fn main() {
     #[cfg(all(not(windows), not(debug_assertions)))]
     let webview = webview.with_url("app://localhost/index.html");
     
-    let webview = webview.build()
+    let _webview = webview
+        .with_https_scheme(false)
+        .build()
         .unwrap();
 
     app.run(move |ev, _, control_flow| {
@@ -98,7 +110,13 @@ fn main() {
     });
 }
 
-fn base_docs() {
+#[derive(Serialize, Deserialize, Debug)]
+pub struct LeadPackage {
+    pub name: String,
+    pub modules: Vec<LeadModule>
+}
+
+fn base_docs() -> Vec<LeadPackage> {
     use std::env::var;
 
     let Ok(lead_home) = var("LEAD_HOME") else {
@@ -109,6 +127,8 @@ fn base_docs() {
     let mut path = path.to_owned();
 
     path.push("docs");
+
+    let mut res = vec![];
 
     for pkg in fs::read_dir(&path).unwrap() {
         let pkg = pkg.unwrap();
@@ -131,6 +151,9 @@ fn base_docs() {
             .filter(|x| x.contains("->"))
             .collect::<Vec<_>>();
 
-        LeadModule::new(own, refs, pkgs, true);
+        let docs = LeadModule::new(own, refs, pkgs, true);
+        res.push(LeadPackage { name: own.into(), modules: docs });
     }
+
+    res
 }

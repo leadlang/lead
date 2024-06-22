@@ -79,16 +79,16 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
+      - name: Build Lead Docs UI
+        run: pnpm install; pnpm build
+        working-directory: lead-docs/ui
+
       - name: Package stuff
         run: cargo +nightly run --release
 
       - name: Run Installer
         run: cargo +nightly build --release
         working-directory: lead_init
-
-      - name: Build Lead Docs UI
-        run: pnpm install; pnpm build
-        working-directory: lead-docs/ui
 
       - name: Get tag
         run: ./publish
@@ -101,6 +101,7 @@ jobs:
           file: ./lead_init/target/release/lead_init
           asset_name: lead_init_${{ matrix.build-os }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.tag.outputs.TAG_NAME }}
 
       - name: Publish Windows Bin
         uses: svenstaro/upload-release-action@v2
@@ -109,6 +110,7 @@ jobs:
           file: ./lead_init/target/release/lead_init.exe
           asset_name: lead_init_${{ matrix.build-os }}.exe
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.tag.outputs.TAG_NAME }}
 
       - name: Publish
         uses: svenstaro/upload-release-action@v2
@@ -116,3 +118,4 @@ jobs:
           file: ./build.zip
           asset_name: binaries_${{ matrix.build-os }}.zip
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.tag.outputs.TAG_NAME }}
