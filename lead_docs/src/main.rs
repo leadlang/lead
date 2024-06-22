@@ -7,10 +7,6 @@ use tao::{
 };
 use wry::{http::{HeaderValue, Response, StatusCode}, WebViewBuilder};
 
-#[allow(dead_code)]
-#[cfg(windows)]
-use wry::WebViewBuilderExtWindows;
-
 #[cfg(not(debug_assertions))]
 use include_dir::{include_dir, Dir};
 
@@ -95,7 +91,6 @@ fn main() {
     let webview = webview.with_url("app://localhost/index.html");
     
     let _webview = webview
-        .with_https_scheme(false)
         .build()
         .unwrap();
 
