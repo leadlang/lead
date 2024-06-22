@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-include_dir = "0.7.3"
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.115"
-tao = { version = "0.27", features = ["rwh_06"] }
-wry = "0.39"
+include_dir = "0.7.4"
+serde = { version = "1.0.203", features = ["derive"] }
+serde_json = "1.0.117"
+tao = { version = "0.28", features = ["rwh_06"] }
+wry = "0.41"

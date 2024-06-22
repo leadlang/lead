@@ -22,7 +22,7 @@ async fn main() {
         .with_message("Fetching packages...");
     bar.enable_steady_tick(Duration::from_millis(3));
 
-    tokio::time::sleep(Duration::from_secs(5)).await;
+    tokio::time::sleep(Duration::from_secs(1)).await;
 
     let zip = utils::get_bin_zip().await;
 
