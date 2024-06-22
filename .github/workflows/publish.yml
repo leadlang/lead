@@ -64,8 +64,8 @@ jobs:
         with:
           toolchain: nightly
 
-      - name: Install ZIP (Linux)
-        if: matrix.build-os == 'ubuntu-latest'
+      - name: Install Deps (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt install zip
           sudo apt update
