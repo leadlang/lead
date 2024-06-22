@@ -7,9 +7,6 @@ fn main() {
   #[cfg(not(debug_assertions))]
   fs::create_dir_all("./build/lib").unwrap();
 
-  #[cfg(windows)]
-  let path = ".\\packages";
-  #[cfg(not(windows))]
   let path = "./packages";
 
   let mut dir = fs::read_dir(path)
@@ -18,11 +15,8 @@ fn main() {
     .map(|x| x.unwrap().path())
     .collect::<Vec<_>>();
 
-  #[cfg(windows)]
-  dir.push(PathBuf::from_str(".\\lead").unwrap());
-
-  #[cfg(not(windows))]
   dir.push(PathBuf::from_str("./lead").unwrap());
+  dir.push(PathBuf::from_str("./lead_docs").unwrap());
 
   for path in dir {
     if !Command::new("rustup")
@@ -50,10 +44,6 @@ fn main() {
     #[cfg(debug_assertions)]
     let typ = "debug";
 
-    #[cfg(windows)]
-    let fs_dir = format!("{}\\target\\{}", path.to_string_lossy(), &typ);
-
-    #[cfg(not(windows))]
     let fs_dir = format!("{}/target/{}", path.to_string_lossy(), &typ);
 
     for file in fs::read_dir(fs_dir).unwrap() {
@@ -63,7 +53,7 @@ fn main() {
       let name = name.to_str().unwrap();
       let path = file.path();
 
-      if name.starts_with("lead") && [4, 8].contains(&name.len()) {
+      if name.starts_with("lead") && [4, 8, 9, 13].contains(&name.len()) {
         fs::copy(&path, format!("./build/{}", name)).unwrap();
       }
 
