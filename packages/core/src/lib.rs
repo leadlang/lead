@@ -2,7 +2,7 @@
 #![feature(concat_idents)]
 
 use interpreter::{
-  document, error, function, generate, parse, types::{BufKeyVal, BufValue, Heap, Options}, Package
+  document, error, function, generate, parse, types::{BufValue, Heap, Options}, Package
 };
 
 mod array;
