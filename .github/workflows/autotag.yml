@@ -4,7 +4,8 @@ permissions: write-all
 
 on:
   push:
-    paths: ./.version
+    paths: |
+      .version
 
 jobs:
   tag:
