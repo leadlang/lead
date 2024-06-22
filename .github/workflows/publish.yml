@@ -81,7 +81,7 @@ jobs:
 
       - name: Build Lead Docs UI
         run: pnpm install; pnpm build
-        working-directory: lead-docs/ui
+        working-directory: lead_docs/ui
 
       - name: Package stuff
         run: cargo +nightly run --release
