@@ -1,0 +1,1 @@
+Invoke-WebRequest -Uri "https://github.com/AHQ-Softwares/lead/releases/latest/download/lead_init_windows.exe" -OutFile "$env:TEMP\lead_init_windows.exe"; start-process -FilePath "$env:TEMP\lead_init_windows.exe" -NoNewWindow -wait

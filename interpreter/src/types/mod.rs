@@ -11,10 +11,11 @@ use crate::runtime::RuntimeValue;
 
 pub struct Options {
   pub marker: bool,
+  pub pre: String,
   pub r_val: Option<BufValue>,
   pub r_ptr_target: String,
   pub r_ptr: BufKeyVal,
-  pub r_runtime: Option<RuntimeValue>,
+  r_runtime: Option<RuntimeValue>,
 }
 
 impl Debug for Options {
@@ -36,6 +37,7 @@ impl Options {
   pub fn new() -> Self {
     Self {
       marker: false,
+      pre: "".to_string(),
       r_ptr: BufKeyVal::None,
       r_ptr_target: "".to_string(),
       r_val: None,
@@ -54,6 +56,14 @@ impl Options {
   pub fn set_return_ptr(&mut self, target: String, ptr: BufKeyVal) {
     self.r_ptr_target = target;
     self.r_ptr = ptr;
+  }
+
+  pub fn rem_r_runtime(&mut self) -> Option<RuntimeValue> {
+    let mut rt = self.r_runtime.take()?;
+
+    rt.r#type = format!("{}/{}", self.pre, rt.r#type);
+
+    Some(rt)
   }
 
   pub fn set_r_runtime(&mut self, val: RuntimeValue) {

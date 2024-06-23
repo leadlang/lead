@@ -16,6 +16,7 @@ pub mod types;
 pub mod val;
 
 pub use package::*;
+use runtime::_root_syntax::RTCreatedModule;
 use types::{DynMethodRes, Heap, LanguagePackages, MethodRes};
 pub use val::*;
 
@@ -38,6 +39,8 @@ pub trait Package {
 pub struct Application<'a> {
   code: HashMap<String, String>,
   pkg: LanguagePackages<'a>,
+  pub modules: HashMap<String, RTCreatedModule<'a>>,
+  pub rt_mod_map: HashMap<String, (&'a String, &'a str)>,
   entry: &'a str,
   next_marker: bool,
   heap: Heap,
@@ -55,6 +58,8 @@ impl<'a> Application<'a> {
       heap: Heap::new(),
       entry: &file,
       next_marker: false,
+      modules: HashMap::new(),
+      rt_mod_map: HashMap::new(),
     }
   }
 
@@ -95,8 +100,13 @@ impl<'a> Application<'a> {
     self
   }
 
-  pub fn run(mut self) -> ! {
+  /// ⚠️ This function still is panicking
+  pub fn run_non(mut self) -> () {
     ipreter::interpret(":entry", &mut self);
-    process::exit(0);
+  }
+
+  pub fn run(self) -> ! {
+    self.run_non();
+    process::exit(0)
   }
 }

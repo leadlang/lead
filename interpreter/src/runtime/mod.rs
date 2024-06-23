@@ -5,14 +5,19 @@ use crate::types::{Args, Heap, Options};
 pub type PackageCallback = fn(&Args, &mut Heap, &mut Heap, &String, &mut Options) -> ();
 pub type RuntimeMethodRes = HashMap<&'static str, (&'static str, PackageCallback)>;
 
+pub mod rt_module;
+pub mod _root_syntax;
+
 pub struct RuntimeValue {
+  pub r#type: String,
   pub _inner: Heap,
   pub fn_ptr: RuntimeMethodRes,
 }
 
 impl RuntimeValue {
-  pub fn new(fn_ptr: RuntimeMethodRes) -> Self {
+  pub fn new(r#type: &str, fn_ptr: RuntimeMethodRes) -> Self {
     Self {
+      r#type: format!("{}", r#type),
       _inner: Heap::new(),
       fn_ptr,
     }

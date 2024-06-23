@@ -7,12 +7,14 @@ use crate::runtime::RuntimeValue;
 
 use super::{BufValue, Options};
 
+#[derive(Debug)]
 pub enum BufKeyVal {
   None,
   Array(usize),
   Map(String),
 }
 
+#[derive(Debug)]
 pub struct PtrType {
   pub key: String,
   pub val: BufKeyVal,
@@ -21,14 +23,14 @@ pub struct PtrType {
 pub type HeapInnerMap = HashMap<String, BufValue>;
 pub type Pointer = HashMap<String, PtrType>;
 
-pub static mut RUNTIME_VAL: Option<HashMap<String, RuntimeValue>> = None;
+pub static mut RUNTIME_VAL: Option<HashMap<String, (&'static str, RuntimeValue)>> = None;
 
-fn get_ptr() -> &'static mut HashMap<String, RuntimeValue> {
+fn get_ptr() -> &'static mut HashMap<String, (&'static str, RuntimeValue)> {
   unsafe { RUNTIME_VAL.as_mut().unwrap() }
 }
 
-pub fn set_runtime_val(key: String, val: RuntimeValue) {
-  let _ = get_ptr().insert(key, val);
+pub fn set_runtime_val(key: String, module: &'static str, val: RuntimeValue) {
+  let _ = get_ptr().insert(key, (module, val));
 }
 
 pub fn call_runtime_val(
@@ -37,13 +39,18 @@ pub fn call_runtime_val(
   a: &mut Heap,
   c: &String,
   o: &mut Options,
-) -> Option<()> {
+) -> Option<&'static str> {
   let ptr = get_ptr();
 
   let (key, caller) = key.split_once("::")?;
-  ptr.get_mut(key)?.call_ptr(caller, v, a, c, o)
+  let data = ptr.get_mut(key)?;
+  
+  data.1.call_ptr(caller, v, a, c, o)?;
+
+  Some(data.0)
 }
 
+#[derive(Debug)]
 pub struct Heap {
   data: HeapInnerMap,
   pointer: Pointer,

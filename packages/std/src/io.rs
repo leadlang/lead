@@ -25,13 +25,13 @@ module!(
 
 module!(
   AHQ,
-  pkg_name! {"📦 Lead Programming Language / IO"}
+  pkg_name! {"📦 Lead Programming Language / AHQ"}
   methods! {
     function! {
       "ahq::mk",
       document!(""),
       |_, _, _, opt| {
-        opt.set_r_runtime(RuntimeValue::new({
+        opt.set_r_runtime(RuntimeValue::new("core/str_string", {
           let mut map: HashMap<&'static _, (&'static _, for<'a, 'b, 'c, 'd, 'e> fn(&'a Vec<String>, &'b mut Heap, &'c mut Heap, &'d String, &'e mut Options))> = HashMap::new();
 
           map.insert("test", ("", |_, _, _, _, _| {
