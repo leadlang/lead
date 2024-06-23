@@ -72,6 +72,8 @@ impl LeadModule {
         panic!("");
       };
 
+      let doc_file = get_file(own, doc_file, base);
+
       lib_map.get_mut(*map.get(md).expect("Incorrect Documentation Specified")).expect("Couldn't find, impossible").methods.push(Method { name: method.into(), desc: fs::read_to_string(&doc_file).expect("File not found!") });
     }
 
