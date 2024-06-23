@@ -68,17 +68,9 @@ impl LeadModule {
     }
 
     for method in refs {
-      let [method, doc_file] = method.split("->").collect::<Vec<_>>()[..] else {
+      let [method, md, doc_file] = method.split("->").collect::<Vec<_>>()[..] else {
         panic!("");
       };
-
-      let mut v= doc_file.split("/").collect::<Vec<_>>();
-      let doc_file = get_file(own, doc_file, base);
-
-      v.pop();
-
-      let md = v.remove(v.len() - 1);
-      drop(v);
 
       lib_map.get_mut(*map.get(md).expect("Incorrect Documentation Specified")).expect("Couldn't find, impossible").methods.push(Method { name: method.into(), desc: fs::read_to_string(&doc_file).expect("File not found!") });
     }

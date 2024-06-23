@@ -12,6 +12,7 @@ pub enum Command {
     #[arg(short, long)]
     dir: Option<String>,
   },
+  Docs,
   /// Create a new Lead app project
   New { dir: String },
 }
@@ -29,6 +30,21 @@ fn main() {
   });
 
   match subcommand {
+    Command::Docs => {
+      let Ok(home) = std::env::var("LEAD_HOME") else {
+        panic!("LEAD_HOME not set");
+      };
+
+      #[cfg(windows)]
+      let file = "lead_docs.exe";
+
+      #[cfg(unix)]
+      let file = "lead_docs";
+
+      let file = format!("{}/{}", home, file);
+
+      std::process::Command::new(file).spawn().unwrap().wait().unwrap();
+    }
     Command::Run { prod, dir } => {
       let dir = dir.unwrap_or(".".into());
       app::run(dir, prod);
