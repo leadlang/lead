@@ -6,6 +6,10 @@
   display: none;
 }
 
+* {
+  scrollbar-color: auto;
+}
+
 div {
   @apply overflow-scroll;
 }
