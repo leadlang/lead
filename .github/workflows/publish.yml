@@ -9,6 +9,7 @@ on:
 jobs:
   publish_cargo:
     name: Publish to cargo
+    continue-on-error: true
 
     runs-on: ubuntu-latest
 
@@ -36,6 +37,7 @@ jobs:
 
   build:
     name: Release & Publish
+    continue-on-error: true
 
     strategy:
       fail-fast: false
