@@ -26,6 +26,7 @@ pub type Pointer = HashMap<String, PtrType>;
 pub static mut RUNTIME_VAL: Option<HashMap<String, (&'static str, RuntimeValue)>> = None;
 
 fn get_ptr() -> &'static mut HashMap<String, (&'static str, RuntimeValue)> {
+  #[allow(static_mut_refs)]
   unsafe { RUNTIME_VAL.as_mut().unwrap() }
 }
 

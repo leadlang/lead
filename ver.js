@@ -1,6 +1,9 @@
 const { readFileSync, writeFileSync } = require("fs");
 
-const version = readFileSync("./.version").toString();
+const date = new Date();
+const version = `${date.getFullYear()}.${
+  date.getMonth() + 1
+}.${date.getDate()}`;
 
 const values = [
   "./Cargo.toml",

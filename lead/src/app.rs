@@ -99,6 +99,8 @@ fn run_inner(file: &String, prod: bool) {
   let mut index = 0u8;
   for lib in dll {
     index += 1;
+
+    #[allow(static_mut_refs)]
     let map = unsafe { LIBS.as_mut().unwrap() };
 
     map.insert(index, lib);

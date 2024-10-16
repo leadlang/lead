@@ -8,7 +8,6 @@ use std::{io::Cursor, path::Path};
 
 use indicatif::ProgressBar;
 use reqwest::{Client, ClientBuilder};
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -23,12 +22,12 @@ pub struct Asset {
   pub browser_download_url: String,
 }
 
-lazy_static! {
-  pub static ref CLIENT: Client = ClientBuilder::new()
+pub static CLIENT: LazyLock<Client> = LazyLock::new(|| 
+  ClientBuilder::new()
     .user_agent("lead lang/init")
     .build()
-    .unwrap();
-}
+    .unwrap()
+);
 
 pub async fn get_bin_zip() -> Release {
   CLIENT.get("https://api.github.com/repos/AHQ-Softwares/lead/releases/latest")
