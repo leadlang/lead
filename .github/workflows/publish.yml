@@ -3,8 +3,6 @@ name: Build & Publish
 permissions: write-all
 on:
   push:
-    paths:
-      - .version
 
 jobs:
   publish_cargo:
