@@ -21,3 +21,5 @@ for (const value of values) {
 
   writeFileSync(value, parsed);
 }
+
+writeFileSync("./.version", version);
