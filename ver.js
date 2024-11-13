@@ -3,7 +3,7 @@ const { readFileSync, writeFileSync } = require("fs");
 const date = new Date();
 const version =
   `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}` +
-  (process.env.NIGHTLY ? "-nightly" : "");
+  (process.env.NIGHTLY == "true" ? "-nightly" : "");
 
 const values = [
   "./Cargo.toml",

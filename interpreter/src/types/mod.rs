@@ -1,7 +1,7 @@
 mod alloc;
 mod fns;
 mod heap;
-use std::{collections::HashMap, fmt::Debug};
+use std::{any::Any, collections::HashMap, fmt::Debug, ops::Deref};
 
 pub use alloc::*;
 pub use fns::*;
@@ -71,8 +71,25 @@ impl Options {
   }
 }
 
+#[derive(Debug)]
+pub struct AnyWrapper(pub Box<dyn Any>);
+
+impl Deref for AnyWrapper {
+  type Target = dyn Any;
+
+  fn deref(&self) -> &Self::Target {
+    self.0.deref()
+  }
+}
+
+impl PartialEq for AnyWrapper {
+  fn eq(&self, _other: &Self) -> bool {
+    false
+  }
+}
+
 #[allow(non_camel_case_types)]
-#[derive(Clone, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum BufValue {
   Int(i64),
   U_Int(u64),
@@ -82,6 +99,7 @@ pub enum BufValue {
   Array(Vec<BufValue>),
   Object(HashMap<String, Box<BufValue>>),
   Faillable(Result<Box<BufValue>, String>),
+  Runtime(AnyWrapper)
 }
 
 impl BufValue {
@@ -97,7 +115,8 @@ impl BufValue {
       BufValue::Faillable(res) => match res {
         Ok(t) => format!("<success {}>", t.type_of()),
         Err(t) => format!("<err {}>", &t),
-      },
+      }
+      BufValue::Runtime(d) => format!("<runtime {:?}>", d.type_id()),
     }
   }
 
