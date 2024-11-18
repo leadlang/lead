@@ -27,7 +27,7 @@ fn main() {
 
   for path in dir {
     let mut cmd = Command::new("rustup");
-    let cmd = cmd.args([
+    let mut cmd = cmd.args([
       "run",
       "nightly",
       "cargo",
