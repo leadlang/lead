@@ -64,7 +64,7 @@ fn main() {
     #[cfg(debug_assertions)]
     let typ = "debug";
 
-    let fs_dir = format!("{}/target/{}", path.to_string_lossy(), &typ);
+    let fs_dir = format!("{}/target/{}/{}", path.to_string_lossy(), target, &typ);
 
     for file in fs::read_dir(fs_dir).unwrap() {
       let file = file.unwrap();

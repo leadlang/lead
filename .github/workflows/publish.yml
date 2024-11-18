@@ -163,7 +163,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         if: matrix.runner != 'windows-latest'
         with:
-          file: ./lead_init/target/release/lead_init
+          file: ./lead_init/target/${{ matrix.target }}/release/lead_init
           asset_name: lead_init_${{ matrix.target }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.tag.outputs.TAG_NAME }}
@@ -173,7 +173,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         if: matrix.runner == 'windows-latest'
         with:
-          file: ./lead_init/target/release/lead_init.exe
+          file: ./lead_init/target/${{ matrix.target }}/release/lead_init.exe
           asset_name: lead_init_${{ matrix.target }}.exe
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.tag.outputs.TAG_NAME }}
