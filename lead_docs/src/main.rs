@@ -40,9 +40,9 @@ fn main() {
 
     let is_workspace = fs::read_dir("./lib").is_ok();
 
-    let webview = WebViewBuilder::new(&window)
+    let webview = WebViewBuilder::new()
         .with_initialization_script(&format!("window.leadver = {:?}; window.os = {OS:?}; window.arch = {ARCH:?};\nwindow.workspace = {is_workspace}", env!("CARGO_PKG_VERSION")))
-        .with_asynchronous_custom_protocol("app".into(), |req, res| {
+        .with_asynchronous_custom_protocol("app".into(), |_, req, res| {
             #[cfg(not(debug_assertions))]
             {
                 let url = req.uri().to_string();
@@ -69,7 +69,7 @@ fn main() {
                 res.respond(resp);
             }
         })
-        .with_asynchronous_custom_protocol("api".into(), |req, res| {
+        .with_asynchronous_custom_protocol("api".into(), |_, req, res| {
             let url = req.uri();
             let pathname = url.path();
 
@@ -98,7 +98,7 @@ fn main() {
     let webview = webview.with_url("app://localhost/index.html");
     
     let _webview = webview
-        .build()
+        .build(&window)
         .unwrap();
 
     app.run(move |ev, _, control_flow| {
