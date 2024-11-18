@@ -40,6 +40,14 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
 
+      - name: Commit Suffix
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: suffix
+          author_name: GitHub Actions
+          author_email: actions@github.com
+          message: Consume suffix file
+
   build:
     name: Release & Publish
     continue-on-error: true

@@ -1,9 +1,13 @@
 const { readFileSync, writeFileSync } = require("fs");
 
+const suffix = readFileSync("./suffix").toString();
+writeFileSync("./suffix", "");
+
 const date = new Date();
 const version =
   `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}` +
-  (process.env.NIGHTLY == "true" ? `-nightly.${Date.now()}` : "");
+  (process.env.NIGHTLY == "true" ? `-nightly.${Date.now()}` : "") +
+  suffix;
 
 const values = [
   "./Cargo.toml",
