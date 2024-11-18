@@ -3,7 +3,7 @@ const { readFileSync, writeFileSync } = require("fs");
 const date = new Date();
 const version =
   `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}` +
-  (process.env.NIGHTLY == "true" ? "-nightly" : "");
+  (process.env.NIGHTLY == "true" ? `-nightly.${Date.now()}` : "");
 
 const values = [
   "./Cargo.toml",
@@ -13,11 +13,12 @@ const values = [
   "./packages/core/Cargo.toml",
   "./packages/std/Cargo.toml",
   "./interpreter/Cargo.toml",
+  "./macros/Cargo.toml",
 ];
 
 for (const value of values) {
   const file = readFileSync(value).toString();
-  const parsed = file.replace('"0.0.0-dev-lead-lang"', '"' + version + '"');
+  const parsed = file.replaceAll('"0.0.0-dev-lead-lang"', '"' + version + '"');
 
   writeFileSync(value, parsed);
 }

@@ -1,0 +1,19 @@
+[package]
+name = "lead_lang_macros"
+version = "0.0.0-dev-lead-lang"
+edition = "2021"
+description = "Interpreter of the Lead Programming Language"
+license = "MIT"
+repository = "https://github.com/AHQ-Softwares/lead"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.89"
+quote = "1.0.37"
+syn = "2.0.87"
+interpreter = { version = "0.0.0-dev-lead-lang" }
+
+[patch.crates-io]
+interpreter = { path = "../interpreter" }
