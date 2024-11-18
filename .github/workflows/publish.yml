@@ -144,9 +144,11 @@ jobs:
 
       - name: Package stuff
         run: cargo +nightly run --release
+        env:
+          TARGET: ${{ matrix.target }}
 
       - name: Run Installer
-        run: cargo +nightly build --release
+        run: cargo +nightly build --target ${{ matrix.target }} --release
         working-directory: lead_init
 
       - name: chmod

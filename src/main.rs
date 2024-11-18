@@ -1,6 +1,8 @@
 use std::{fs::{self, create_dir_all}, path::PathBuf, process::Command, str::FromStr};
 
 fn main() {
+  let target = option_env!("TARGET").unwrap_or("x86_64-pc-windows-msvc");
+
   #[cfg(not(debug_assertions))]
   fs::remove_dir_all("./build").unwrap_or(());
   fs::remove_file("./build.zip").unwrap_or(());
@@ -25,6 +27,8 @@ fn main() {
         "nightly",
         "cargo",
         { if path.to_string_lossy().contains("lead") { "build" } else { "run" } },
+        "--target",
+        target,
         #[cfg(not(debug_assertions))]
         "--release"
       ])
