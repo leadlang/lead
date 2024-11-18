@@ -1,8 +1,8 @@
 #[cfg(windows)]
 mod windows;
 
-#[cfg(target_os="linux")]
-mod linux;
+#[cfg(not(windows))]
+mod unix;
 
 use std::{sync::LazyLock, io::Cursor, path::Path};
 
@@ -63,6 +63,6 @@ pub async fn download_install_lead(url: &str, dir: &str) {
 pub async fn postinstall(path: &str) {
   #[cfg(windows)]
   windows::postinstall(path).await;
-  #[cfg(target_os = "linux")]
-  linux::postinstall(path).await;
+  #[cfg(not(windows))]
+  unix::postinstall(path).await;
 }

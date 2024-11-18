@@ -5,7 +5,7 @@ writeFileSync("./suffix", "");
 
 const date = new Date();
 const version =
-  `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}` +
+  `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate() - 1}` +
   (process.env.NIGHTLY == "true" ? `-nightly.${Date.now()}` : "") +
   suffix;
 
