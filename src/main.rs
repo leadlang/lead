@@ -1,7 +1,12 @@
-use std::{fs::{self, create_dir_all}, path::PathBuf, process::Command, str::FromStr};
+use std::{
+  fs::{self, create_dir_all},
+  path::PathBuf,
+  process::Command,
+  str::FromStr,
+};
 
 fn main() {
-  let target = option_env!("TARGET").unwrap_or("x86_64-pc-windows-msvc");
+  let target = env!("TARGET");
 
   #[cfg(not(debug_assertions))]
   fs::remove_dir_all("./build").unwrap_or(());
@@ -21,24 +26,35 @@ fn main() {
   dir.push(PathBuf::from_str("./lead_docs").unwrap());
 
   for path in dir {
-    if !Command::new("rustup")
-      .args([
-        "run",
-        "nightly",
-        "cargo",
-        { if path.to_string_lossy().contains("lead") { "build" } else { "run" } },
-        "--target",
-        target,
-        #[cfg(not(debug_assertions))]
-        "--release"
-      ])
+    let mut cmd = Command::new("rustup");
+    let cmd = cmd.args([
+      "run",
+      "nightly",
+      "cargo",
+      {
+        if path.to_string_lossy().contains("lead") {
+          "build"
+        } else {
+          "run"
+        }
+      },
+      #[cfg(not(debug_assertions))]
+      "--release",
+    ]);
+
+    if path.to_string_lossy().contains("lead") {
+      cmd = cmd.args(["--target", target]);
+    }
+
+    let cmd = cmd
       .current_dir(&path)
       .spawn()
       .unwrap()
       .wait()
       .unwrap()
-      .success()
-    {
+      .success();
+
+    if !cmd {
       panic!("Failed to build");
     }
 
@@ -65,7 +81,11 @@ fn main() {
         #[cfg(debug_assertions)]
         fs::create_dir_all(format!("./build/lib/{}", &name.split_once(".").unwrap().0)).unwrap();
         #[cfg(debug_assertions)]
-        fs::copy(&path, format!("./build/lib/{}/{}", &name.split_once(".").unwrap().0, name)).unwrap();
+        fs::copy(
+          &path,
+          format!("./build/lib/{}/{}", &name.split_once(".").unwrap().0, name),
+        )
+        .unwrap();
 
         #[cfg(not(debug_assertions))]
         fs::copy(&path, format!("./build/lib/{}", name)).unwrap();
