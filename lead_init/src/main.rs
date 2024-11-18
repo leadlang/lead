@@ -29,7 +29,7 @@ async fn main() {
     let asset = zip.assets.into_iter()
         .find(|x| {
             use std::env::consts::{OS, ARCH};
-            x.name.starts_with("binaries_") && x.name.contains(OS.replace("macos", "darwin")) && x.name.constains(ARCH)
+            x.name.starts_with("binaries_") && x.name.contains(&OS.replace("macos", "darwin")) && x.name.contains(ARCH)
         })
         .unwrap();
 
