@@ -27,7 +27,7 @@ fn main() {
 
   for path in dir {
     let mut cmd = Command::new("rustup");
-    let mut cmd = cmd.args([
+    let cmd = cmd.args([
       "run",
       "nightly",
       "cargo",
@@ -42,8 +42,24 @@ fn main() {
       "--release",
     ]);
 
-    if path.to_string_lossy().contains("lead") {
-      cmd = cmd.args(["--target", target]);
+    if !path.to_string_lossy().contains("lead") {
+      // Build for target necessary
+      Command::new("rustup")
+        .args([
+          "run",
+          "nightly",
+          "cargo",
+          "build",
+          "--target",
+          target,
+          #[cfg(not(debug_assertions))]
+          "--release",
+        ])
+        .current_dir(&path)
+        .spawn()
+        .unwrap()
+        .wait()
+        .unwrap();
     }
 
     let cmd = cmd
