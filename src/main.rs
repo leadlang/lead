@@ -60,6 +60,9 @@ fn main() {
         .unwrap()
         .wait()
         .unwrap();
+    } else {
+      // Build for target necessary
+      cmd.args(["--target", target]);
     }
 
     let cmd = cmd
@@ -81,6 +84,8 @@ fn main() {
     let typ = "debug";
 
     let fs_dir = format!("{}/target/{}/{}", path.to_string_lossy(), target, &typ);
+
+    println!("{}", fs_dir);
 
     for file in fs::read_dir(fs_dir).unwrap() {
       let file = file.unwrap();
@@ -112,6 +117,7 @@ fn main() {
   let pkg_docs = [
     ("./packages/core/docs/", "./build/docs/core"),
     ("./packages/std/docs/", "./build/docs/std"),
+    ("./templates", "./build/templates")
   ];
 
   use fs_extra::dir::{copy, CopyOptions};

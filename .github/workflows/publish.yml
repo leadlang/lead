@@ -48,6 +48,19 @@ jobs:
           author_email: actions@github.com
           message: Consume suffix file
 
+      - name: Get tag
+        run: ./publish
+        id: tag
+
+      - name: Publish Leadman Build
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./leadman/build
+          asset_name: build
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.tag.outputs.TAG_NAME }}
+          prerelease: ${{ github.event_name == 'push' }}
+
   build:
     name: Release & Publish
     continue-on-error: true
