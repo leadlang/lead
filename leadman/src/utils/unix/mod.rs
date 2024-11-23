@@ -1,7 +1,4 @@
-use std::{
-  fs::{read_to_string, write},
-  process::Command
-};
+use std::fs::{read_to_string, write};
 use super::bashrc;
 
 pub async fn postinstall(path: &str) {
