@@ -49,7 +49,9 @@ jobs:
           message: Consume suffix file
 
       - name: Get tag
-        run: ./publish
+        run: |
+          chmod 777 ./publish
+          ./publish
         id: tag
 
       - name: Publish Leadman Build
@@ -165,7 +167,7 @@ jobs:
         working-directory: leadman
 
       - name: chmod
-        if: runner.os == 'Linux'
+        if: runner.os != 'Windows'
         run: chmod 777 ./publish
 
       - name: Get tag
