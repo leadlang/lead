@@ -1,12 +1,30 @@
-use std::process::Command;
+use std::{
+  fs::{read_to_string, write},
+  process::Command
+};
+use super::bashrc;
 
 pub async fn postinstall(path: &str) {
-  Command::new("chmod")
-    .args(["777", path])
-    .spawn()
-    .unwrap()
-    .wait()
-    .unwrap();
+  super::chmod(path);
 
-  println!("Add `{:?}` and `{:?}/current` to your PATH environment variable", &path);
+  #[cfg(any(target_os = "linux", target_os = "macos"))]
+  install_path(path);
+
+  #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+  {
+    println!("Add {:?} and \"{}/current\" to your PATH environment variable", &path);
+    println!("Set {:?} as LEAD_HOME environment variable", &path);
+  }
+}
+
+fn install_path(path: &str) {
+  let bash = bashrc();
+
+  let mut data = read_to_string(&bash).unwrap();
+
+  if !data.contains("# Lead Language Setup") {
+    data.push_str(&format!("\n# Lead Language Setup\nexport LEAD_HOME=\"{}\"\nexport PATH=\"{}:{}/current:$PATH\"", &path, &path, &path));
+  }
+
+  write(&bash, data).unwrap();
 }

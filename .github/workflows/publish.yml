@@ -147,9 +147,9 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
 
-      - name: Run Installer
+      - name: Build Leadman
         run: cargo +nightly build --target ${{ matrix.target }} --release
-        working-directory: lead_init
+        working-directory: leadman
 
       - name: chmod
         if: runner.os == 'Linux'
@@ -163,8 +163,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         if: matrix.runner != 'windows-latest'
         with:
-          file: ./lead_init/target/${{ matrix.target }}/release/lead_init
-          asset_name: lead_init_${{ matrix.target }}
+          file: ./leadman/target/${{ matrix.target }}/release/leadman
+          asset_name: leadman_${{ matrix.target }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.tag.outputs.TAG_NAME }}
           prerelease: ${{ github.event_name == 'push' }}
@@ -173,8 +173,8 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         if: matrix.runner == 'windows-latest'
         with:
-          file: ./lead_init/target/${{ matrix.target }}/release/lead_init.exe
-          asset_name: lead_init_${{ matrix.target }}.exe
+          file: ./leadman/target/${{ matrix.target }}/release/leadman.exe
+          asset_name: leadman_${{ matrix.target }}.exe
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.tag.outputs.TAG_NAME }}
           prerelease: ${{ github.event_name == 'push' }}

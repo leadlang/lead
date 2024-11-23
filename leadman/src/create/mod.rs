@@ -31,7 +31,7 @@ pub async fn create(chalk: &mut Chalk) {
 
   chalk.green().print(&">");
 
-  fs::remove_dir_all(&dir).expect("Unable to process IO action");
+  let _ = fs::remove_dir_all(&dir);
   fs::create_dir_all(&dir).expect("Unable to process IO action");
 
   dir.push("versions");

@@ -1,4 +1,4 @@
-use std::sync::LazyLock;
+use std::{path::PathBuf, process::Command, sync::LazyLock};
 
 use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
@@ -38,6 +38,29 @@ pub struct Asset {
   pub name: String,
   pub browser_download_url: String,
   pub size: u64,
+}
+
+#[allow(dead_code, unused_mut)]
+pub fn bashrc() -> PathBuf {
+  let mut home = dirs::home_dir().unwrap();
+
+  #[cfg(target_os = "macos")]
+  home.push(".bash_profile");
+
+  #[cfg(target_os = "linux")]
+  home.push(".bashrc");
+
+  home
+}
+
+#[allow(dead_code)]
+pub fn chmod(path: &str) {
+  Command::new("chmod")
+    .args(["777", path])
+    .spawn()
+    .unwrap()
+    .wait()
+    .unwrap();
 }
 
 pub async fn get_latest_pre(data: Vec<ReleaseData>) -> (ReleaseData, ReleaseData) {
