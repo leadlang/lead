@@ -7,7 +7,28 @@ on:
     - cron: "0 0 1 * *"
 
 jobs:
+  tag:
+    name: Get Tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.ver.outputs.TAG_NAME }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checktou@v4
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+
+      - name: Get Tag
+        run: |
+          node ver.js
+          chmod 777 ./publish
+          ./publish
+        id: ver
+
   publish_cargo:
+    needs: [tag]
     name: Publish to cargo
     continue-on-error: true
 
@@ -48,19 +69,13 @@ jobs:
           author_email: actions@github.com
           message: Consume suffix file
 
-      - name: Get tag
-        run: |
-          chmod 777 ./publish
-          ./publish
-        id: tag
-
       - name: Publish Leadman Build
         uses: svenstaro/upload-release-action@v2
         with:
           file: ./leadman/build
           asset_name: build
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.tag.outputs.TAG_NAME }}
+          tag: ${{ needs.tag.outputs.tag }}
           prerelease: ${{ github.event_name == 'push' }}
 
   build:
@@ -80,8 +95,8 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             runner: ubuntu-22.04
 
-          - target: aarch64-unknown-linux-gnu
-            runner: ubuntu-22.04
+          # - target: aarch64-unknown-linux-gnu
+          #   runner: ubuntu-22.04
 
           - target: x86_64-apple-darwin
             runner: macos-latest
@@ -166,14 +181,6 @@ jobs:
         run: cargo +nightly build --target ${{ matrix.target }} --release
         working-directory: leadman
 
-      - name: chmod
-        if: runner.os != 'Windows'
-        run: chmod 777 ./publish
-
-      - name: Get tag
-        run: ./publish
-        id: tag
-
       - name: Publish Linux / Macos Bin
         uses: svenstaro/upload-release-action@v2
         if: matrix.runner != 'windows-latest'
@@ -181,7 +188,7 @@ jobs:
           file: ./leadman/target/${{ matrix.target }}/release/leadman
           asset_name: leadman_${{ matrix.target }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.tag.outputs.TAG_NAME }}
+          tag: ${{ needs.tag.outputs.tag }}
           prerelease: ${{ github.event_name == 'push' }}
 
       - name: Publish Windows Bin
@@ -191,7 +198,7 @@ jobs:
           file: ./leadman/target/${{ matrix.target }}/release/leadman.exe
           asset_name: leadman_${{ matrix.target }}.exe
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.tag.outputs.TAG_NAME }}
+          tag: ${{ needs.tag.outputs.tag }}
           prerelease: ${{ github.event_name == 'push' }}
 
       - name: Publish
@@ -200,5 +207,5 @@ jobs:
           file: ./build.zip
           asset_name: binaries_${{ matrix.target }}.zip
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.tag.outputs.TAG_NAME }}
+          tag: ${{ needs.tag.outputs.tag }}
           prerelease: ${{ github.event_name == 'push' }}
