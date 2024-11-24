@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checktou@v4
+        uses: actions/checkout@v4
 
       - name: Setup NodeJS
         uses: actions/setup-node@v4
@@ -81,6 +81,7 @@ jobs:
   build:
     name: Release & Publish
     continue-on-error: true
+    needs: [tag] 
 
     strategy:
       fail-fast: false
