@@ -3,6 +3,7 @@ name: Build & Publish
 permissions: write-all
 on:
   push:
+  workflow_dispatch:
   schedule:
     - cron: "0 0 1 * *"
 
@@ -25,6 +26,8 @@ jobs:
           node ver.js
           chmod 777 ./publish
           ./publish
+        env:
+          NIGHTLY: ${{ github.event_name == 'push' }}
         id: ver
 
   publish_cargo:
@@ -45,6 +48,7 @@ jobs:
         run: node ver.js
         env:
           NIGHTLY: ${{ github.event_name == 'push' }}
+          LEAD_VER: ${{ needs.tag.outputs.tag }}
 
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -69,19 +73,10 @@ jobs:
           author_email: actions@github.com
           message: Consume suffix file
 
-      - name: Publish Leadman Build
-        uses: svenstaro/upload-release-action@v2
-        with:
-          file: ./leadman/build
-          asset_name: build
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ needs.tag.outputs.tag }}
-          prerelease: ${{ github.event_name == 'push' }}
-
   build:
     name: Release & Publish
     continue-on-error: true
-    needs: [tag] 
+    needs: [tag]
 
     strategy:
       fail-fast: false
@@ -121,6 +116,7 @@ jobs:
         run: node ver.js
         env:
           NIGHTLY: ${{ github.event_name == 'push' }}
+          LEAD_VER: ${{ needs.tag.outputs.tag }}
 
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -191,6 +187,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ needs.tag.outputs.tag }}
           prerelease: ${{ github.event_name == 'push' }}
+          draft: true
 
       - name: Publish Windows Bin
         uses: svenstaro/upload-release-action@v2
@@ -201,12 +198,32 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ needs.tag.outputs.tag }}
           prerelease: ${{ github.event_name == 'push' }}
+          draft: true
 
       - name: Publish
         uses: svenstaro/upload-release-action@v2
         with:
           file: ./build.zip
           asset_name: binaries_${{ matrix.target }}.zip
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ needs.tag.outputs.tag }}
+          prerelease: ${{ github.event_name == 'push' }}
+          draft: true
+
+  publish:
+    name: Undraft Release
+    needs: [tag, publish_cargo, build]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Initial Commit
+        uses: actions/checkout@v4
+
+      - name: Publish Leadman Build
+        uses: svenstaro/upload-release-action@v2
+        with:
+          file: ./leadman/build
+          asset_name: build
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ needs.tag.outputs.tag }}
           prerelease: ${{ github.event_name == 'push' }}

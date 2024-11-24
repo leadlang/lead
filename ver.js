@@ -5,9 +5,14 @@ writeFileSync("./suffix", "");
 
 const date = new Date();
 const version =
-  `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate() - 1}` +
-  (process.env.NIGHTLY == "true" ? `-nightly.${Date.now()}` : "") +
-  suffix;
+  process.env.LEAD_VER ||
+  `${date.getFullYear()}.${date.getMonth() + 1}.${
+    date.getDate() == 1 ? 0 : date.getDate()
+  }` +
+    (process.env.NIGHTLY == "true" ? `-nightly.${Date.now()}` : "") +
+    suffix;
+
+console.log(process.env.LEAD_VER || `Created version ${version}`);
 
 const values = [
   "./Cargo.toml",
