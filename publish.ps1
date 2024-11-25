@@ -1,5 +1,5 @@
-$v = cat .version
+$v = Get-Content .version
 
-echo PowerShell
+Write-Output PowerShell
 
-echo "TAG_NAME=$v" >> "$env:GITHUB_OUTPUT"
+Write-Output "TAG_NAME=$v" >> "$env:GITHUB_OUTPUT"
