@@ -1,17 +1,23 @@
 {
   "name": "web",
-  "type": "module",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "build": "rspress build",
+    "dev": "rspress dev",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "preview": "rspress preview"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.21.2",
-    "astro": "^4.5.10",
-    "sharp": "^0.33.3"
+    "rspress": "^1.37.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/node": "^22.9.3",
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0",
+    "prettier": "^3.3.3",
+    "typescript-eslint": "^8.15.0"
   }
 }

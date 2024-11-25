@@ -5,6 +5,7 @@ $ERR = "$($PSStyle.Foreground.Red)$($PSStyle.Bold)[ERRR]$($PSStyle.Reset)"
 $SUCC = "$($PSStyle.Foreground.Green)$($PSStyle.Bold)[SUCC]$($PSStyle.Reset)"
 
 $architecture = [System.Environment]::GetEnvironmentVariable("PROCESSOR_ARCHITECTURE")
+$tag = [System.Environment]::GetEnvironmentVariable("TAG_NAME")
 
 "$INFO Checking OS"
 
@@ -15,21 +16,36 @@ if (![System.OperatingSystem]::IsWindows()) {
 
 "$INFO Getting architecture"
 
-$API = "https://api.github.com/repos/ahq-softwares/lead/releases/latest"
+if ($tag.Length -eq 0) {
+  "$INFO Using latest as version"
 
-$data = Invoke-WebRequest -Uri $API
-$data = ConvertFrom-Json -InputObject $data.Content
-$tag = $data.tag_name
+  $tag = "latest"
+}
+else {
+  "$INFO Provided Leadman Version $tag"
+}
 
-"$INFO Found Lead Language Version $tag"
+"$INFO Found Leadman Version $tag"
 
 if ($architecture -eq "AMD64") {
   "$INFO Getting Leadman x86_64-pc-windows-msvc"
-  $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/download/$tag/leadman_x86_64-pc-windows-msvc.exe"
+  
+  if ($tag -eq "latest") {
+    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/latest/download/leadman_x86_64-pc-windows-msvc.exe"
+  }
+  else {
+    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/download/$tag/leadman_x86_64-pc-windows-msvc.exe"
+  }
 }
 elseif ($architecture -eq "ARM64") {
   "$INFO Getting Leadman aarch64-pc-windows-msvc"
-  $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/download/$tag/leadman_aarch64-pc-windows-msvc.exe"
+
+  if ($tag -eq "latest") {
+    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/latest/download/leadman_aarch64-pc-windows-msvc.exe"
+  }
+  else {
+    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/download/$tag/leadman_aarch64-pc-windows-msvc.exe"
+  }
 }
 else {
   Write-Err "$ERR Unknown architecture $architecture"
