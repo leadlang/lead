@@ -205,14 +205,11 @@ jobs:
           upload_url: ${{ needs.tag.outputs.upload }}
 
       - name: Publish
-        uses: svenstaro/upload-release-action@v2
+        uses: shogo82148/actions-upload-release-asset@v1
         with:
-          file: ./build.zip
+          asset_path: ./build.zip
           asset_name: binaries_${{ matrix.target }}.zip
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ needs.tag.outputs.tag }}
-          prerelease: ${{ github.event_name == 'push' }}
-          draft: true
+          upload_url: ${{ needs.tag.outputs.upload }}
 
   publish:
     name: Undraft Release
