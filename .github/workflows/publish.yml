@@ -104,16 +104,16 @@ jobs:
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-22.04
 
-          - target: aarch64-unknown-netbsd
-            runner: ubuntu-latest
-
           - target: x86_64-unknown-netbsd
             runner: ubuntu-latest
 
-          - target: aarch64-unknown-openbsd
+          - target: aarch64-unknown-netbsd
             runner: ubuntu-latest
 
-          - target: x86_64-unknown-openbsd
+          - target: x86_64-unknown-freebsd
+            runner: ubuntu-latest
+
+          - target: aarch64-unknown-freebsd
             runner: ubuntu-latest
 
           - target: x86_64-apple-darwin
@@ -173,7 +173,7 @@ jobs:
             libgtk-3-dev:arm64
 
           sudo apt install libwebkit2gtk-4.1-dev:arm64
-          sudo apt install libssl-dev:arm64
+          sudo apt install libssl-dev:arm64.
 
       - name: Install Deps (Linux x86)
         if: matrix.target == 'x86_64-unknown-linux-gnu'
@@ -200,7 +200,15 @@ jobs:
           TARGET: ${{ matrix.target }}
 
       - name: Build Leadman
-        run: cargo +nightly build --target ${{ matrix.target }} --release
+        run: |
+          $arch=(echo ${{ matrix.target }})
+          if [[ $arch == "aarch64-unknown-linux-gnu" ]]; then
+            echo "Setting PKG CONFIG for aarch64 linux"
+            
+            export PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu/
+          fi
+
+          cargo +nightly build --target ${{ matrix.target }} --release
         working-directory: leadman
 
       - name: Publish Linux / Macos Bin
