@@ -23,7 +23,10 @@ fn main() {
     .collect::<Vec<_>>();
 
   dir.push(PathBuf::from_str("./lead").unwrap());
-  dir.push(PathBuf::from_str("./lead_docs").unwrap());
+  
+  if !target.contains("bsd") {
+    dir.push(PathBuf::from_str("./lead_docs").unwrap());
+  }
 
   for path in dir {
     let mut cmd = Command::new("rustup");
