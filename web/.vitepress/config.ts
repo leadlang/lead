@@ -11,6 +11,13 @@ export default defineConfig({
   head: [
     ["link", { rel: "icon", href: "/lead/icon.svg" }]
   ],
+  vite: {
+    assetsInclude: [
+      /install.sh/,
+      /install.ps1/,
+      /\*.svg/g
+    ]
+  },
   themeConfig: {
     search: {
       provider: "local"
