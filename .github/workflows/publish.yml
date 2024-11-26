@@ -159,6 +159,8 @@ jobs:
           target=(echo "${{ matrix.target }}")
 
           if [[ $target == "aarch64-unknown-linux-gnu" ]]; then
+            echo "Installing aarch64 dependencies"
+
             sudo dpkg --add-architecture arm64
             sudo cat ubuntu | sudo tee /etc/apt/sources.list
 
@@ -171,6 +173,8 @@ jobs:
             sudo apt install libwebkit2gtk-4.1-dev:arm64
             sudo apt install libssl-dev:arm64
           elif [[ $target == "x86_64-unknown-linux-gnu" ]]; then
+            echo "Installing x86 dependencies"
+
             sudo apt update
             sudo apt install libwebkit2gtk-4.1-dev \
               build-essential \
@@ -188,12 +192,7 @@ jobs:
         run: pnpm install; pnpm build
         working-directory: lead_docs/ui
 
-      - name: Package stuff
-        run: cargo +nightly run --release
-        env:
-          TARGET: ${{ matrix.target }}
-
-      - name: Build Leadman (Unix)
+      - name: Package stuff (Unix)
         if: runner.os != 'Windows'
         run: |
           arch=(echo "${{ matrix.target }}")
@@ -203,11 +202,17 @@ jobs:
             export PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu/
           fi
 
-          cargo +nightly build --target ${{ matrix.target }} --release
-        working-directory: leadman
+          cargo +nightly run --release
+        env:
+          TARGET: ${{ matrix.target }}
+
+      - name: Package stuff (Unix)
+        if: runner.os != 'Windows'
+        run: cargo +nightly run --release
+        env:
+          TARGET: ${{ matrix.target }}
 
       - name: Build Leadman (Windows)
-        if: runner.os == 'Windows'
         run: |
           cargo +nightly build --target ${{ matrix.target }} --release
         working-directory: leadman
