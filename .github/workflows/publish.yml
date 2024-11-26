@@ -104,6 +104,12 @@ jobs:
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-22.04
 
+          - target: x86_64-unknown-netbsd
+            runner: ubuntu-latest
+
+          - target: x86_64-unknown-freebsd
+            runner: ubuntu-latest
+
           - target: x86_64-apple-darwin
             runner: macos-latest
 
@@ -135,7 +141,6 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Install Deps
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           sudo apt update
 
