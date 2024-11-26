@@ -141,6 +141,7 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Install Deps
+        if: runner.os == 'Linux'
         run: |
           sudo apt update
 
