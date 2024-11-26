@@ -145,7 +145,7 @@ jobs:
         run: |
           sudo apt update
 
-          sudo apt install gcc-aarch64-linux-gnu gcc-x86-64-freebsd gcc-x86-64-netbsd
+          sudo apt install gcc-aarch64-linux-gnu clang lld
 
           sudo apt-get update && sudo apt-get upgrade -y
 
