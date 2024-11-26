@@ -174,7 +174,8 @@ jobs:
               libssl-dev \
               libayatana-appindicator3-dev \
               librsvg2-dev \
-              libgtk-3-dev
+              libgtk-3-dev \
+              gdk-sys
           fi
 
       - name: Build Lead Docs UI
@@ -186,7 +187,8 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
 
-      - name: Build Leadman
+      - name: Build Leadman (Unix)
+        if: runner.os != 'Windows'
         run: |
           arch=(echo "${{ matrix.target }}")
           if [[ $arch == "aarch64-unknown-linux-gnu" ]]; then
@@ -195,6 +197,12 @@ jobs:
             export PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu/
           fi
 
+          cargo +nightly build --target ${{ matrix.target }} --release
+        working-directory: leadman
+
+      - name: Build Leadman (Windows)
+        if: runner.os == 'Windows'
+        run: |
           cargo +nightly build --target ${{ matrix.target }} --release
         working-directory: leadman
 
