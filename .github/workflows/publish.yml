@@ -250,6 +250,7 @@ jobs:
       fail-fast: false
       matrix:
         target:
+          - i686-unknown-linux-gnu
           - x86_64-unknown-freebsd
 
     runs-on: ubuntu-latest
