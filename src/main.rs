@@ -31,7 +31,7 @@ fn main() {
 
   for path in dir {
     let mut cmd = Command::new(if cross { "cross" } else { "rustup" });
-    let cmd = if cross {
+    let cmd = if !cross {
       cmd.args([
         "run",
         "nightly",
@@ -64,18 +64,19 @@ fn main() {
     if !path.to_string_lossy().contains("lead") {
       // Build for target necessary
       if cross { 
-        Command::new("cross")
-        .args([
+        let mut cmd = Command::new("cross");
+        cmd.args([
           "+nightly",
           "build",
           "--target",
           target,
           #[cfg(not(debug_assertions))]
           "--release",
-        ])
+        ]);
+        cmd
       } else {
-        Command::new("rustup")
-        .args([
+        let mut cmd = Command::new("rustup");
+        cmd.args([
           "run",
           "nightly",
           "cargo",
@@ -84,7 +85,9 @@ fn main() {
           target,
           #[cfg(not(debug_assertions))]
           "--release",
-        ])
+        ]);
+
+        cmd
       }
         .current_dir(&path)
         .spawn()
@@ -126,6 +129,7 @@ fn main() {
       let path = file.path();
 
       if name.starts_with("lead") && [4, 8, 9, 13].contains(&name.len()) {
+        println!("Copying {} -> ./build/{}", path.display(), name);
         fs::copy(&path, format!("./build/{}", name)).unwrap();
       }
 
@@ -148,7 +152,6 @@ fn main() {
   let pkg_docs = [
     ("./packages/core/docs/", "./build/docs/core"),
     ("./packages/std/docs/", "./build/docs/std"),
-    ("./templates", "./build/templates"),
   ];
 
   use fs_extra::dir::{copy, CopyOptions};
