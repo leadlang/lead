@@ -248,7 +248,6 @@ jobs:
       matrix:
         target:
           - x86_64-unknown-freebsd
-          - x86_64-unknown-netbsd
 
     runs-on: ubuntu-latest
 
