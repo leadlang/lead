@@ -83,6 +83,19 @@ pub async fn get_latest_pre(data: Vec<ReleaseData>) -> (ReleaseData, ReleaseData
   )
 }
 
+pub async fn get_release(tag: &str) -> ReleaseData {
+  let release = CLIENT
+    .get(format!("{}/{}", RELEASES, tag))
+    .send()
+    .await
+    .expect("Something went wrong!")
+    .json::<ReleaseData>()
+    .await
+    .expect("Something went wrong while parsing it!");
+
+  release
+}
+
 pub async fn get_releases() -> Vec<ReleaseData> {
   let release = CLIENT
     .get(RELEASES)

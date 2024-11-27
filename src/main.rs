@@ -27,6 +27,8 @@ fn main() {
 
   if !target.contains("bsd") && !target.contains("aarch64-unknown-linux-gnu") {
     dir.push(PathBuf::from_str("./lead_docs").unwrap());
+  } else {
+    dir.push(PathBuf::from_str("./lead_docs_cli").unwrap());
   }
 
   for path in dir {

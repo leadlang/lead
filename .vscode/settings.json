@@ -3,6 +3,8 @@
     ".\\Cargo.toml",
     ".\\interpreter\\Cargo.toml",
     ".\\lead\\Cargo.toml",
+    ".\\lead_docs_cli\\Cargo.toml",
+    ".\\leadman\\Cargo.toml",
     ".\\packages\\core\\Cargo.toml",
     ".\\packages\\std\\Cargo.toml",
     ".\\macros\\Cargo.toml"

@@ -19,6 +19,7 @@ const values = [
   "./lead/Cargo.toml",
   "./leadman/Cargo.toml",
   "./lead_docs/Cargo.toml",
+  "./lead_docs_cli/Cargo.toml",
   "./packages/core/Cargo.toml",
   "./packages/std/Cargo.toml",
   "./interpreter/Cargo.toml",

@@ -34,8 +34,8 @@ jobs:
           pnpm install
           pnpm build
 
-          cp ./*.sh ./.vitepress/dist/
-          cp ./*.ps1 ./.vitepress/dist/
+          cp ../leadman_unix.sh ./.vitepress/dist/install.sh
+          cp ../leadman_windows.ps1 ./.vitepress/dist/install.ps1
           cp ./*.svg ./.vitepress/dist/
         working-directory: web
 

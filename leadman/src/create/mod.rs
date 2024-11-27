@@ -3,7 +3,7 @@ use std::{env::current_exe, fs, path::PathBuf};
 use chalk_rs::Chalk;
 use inquire::Select;
 
-use crate::utils::{get_latest_pre, get_releases, postinstall};
+use crate::{install::install, utils::{get_latest_pre, get_releases, postinstall}};
 
 use dirs::home_dir;
 
@@ -61,6 +61,8 @@ pub async fn create(chalk: &mut Chalk) {
   dir.pop();
 
   println!(" Installing Lead Language v{}", &version.tag_name);
+
+  install(version);
 
   let dir = dir.to_str().unwrap();
 
