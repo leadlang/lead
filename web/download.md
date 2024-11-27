@@ -26,22 +26,22 @@ irm https://ahq-softwares.github.io/lead/install.ps1 | iex
 
 ## Supported OS with Architectures
 
-| OS      | Architecture         | Supported | Notes                          |
-| ------- | :------------------- | :-------: | :----------------------------- |
-| Windows | x64                  |    ✅     |                                |
-|         | arm64                |    ✅     |                                |
-|         | i686 (32-bit)        |    ❌     |                                |
-| macOS   | x64                  |    ✅     |                                |
-|         | arm64                |    ✅     |                                |
-| Linux⭐ | x64                  |    ✅     |                                |
-|         | i686, armv7 (32-bit) |    ❌     |                                |
-|         | arm64                |    🟨     | CI failed with lead_docs       |
-| FreeBSD | x64                  |    🟨     | Cannot be built with lead docs |
-|         | i686, armv7 (32-bit) |    ❌     |                                |
-|         | arm64                |    ❌     |                                |
-| NetBSD  | x64                  |    ❌     | Verified to not work           |
-|         | i686, armv7 (32-bit) |    ❌     |                                |
-|         | arm64                |    ❌     |                                |
+| OS      | Architecture         | Supported | Notes                                |
+| ------- | :------------------- | :-------: | :----------------------------------- |
+| Windows | x64                  |    ✅     | Windows 10 or above                  |
+|         | arm64                |    ✅     | Windows 11                           |
+|         | i686 (32-bit)        |    ✅     | Windows 10                           |
+| macOS   | x64                  |    ✅     | Ubuntu 20.04 or above and equivalent |
+|         | arm64                |    ✅     |                                      |
+| Linux⭐ | x64                  |    ✅     |                                      |
+|         | i686, armv7 (32-bit) |    ❌     |                                      |
+|         | arm64                |    🟨     | CI failed with lead_docs             |
+| FreeBSD | x64                  |    🟨     | Cannot be built with lead docs       |
+|         | i686, armv7 (32-bit) |    ❌     |                                      |
+|         | arm64                |    ❌     |                                      |
+| NetBSD  | x64                  |    ❌     | Verified to not work                 |
+|         | i686, armv7 (32-bit) |    ❌     |                                      |
+|         | arm64                |    ❌     |                                      |
 
 ✅: Fully Supported
 

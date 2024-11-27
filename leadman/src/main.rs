@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use chrono::{Datelike, Local};
 use indicatif::ProgressBar;
 use tokio::time::sleep;
