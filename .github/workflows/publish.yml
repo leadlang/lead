@@ -272,7 +272,7 @@ jobs:
 
           cargo install cross
 
-          cargo run --release --target ${{ matrix.target }}
+          cargo run --release
         env:
           TARGET: ${{ matrix.target }}
           USE_CROSS: true
