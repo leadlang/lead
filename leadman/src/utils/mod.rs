@@ -3,6 +3,8 @@ use std::{path::PathBuf, process::Command, sync::LazyLock};
 use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 
+use crate::BUILD;
+
 #[cfg(not(windows))]
 pub mod unix;
 
@@ -107,4 +109,20 @@ pub async fn get_releases() -> Vec<ReleaseData> {
     .expect("Something went wrong while parsing it!");
 
   release
+}
+
+pub async fn check_update() -> bool {
+  let Some(res) = CLIENT.get("https://github.com/ahq-softwares/lead/releases/latest/download/build")
+    .send()
+    .await
+    .map(|x| x.bytes())
+    .ok() else {
+      return false;
+    };
+
+  let bytes = res.await.unwrap();
+
+  let bytes = bytes.to_vec();
+
+  String::from_utf8_lossy(&bytes).parse::<u64>().map_or(false, |x| x > BUILD)
 }

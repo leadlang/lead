@@ -47,6 +47,16 @@ elseif ($architecture -eq "ARM64") {
     $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/download/$tag/leadman_aarch64-pc-windows-msvc.exe"
   }
 }
+elseif ($architecture -eq "x86") {
+  "$INFO Getting Leadman i686-pc-windows-msvc"
+
+  if ($tag -eq "latest") {
+    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/latest/download/leadman_i686-pc-windows-msvc.exe"
+  }
+  else {
+    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/download/$tag/leadman_i686-pc-windows-msvc.exe"
+  }
+}
 else {
   Write-Err "$ERR Unknown architecture $architecture"
   exit 1

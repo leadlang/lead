@@ -3,6 +3,7 @@
 use chrono::{Datelike, Local};
 use indicatif::ProgressBar;
 use tokio::time::sleep;
+use utils::check_update;
 use std::{env::{self, args}, sync::LazyLock, time::Duration};
 
 use chalk_rs::Chalk;
@@ -22,6 +23,8 @@ pub static LEAD_ROOT_DIR: LazyLock<String> = LazyLock::new(|| {
   env::var("LEAD_HOME").expect("LEAD_HOME environment variable not set! Please reinstall the application")
 });
 
+pub static TARGET: &'static str = env!("TARGET");
+
 static BUILD: u64 = include!("../build");
 
 fn prefix(chalk: &mut Chalk) {
@@ -33,6 +36,18 @@ fn prefix(chalk: &mut Chalk) {
     "©️ {} - Lead Programming Language \n",
     Local::now().year()
   ));
+}
+
+fn show_update_message(chalk: &mut Chalk) {
+  chalk
+    .blue()
+    .bold()
+    .println(&r#"----------------------------------------------------------------------------
+| A newer build of leadman is available! Please update to the latest build |
+|                                                                          |
+| To update, run:                                                          |
+|   leadman self-update                                                    |
+----------------------------------------------------------------------------"#);
 }
 
 #[tokio::main]
@@ -48,9 +63,13 @@ async fn main() {
 
   bar.enable_steady_tick(Duration::from_millis(20));
 
-  sleep(Duration::from_secs(5)).await;
+  let update = check_update().await;
 
   bar.finish_and_clear();
+
+  if update {
+    show_update_message(&mut chalk);
+  }
 
   if args.len() < 2 {
     help();
