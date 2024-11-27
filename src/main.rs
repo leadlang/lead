@@ -7,6 +7,7 @@ use std::{
 
 fn main() {
   let target = env!("TARGET");
+  let cross = option_env!("USE_CROSS").map_or(false, |_| true);
 
   #[cfg(not(debug_assertions))]
   fs::remove_dir_all("./build").unwrap_or(());
@@ -23,31 +24,57 @@ fn main() {
     .collect::<Vec<_>>();
 
   dir.push(PathBuf::from_str("./lead").unwrap());
-  
+
   if !target.contains("bsd") {
     dir.push(PathBuf::from_str("./lead_docs").unwrap());
   }
 
   for path in dir {
-    let mut cmd = Command::new("rustup");
-    let cmd = cmd.args([
-      "run",
-      "nightly",
-      "cargo",
-      {
-        if path.to_string_lossy().contains("lead") {
-          "build"
-        } else {
-          "run"
-        }
-      },
-      #[cfg(not(debug_assertions))]
-      "--release",
-    ]);
+    let mut cmd = Command::new(if cross { "cross" } else { "rustup" });
+    let cmd = if cross {
+      cmd.args([
+        "run",
+        "nightly",
+        "cargo",
+        {
+          if path.to_string_lossy().contains("lead") {
+            "build"
+          } else {
+            "run"
+          }
+        },
+        #[cfg(not(debug_assertions))]
+        "--release",
+      ])
+    } else {
+      cmd.args([
+        "+nightly",
+        {
+          if path.to_string_lossy().contains("lead") {
+            "build"
+          } else {
+            "run"
+          }
+        },
+        #[cfg(not(debug_assertions))]
+        "--release",
+      ])
+    };
 
     if !path.to_string_lossy().contains("lead") {
       // Build for target necessary
-      Command::new("rustup")
+      if cross { 
+        Command::new("cross")
+        .args([
+          "+nightly",
+          "build",
+          "--target",
+          target,
+          #[cfg(not(debug_assertions))]
+          "--release",
+        ])
+      } else {
+        Command::new("rustup")
         .args([
           "run",
           "nightly",
@@ -58,6 +85,7 @@ fn main() {
           #[cfg(not(debug_assertions))]
           "--release",
         ])
+      }
         .current_dir(&path)
         .spawn()
         .unwrap()
@@ -120,7 +148,7 @@ fn main() {
   let pkg_docs = [
     ("./packages/core/docs/", "./build/docs/core"),
     ("./packages/std/docs/", "./build/docs/std"),
-    ("./templates", "./build/templates")
+    ("./templates", "./build/templates"),
   ];
 
   use fs_extra::dir::{copy, CopyOptions};
