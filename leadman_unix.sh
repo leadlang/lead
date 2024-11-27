@@ -50,6 +50,19 @@ if [[ $os == 'Linux' || $os == 'Darwin' || $os == 'FreeBSD' ]]; then
       echo -e "$info Getting Leadman $target"
       download="https://github.com/ahq-softwares/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
       ;;
+    i386)
+      if [[ $os == 'FreeBSD' ]]; then
+        echo -e "$err Lead Docs will fallback to using CLI on FreeBSD 32 bit systems"
+      elif [[ $os == 'Linux' ]]; then
+        echo -e "$info Lead Docs will fallback to using CLI on FreeBSD 32 bit systems"
+      fi
+      
+      target="${arch}-unknown-freeebsd"
+      [[ $os == 'Linux' ]] && target="${arch}-unknown-linux-gnu"
+
+      echo -e "$info Getting Leadman $target"
+      download="https://github.com/ahq-softwares/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      ;;
     *)
       echo -e "$err Unsupported architecture: $arch"
       exit 1
