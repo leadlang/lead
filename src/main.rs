@@ -25,7 +25,7 @@ fn main() {
 
   dir.push(PathBuf::from_str("./lead").unwrap());
 
-  if !target.contains("bsd") {
+  if !target.contains("bsd") && !target.contains("aarch64-unknown-linux-gnu") {
     dir.push(PathBuf::from_str("./lead_docs").unwrap());
   }
 
