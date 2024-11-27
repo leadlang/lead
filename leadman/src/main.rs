@@ -14,6 +14,7 @@ mod create;
 use create::create;
 
 mod clear;
+pub(crate) mod install;
 
 pub static LEAD_ROOT_DIR: LazyLock<String> = LazyLock::new(|| {
   env::var("LEAD_HOME").expect("LEAD_HOME environment variable not set! Please reinstall the application")

@@ -93,7 +93,5 @@ pub async fn get_releases() -> Vec<ReleaseData> {
     .await
     .expect("Something went wrong while parsing it!");
 
-  release.truncate(10);
-
   release
 }
