@@ -9,7 +9,7 @@ pub async fn postinstall(path: &str) {
 
   #[cfg(not(any(target_os = "linux", target_os = "macos")))]
   {
-    println!("Add {:?} and \"{}/current\" to your PATH environment variable", &path);
+    println!("Add {:?} and \"{}/current\" to your PATH environment variable", &path, &path);
     println!("Set {:?} as LEAD_HOME environment variable", &path);
   }
 }
