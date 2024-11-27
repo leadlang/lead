@@ -84,7 +84,7 @@ pub async fn get_latest_pre(data: Vec<ReleaseData>) -> (ReleaseData, ReleaseData
 }
 
 pub async fn get_releases() -> Vec<ReleaseData> {
-  let mut release = CLIENT
+  let release = CLIENT
     .get(RELEASES)
     .send()
     .await

@@ -210,7 +210,7 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
 
-      - name: Build Leadman (Windows)
+      - name: Build Leadman
         run: |
           cargo +nightly build --target ${{ matrix.target }} --release
         working-directory: leadman
