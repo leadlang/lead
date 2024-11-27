@@ -204,8 +204,8 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
 
-      - name: Package stuff (Unix)
-        if: runner.os != 'Windows'
+      - name: Package stuff (Windows)
+        if: runner.os == 'Windows'
         run: cargo +nightly run --release
         env:
           TARGET: ${{ matrix.target }}
