@@ -9,27 +9,29 @@ Lead lang is distributed by **leadman**. This article shares the script to insta
 
 ## Supported OS with Architectures
 
-| OS      |  Architecture  | Supported |
-| ------- | :------------: | --------: |
-| Windows |      x64       |        ✅ |
-|         |     arm64      |        ✅ |
-|         | i686 (32-bit)  |        ❌ |
-| macOS   |      x64       |        ✅ |
-|         |     arm64      |        ✅ |
-| Linux⭐ |      x64       |        ✅ |
-|         | i686 (32-bit)  |        ❌ |
-|         |     arm64      |        ⏲️ |
-|         | armv7 (32-bit) |        ❌ |
-| FreeBSD |      x64       |        ⏲️ |
-|         | i686 (32-bit)  |        ❌ |
-|         |     arm64      |        ⏲️ |
-|         | armv7 (32-bit) |        ❌ |
+| OS      |  Architecture  | Supported | Notes                           |
+| ------- | :------------: | :-------: | :------------------------------ |
+| Windows |      x64       |    ✅     |                                 |
+|         |     arm64      |    ✅     |                                 |
+|         | i686 (32-bit)  |    ❌     | 32 bit is not longer widespread |
+| macOS   |      x64       |    ✅     |                                 |
+|         |     arm64      |    ✅     |                                 |
+| Linux⭐ |      x64       |    ✅     |                                 |
+|         | i686 (32-bit)  |    ❌     | 32 bit is not longer widespread |
+|         |     arm64      |    🟨     | CI failed with lead_docs        |
+|         | armv7 (32-bit) |    ❌     | 32 bit is not longer widespread |
+| FreeBSD |      x64       |    🟨     | Cannot be built with lead docs  |
+|         | i686 (32-bit)  |    ❌     | 32 bit is not longer widespread |
+|         |     arm64      |    ❌     |                                 |
+|         | armv7 (32-bit) |    ❌     | 32 bit is not longer widespread |
+| NetBSD  |      x64       |    ❌     | Verified to not work            |
+|         | i686 (32-bit)  |    ❌     | 32 bit is not longer widespread |
+|         |     arm64      |    ❌     |                                 |
+|         | armv7 (32-bit) |    ❌     | 32 bit is not longer widespread |
 
-✅: Currently Supported
+✅: Fully Supported
 
 🟨: Lead Docs not supported
-
-⏲️: Not Supported, Currently being worked on
 
 ❌: Not Supported, Not Planned either
 
@@ -37,9 +39,11 @@ Lead lang is distributed by **leadman**. This article shares the script to insta
 ::: details **Note for linux users**
 You must have the following installed for **lead docs** desktop application
 
-| Package   | Version |
-| --------- | ------- |
-| webkitgtk | >= 4.1  |
+| Package       | Version      |
+| ------------- | ------------ |
+| webkitgtk-4.1 | 2.20 to 2.36 |
+
+You might follow [this](https://tauri.app/start/prerequisites/#linux)
 
 :::
 
