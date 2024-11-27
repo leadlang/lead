@@ -240,42 +240,42 @@ jobs:
           asset_name: binaries_${{ matrix.target }}.zip
           upload_url: ${{ needs.tag.outputs.upload }}
 
-  # build-bsd:
-  #   name: Release & Publish
+  build-bsd:
+    name: Release & Publish
 
-  #   needs: [tag]
+    needs: [tag]
 
-  #   strategy:
-  #     matrix:
-  #       target:
-  #         - x86_64-unknown-freebsd
-  #         - x86_64-unknown-netbsd
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-freebsd
+          - x86_64-unknown-netbsd
 
-  #   runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  #     - name: Install Rust
-  #       uses: dtolnay/rust-toolchain@stable
-  #       with:
-  #         targets: ${{ matrix.target }}
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
-  #     - name: Package Stuff
-  #       run: |
-  #         sudo apt-get update
-  #         sudo apt-get -y install podman
+      - name: Package Stuff
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install podman
 
-  #         cargo install cross
+          cargo install cross
 
-  #         cross run --release --target ${{ matrix.target }}
-  #       env:
-  #         TARGET: ${{ matrix.target }}
-  #         USE_CROSS: true
+          cross run --release --target ${{ matrix.target }}
+        env:
+          TARGET: ${{ matrix.target }}
+          USE_CROSS: true
 
-  #     - name: Build leadman
-  #       run: |
+      - name: Build leadman
+        run: |
 
   publish:
     name: Undraft Release
