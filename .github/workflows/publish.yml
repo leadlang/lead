@@ -260,6 +260,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+          toolchain: nightly
 
       - name: Install zip
         run: |
