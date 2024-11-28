@@ -62,7 +62,7 @@ pub async fn create(chalk: &mut Chalk) {
 
   println!(" Installing Lead Language v{}", &version.tag_name);
 
-  install(version);
+  install(version, chalk).await;
 
   let dir = dir.to_str().unwrap();
 

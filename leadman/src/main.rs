@@ -4,7 +4,7 @@ use chrono::{Datelike, Local};
 use indicatif::ProgressBar;
 use tokio::time::sleep;
 use utils::check_update;
-use std::{env::{self, args}, sync::LazyLock, time::Duration};
+use std::{env::{self, args}, io::{stderr, Write}, panic, sync::LazyLock, time::Duration};
 
 use chalk_rs::Chalk;
 
@@ -53,6 +53,53 @@ fn show_update_message(chalk: &mut Chalk) {
 #[tokio::main]
 async fn main() {
   let mut chalk = Chalk::new();
+
+  panic::set_hook(Box::new(|info| {
+    let mut chalk = Chalk::new();
+
+    let info_pay = info.payload();
+    
+    let mut err = stderr();
+
+    let err_str = chalk
+      .red()
+      .bold()
+      .string(&"An error occured!");
+
+    let _ = err.write_all(err_str.as_bytes());
+    let _ = err.write_all(b"\n");
+
+    if let Some(s) = info_pay.downcast_ref::<&str>() {
+      let _ = err.write_all(format!("Error: {s}\n").as_bytes());
+    } else if let Some(s) = info_pay.downcast_ref::<String>() {
+      let _ = err.write_all(format!("Error: {s}\n").as_bytes());
+    } else {
+      let _ = err.write_all(b"Error: Unknown");
+    }
+
+    let err_str = chalk
+      .red()
+      .bold()
+      .string(&"\n----- TRACE -------------");
+
+    let _ = err.write_all(err_str.as_bytes());
+    let _ = err.write_all(b"\n");
+
+    let loc = info.location().map_or("".to_string(), |x| x.to_string());
+    let _ = err.write_all(loc.as_bytes());
+
+    let err_str = chalk
+    .red()
+    .bold()
+    .string(&"\n----- FILE AN ISSUE -----");
+
+    let _ = err.write_all(err_str.as_bytes());
+    let _ = err.write_all(b"\nIf you are unable to understand the error, or if its some internal error, file an issue at: https://github.com/ahq-softwares/lead/issues\n\n");
+
+    let _ = err.flush();
+  }));
+
+  let _: String = None.expect("Something went wrong");
 
   let args = args().collect::<Vec<_>>();
 

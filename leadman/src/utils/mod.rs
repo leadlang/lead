@@ -19,7 +19,7 @@ pub async fn postinstall(path: &str) {
   return windows::postinstall(path).await;
 }
 
-static CLIENT: LazyLock<Client> = LazyLock::new(|| {
+pub static CLIENT: LazyLock<Client> = LazyLock::new(|| {
   ClientBuilder::new()
     .user_agent("Lead Programming / Leadman")
     .build()

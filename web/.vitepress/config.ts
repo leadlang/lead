@@ -9,7 +9,18 @@ export default defineConfig({
   base: "/lead/",
   lang: "en-US",
   head: [
-    ["link", { rel: "icon", href: "/lead/icon.svg" }]
+    ["link", { rel: "icon", href: "/lead/icon.svg" }],
+    [
+      'script',
+      {},
+      `
+      window.onkeydown = function(e) {
+        if (e.key == "E") {
+          document.body.style = "transform: rotate(180deg)";
+        }
+      }
+      `
+    ]
   ],
   vite: {
     assetsInclude: [
