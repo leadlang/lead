@@ -2,9 +2,15 @@
 
 use chrono::{Datelike, Local};
 use indicatif::ProgressBar;
+use std::{
+  env::{self, args},
+  io::{stderr, Write},
+  panic,
+  sync::LazyLock,
+  time::Duration,
+};
 use tokio::time::sleep;
 use utils::check_update;
-use std::{env::{self, args}, io::{stderr, Write}, panic, sync::LazyLock, time::Duration};
 
 use chalk_rs::Chalk;
 
@@ -16,11 +22,20 @@ use help::help;
 mod create;
 use create::create;
 
-mod clear;
+mod help_ci;
+
+mod replace;
+mod self_update;
+mod use_default;
+
+mod list;
+
 pub(crate) mod install;
+pub(crate) mod uninstall;
 
 pub static LEAD_ROOT_DIR: LazyLock<String> = LazyLock::new(|| {
-  env::var("LEAD_HOME").expect("LEAD_HOME environment variable not set! Please reinstall the application")
+  env::var("LEAD_HOME")
+    .expect("LEAD_HOME environment variable not set! Please reinstall the application")
 });
 
 pub static TARGET: &'static str = env!("TARGET");
@@ -28,10 +43,10 @@ pub static TARGET: &'static str = env!("TARGET");
 static BUILD: u64 = include!("../build");
 
 fn prefix(chalk: &mut Chalk) {
-  chalk
-    .yellow()
-    .bold()
-    .println(&format!("LeadMan v{} : Build {BUILD}", env!("CARGO_PKG_VERSION")));
+  chalk.yellow().bold().println(&format!(
+    "LeadMan v{} : Build {BUILD}",
+    env!("CARGO_PKG_VERSION")
+  ));
   chalk.default_color().bold().println(&format!(
     "©️ {} - Lead Programming Language \n",
     Local::now().year()
@@ -39,15 +54,14 @@ fn prefix(chalk: &mut Chalk) {
 }
 
 fn show_update_message(chalk: &mut Chalk) {
-  chalk
-    .blue()
-    .bold()
-    .println(&r#"----------------------------------------------------------------------------
+  chalk.blue().bold().println(
+    &r#"----------------------------------------------------------------------------
 | A newer build of leadman is available! Please update to the latest build |
 |                                                                          |
 | To update, run:                                                          |
 |   leadman self-update                                                    |
-----------------------------------------------------------------------------"#);
+----------------------------------------------------------------------------"#,
+  );
 }
 
 #[tokio::main]
@@ -58,13 +72,10 @@ async fn main() {
     let mut chalk = Chalk::new();
 
     let info_pay = info.payload();
-    
+
     let mut err = stderr();
 
-    let err_str = chalk
-      .red()
-      .bold()
-      .string(&"An error occured!");
+    let err_str = chalk.red().bold().string(&"An error occured!");
 
     let _ = err.write_all(err_str.as_bytes());
     let _ = err.write_all(b"\n");
@@ -77,10 +88,7 @@ async fn main() {
       let _ = err.write_all(b"Error: Unknown");
     }
 
-    let err_str = chalk
-      .red()
-      .bold()
-      .string(&"\n----- TRACE -------------");
+    let err_str = chalk.red().bold().string(&"\n----- TRACE -------------");
 
     let _ = err.write_all(err_str.as_bytes());
     let _ = err.write_all(b"\n");
@@ -88,10 +96,7 @@ async fn main() {
     let loc = info.location().map_or("".to_string(), |x| x.to_string());
     let _ = err.write_all(loc.as_bytes());
 
-    let err_str = chalk
-    .red()
-    .bold()
-    .string(&"\n----- FILE AN ISSUE -----");
+    let err_str = chalk.red().bold().string(&"\n----- FILE AN ISSUE -----");
 
     let _ = err.write_all(err_str.as_bytes());
     let _ = err.write_all(b"\nIf you are unable to understand the error, or if its some internal error, file an issue at: https://github.com/ahq-softwares/lead/issues\n\n");
@@ -99,14 +104,11 @@ async fn main() {
     let _ = err.flush();
   }));
 
-  let _: String = None.expect("Something went wrong");
-
   let args = args().collect::<Vec<_>>();
 
   prefix(&mut chalk);
 
-  let bar = ProgressBar::new_spinner()
-    .with_message("Checking for self update...");
+  let bar = ProgressBar::new_spinner().with_message("Checking for self update...");
 
   bar.enable_steady_tick(Duration::from_millis(20));
 
@@ -127,12 +129,40 @@ async fn main() {
     "help" => {
       help();
     }
+    "help-ci" => {
+      help_ci::help();
+    }
+    "install" => {
+      install::install_cli(&mut chalk).await;
+    }
+    "uninstall" => {
+      uninstall::uninstall(&mut chalk).await;
+    }
+    // Undocumented
     "create" => {
       create(&mut chalk).await;
     }
-    "clear" => {
-      clear::clear(&mut chalk).await;
+    "self-update" => {
+      self_update::update().await;
     }
+    "use" | "default" => {
+      use_default::use_default(&mut chalk);
+    }
+    // Undocumented
+    "replace" => {
+      chalk
+        .yellow()
+        .bold()
+        .println(&"We're updating, please wait...");
+
+      replace::replace();
+
+      chalk
+        .yellow()
+        .bold()
+        .println(&"We're updating, please wait...");
+    }
+    "list" => list::list_versions(),
     e => {
       chalk.red().bold().println(&format!("Unknown command: {e}"));
       help();

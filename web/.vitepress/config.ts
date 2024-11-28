@@ -38,7 +38,7 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Download', link: '/download' },
-      { text: 'Examples', link: '/markdown-examples' }
+      { text: 'Learn', link: '/learn/' }
     ],
 
     sidebar: [
@@ -49,9 +49,9 @@ export default defineConfig({
         ]
       },
       {
-        text: 'Examples',
+        text: 'Learn',
         items: [
-
+          { text: "Basics", link: "/learn/" }
         ]
       }
     ],

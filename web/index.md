@@ -13,8 +13,9 @@ hero:
     - theme: brand
       text: Download
       link: /download
-    - theme: Guide
-      link: /api-examples
+    - theme: alt
+      text: Learn
+      link: /learn
 
 features:
   - icon: 🧪
@@ -36,7 +37,3 @@ features:
     title: Multiplatform
     details: Supported on Windows, macOS, Linux. Work on FreeBSD and NetBSD is going on.
 ---
-
-<!-- <div align="center" style="margin-top: 2rem;">
-  <h1>Get, Set, Go 🚀</h1>
-</div> -->

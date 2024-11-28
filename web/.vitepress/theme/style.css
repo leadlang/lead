@@ -43,6 +43,32 @@
  *   in custom container, badges, etc.
  * -------------------------------------------------------------------------- */
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+pre,
+code,
+span,
+.VPImage:nth-child(1) {
+  animation: fadeIn 250ms;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+
 :root {
   --vp-c-default-1: var(--vp-c-gray-1);
   --vp-c-default-2: var(--vp-c-gray-2);
@@ -137,6 +163,7 @@
   border-radius: 10px;
 }
 
-:root::-webkit-scrollbar {
+:root::-webkit-scrollbar,
+*::-webkit-scrollbar {
   display: none;
 }

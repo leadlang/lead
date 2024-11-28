@@ -10,7 +10,7 @@ $tag = [System.Environment]::GetEnvironmentVariable("TAG_NAME")
 "$INFO Checking OS"
 
 if (![System.OperatingSystem]::IsWindows()) {
-  Write-Err "$ERR Unsupported Operating System, use $($PSStyle.Bold)Windows$($PSStyle.Reset) or use the bash script"
+  Write-Err "$ERR Unsupported Operating System, run this in $($PSStyle.Bold)Windows$($PSStyle.Reset) or use the $($PSStyle.Bold)bash script$($PSStyle.Reset)"
   exit 1
 }
 
@@ -27,44 +27,37 @@ else {
 
 "$INFO Found Leadman Version $tag"
 
-if ($architecture -eq "AMD64") {
-  "$INFO Getting Leadman x86_64-pc-windows-msvc"
-  
-  if ($tag -eq "latest") {
-    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/latest/download/leadman_x86_64-pc-windows-msvc.exe"
+$arch = switch ($architecture) {
+  "AMD64" {
+    "x86_64"
+    break
   }
-  else {
-    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/download/$tag/leadman_x86_64-pc-windows-msvc.exe"
+  "ARM64" {
+    "aarch64"
+    break
   }
-}
-elseif ($architecture -eq "ARM64") {
-  "$INFO Getting Leadman aarch64-pc-windows-msvc"
-
-  if ($tag -eq "latest") {
-    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/latest/download/leadman_aarch64-pc-windows-msvc.exe"
+  "x86" {
+    "i686"
+    break
   }
-  else {
-    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/download/$tag/leadman_aarch64-pc-windows-msvc.exe"
+  default {
+    Write-Err "$ERR Unknown architecture $architecture"
+    exit 1
   }
 }
-elseif ($architecture -eq "x86") {
-  "$INFO Getting Leadman i686-pc-windows-msvc"
 
-  if ($tag -eq "latest") {
-    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/latest/download/leadman_i686-pc-windows-msvc.exe"
-  }
-  else {
-    $DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/download/$tag/leadman_i686-pc-windows-msvc.exe"
-  }
+"$INFO Found Architecture $arch"
+
+if ($tag -eq "latest") {
+  $tag = "latest/download"
 }
 else {
-  Write-Err "$ERR Unknown architecture $architecture"
-  exit 1
+  $tag = "download/$tag"
 }
 
-Invoke-WebRequest -Uri $DOWNLOAD -OutFile "$env:TEMP\leadman_init.exe"
-"$INFO Starting leadman"
-""
+$DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/$tag/leadman_$arch-pc-windows-msvc.exe"
+
+Invoke-WebRequest -Uri $DOWNLOAD -OutFile "$env:TEMP\leadman_init.exe"; "$INFO Starting leadman"; ""
 
 $result = Start-Process -Wait -NoNewWindow -FilePath "$env:TEMP\leadman_init.exe" -ArgumentList "create" -PassThru
 

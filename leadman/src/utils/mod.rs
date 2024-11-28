@@ -1,9 +1,15 @@
-use std::{path::PathBuf, process::Command, sync::LazyLock};
+use std::{
+  fmt::{self, Display, Formatter},
+  fs,
+  path::PathBuf,
+  process::Command,
+  sync::LazyLock,
+};
 
 use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 
-use crate::BUILD;
+use crate::{BUILD, LEAD_ROOT_DIR};
 
 #[cfg(not(windows))]
 pub mod unix;
@@ -33,6 +39,12 @@ pub struct ReleaseData {
   pub tag_name: String,
   pub assets: Vec<Asset>,
   pub prerelease: bool,
+}
+
+impl Display for ReleaseData {
+  fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    write!(f, "{}", self.tag_name)
+  }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -112,17 +124,30 @@ pub async fn get_releases() -> Vec<ReleaseData> {
 }
 
 pub async fn check_update() -> bool {
-  let Some(res) = CLIENT.get("https://github.com/ahq-softwares/lead/releases/latest/download/build")
+  let Some(res) = CLIENT
+    .get("https://github.com/ahq-softwares/lead/releases/latest/download/build")
     .send()
     .await
     .map(|x| x.bytes())
-    .ok() else {
-      return false;
-    };
+    .ok()
+  else {
+    return false;
+  };
 
   let bytes = res.await.unwrap();
 
   let bytes = bytes.to_vec();
 
-  String::from_utf8_lossy(&bytes).parse::<u64>().map_or(false, |x| x > BUILD)
+  String::from_utf8_lossy(&bytes)
+    .parse::<u64>()
+    .map_or(false, |x| x > BUILD)
+}
+
+pub fn list_versions() -> Vec<String> {
+  fs::read_dir(format!("{}/versions", &*LEAD_ROOT_DIR))
+    .unwrap()
+    .map(|x| x.unwrap())
+    .filter(|x| x.metadata().unwrap().is_dir())
+    .map(|x| x.file_name().into_string().unwrap())
+    .collect()
 }

@@ -5,21 +5,21 @@ sidebar: true
 
 # Get Lead Lang
 
-Lead lang is distributed by **leadman**. The following command can install leadman on **Windows** and **most** **UNIX-like** systems.
+Lead lang is distributed using **leadman**. The following command can install leadman on **Windows** and **most** **UNIX-like** systems. [Read more about supported operating systems](#supported-os-with-architectures)
 
 ## Install
 
 :::tabs
-== Linux / macOS / FreeBSD
-
-```sh
-curl -fsSL https://ahq-softwares.github.io/lead/install.sh | bash
-```
-
 == Windows (Powershell)
 
 ```sh
 irm https://ahq-softwares.github.io/lead/install.ps1 | iex
+```
+
+== Linux / macOS / FreeBSD
+
+```sh
+curl -fsSL https://ahq-softwares.github.io/lead/install.sh | bash
 ```
 
 :::
@@ -49,6 +49,7 @@ irm https://ahq-softwares.github.io/lead/install.ps1 | iex
 ❌: Not Supported, Not Planned either
 
 ⭐: See Below
+
 ::: details **Note for linux users**
 You must have the following installed for **lead docs** desktop application
 

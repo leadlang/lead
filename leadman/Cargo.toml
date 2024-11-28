@@ -1,28 +1,38 @@
 [package]
 name = "leadman"
 version = "0.0.0-dev-lead-lang"
+description = "The Lead Version Manager"
 edition = "2021"
 publish = false
+authors = ["AHQ", "The AHQ Softwares' Lead lang Team"]
+license = "MIT"
 rust-version = "1.81"
 
 [dependencies]
-chalk_rs = "1.0.1"
-chrono = "0.4.38"
-dirs = "5.0.1"
-fs_extra = "1.3.0"
-indicatif = "0.17.9"
-inquire = { version = "0.7.5", default-features = false, features = [
+chalk_rs = "1"
+chrono = "0.4"
+dirs = "5"
+indicatif = "0.17"
+inquire = { version = "0.7", default-features = false, features = [
   "console",
   "fuzzy",
   "one-liners",
   "macros",
 ] }
-reqwest = { version = "0.12.9", default-features = false, features = [
+reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "rustls-tls",
 ] }
-serde = { version = "1.0.215", features = ["derive"] }
-tokio = { version = "1.41.1", features = ["rt", "rt-multi-thread", "macros"] }
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+zip = "2"
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52.0"
+
+[target.'cfg(windows)'.build-dependencies]
+tauri-winres = "0.1.1"
+
+[package.metadata.tauri-winres]
+OriginalFilename = "leadman.exe"
+LegalCopyright = "Copyright © 2024 - The AHQ Softwares' Lead lang Team"

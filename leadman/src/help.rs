@@ -17,8 +17,8 @@ macro_rules! generate_help {
 
 generate_help!(
   env!("CARGO_PKG_NAME"),
-  "clear" => "Clear downloaded cache",
   "help" => "Prints this help message",
+  "help-ci" => "Get environment variables that can be used by CI to skip the prompts",
   "install" => "Install a version of lead lang",
   "list" => "Lists the installed versions",
   "use, default" => "Set the default lead version",

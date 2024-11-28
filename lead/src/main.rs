@@ -41,7 +41,7 @@ fn main() {
       #[cfg(unix)]
       let file = "lead_docs";
 
-      let file = format!("{}/{}", home, file);
+      let file = format!("{}/versions/{}/{}", home, env!("CARGO_PKG_VERSION"), file);
 
       std::process::Command::new(file).spawn().unwrap().wait().unwrap();
     }
