@@ -35,10 +35,6 @@ generate_help!(
   " uninstall" => "Uninstall a version of lead lang",
   "" => "",
   {
-    Chalk::new().underline().bold().string(&"PROJECT MANAGEMENT")
-  } => "",
-  "" => "",
-  {
     Chalk::new().underline().bold().string(&"PACKAGE MANAGEMENT")
   } => "",
   " add [..packages]" => {

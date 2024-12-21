@@ -1,3 +1,5 @@
+use chalk_rs::Chalk;
+
 macro_rules! generate_help {
   ($app_name:expr, $($option:expr => $description:expr),*) => {
       pub fn help() {
@@ -18,7 +20,17 @@ macro_rules! generate_help {
 generate_help!(
   env!("CARGO_PKG_NAME"),
   "[installing]" => ["LEAD_CHANNEL = \"Stable\" or \"Nightly\""],
+  "" => [""],
+  {
+    Chalk::new().underline().bold().string(&"GENERAL")
+  } => [""],
   "install" => ["LEAD_VERSION"],
   "use, default" => ["LEAD_OVERRIDE = \"stable\" or \"nightly\" or \"current\"", "LEAD_VERSION"],
-  "uninstall" => ["LEAD_VERSION"]
+  "uninstall" => ["LEAD_VERSION"],
+  "" => [""],
+  {
+    Chalk::new().underline().bold().string(&"PACKAGE MANAGEMENT")
+  } => [""],
+  "add" => ["GITHUB_PAT"],
+  "remove" => ["GITHUB_PAT"]
 );

@@ -30,6 +30,8 @@ mod use_default;
 
 mod list;
 
+mod packages;
+
 pub(crate) mod install;
 pub(crate) mod uninstall;
 
