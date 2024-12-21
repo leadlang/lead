@@ -261,7 +261,6 @@ jobs:
         with:
           toolchain: nightly
           components: rust-src
-          rustflags: --no-std
           override: true
 
       - name: Install zip
