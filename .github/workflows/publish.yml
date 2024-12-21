@@ -262,6 +262,7 @@ jobs:
           target: ${{ matrix.target }}
           toolchain: nightly
           components: rust-src
+          rustflags: --no-std
 
       - name: Install zip
         run: |
