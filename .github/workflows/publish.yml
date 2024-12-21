@@ -136,7 +136,6 @@ jobs:
         with:
           toolchain: nightly
           target: ${{ matrix.target }}
-          components: rust-src
 
       - name: Install Deps
         if: runner.os == 'Linux'
