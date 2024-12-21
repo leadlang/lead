@@ -272,7 +272,7 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install podman
 
-          cargo install cross --git https://github.com/cross-rs/cross
+          RUSTFLAGS="" cargo install cross --git https://github.com/cross-rs/cross
 
           cargo run --release
         env:
