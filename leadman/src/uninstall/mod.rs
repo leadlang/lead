@@ -9,19 +9,21 @@ fn version() -> String {
   let versions = list_versions();
 
   let v = versions.iter().collect::<Vec<_>>();
-  env::var("LEAD_VERSION")
-    .map_or_else(|_| {
+  env::var("LEAD_VERSION").map_or_else(
+    |_| {
       Select::new("Select version to uninstall", v)
         .prompt()
         .expect("You must select a version!")
         .clone()
-    }, |x| {
+    },
+    |x| {
       if !versions.contains(&x) {
         panic!("Version {} is not installed!", x);
       }
 
       x
-    })
+    },
+  )
 }
 
 pub async fn uninstall(chalk: &mut Chalk) {
@@ -45,5 +47,6 @@ pub async fn uninstall(chalk: &mut Chalk) {
     fs::write(&nt_path, "").expect("Unable to write to file");
   }
 
-  fs::remove_dir_all(format!("{}/versions/{}", &*LEAD_ROOT_DIR, &version)).expect("Unable to delete directory");
+  fs::remove_dir_all(format!("{}/versions/{}", &*LEAD_ROOT_DIR, &version))
+    .expect("Unable to delete directory");
 }

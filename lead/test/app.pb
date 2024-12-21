@@ -1,10 +1,10 @@
-*mod test/hello
+# *mod test/hello
 
-$1: os::name $1
+# $1: os::name $1
 $2: @s"Hello"
 
-$3: ahq::mk
+# $3: ahq::mk
 
-$3::test
+# $3::test
 
 print $1 $2

@@ -4,6 +4,7 @@ use std::{
   path::PathBuf,
   process::Command,
   sync::LazyLock,
+  time::{SystemTime, UNIX_EPOCH},
 };
 
 use reqwest::{Client, ClientBuilder};
@@ -123,24 +124,46 @@ pub async fn get_releases() -> Vec<ReleaseData> {
   release
 }
 
+pub fn last_update_check_file() -> u64 {
+  let data =
+    fs::read_to_string(format!("{}/versions/last_update_check", &*LEAD_ROOT_DIR)).unwrap_or_default();
+
+  data.parse().unwrap_or(0)
+}
+
+pub fn set_update_check(now: u64) {
+  let _ = fs::write(format!("{}/versions/last_update_check", &*LEAD_ROOT_DIR), format!("{}", now));
+}
+
 pub async fn check_update() -> bool {
-  let Some(res) = CLIENT
-    .get("https://github.com/ahq-softwares/lead/releases/latest/download/build")
-    .send()
-    .await
-    .map(|x| x.bytes())
-    .ok()
-  else {
-    return false;
-  };
+  let now = SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .unwrap()
+    .as_secs();
 
-  let bytes = res.await.unwrap();
+  if last_update_check_file() < now {
+    set_update_check(now + 3600);
 
-  let bytes = bytes.to_vec();
+    let Some(res) = CLIENT
+      .get("https://github.com/ahq-softwares/lead/releases/latest/download/build")
+      .send()
+      .await
+      .map(|x| x.bytes())
+      .ok()
+    else {
+      return false;
+    };
 
-  String::from_utf8_lossy(&bytes)
-    .parse::<u64>()
-    .map_or(false, |x| x > BUILD)
+    let bytes = res.await.unwrap();
+
+    let bytes = bytes.to_vec();
+
+    return String::from_utf8_lossy(&bytes)
+      .parse::<u64>()
+      .map_or(false, |x| x > BUILD);
+  }
+
+  false
 }
 
 pub fn list_versions() -> Vec<String> {

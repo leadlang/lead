@@ -158,9 +158,9 @@ async fn main() {
       replace::replace();
 
       chalk
-        .yellow()
+        .green()
         .bold()
-        .println(&"We're updating, please wait...");
+        .println(&"Successfully updated!");
     }
     "list" => list::list_versions(),
     e => {

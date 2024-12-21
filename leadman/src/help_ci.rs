@@ -4,13 +4,11 @@ macro_rules! generate_help {
           println!("Pass these variables to {} to skip prompts\nThese are case sensitive", $app_name);
           println!();
           println!("{:<22} Variables", "Command");
-          println!();
           $(
             println!("  {:<20} {}", $option, $description[0]);
             for desc in 1..$description.len() {
               println!("  {:<20} {}", "", $description[desc]);
             }
-            println!();
           )*
           println!();
       }
