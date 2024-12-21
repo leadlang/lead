@@ -259,10 +259,10 @@ jobs:
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          target: ${{ matrix.target }}
           toolchain: nightly
           components: rust-src
           rustflags: --no-std
+          override: true
 
       - name: Install zip
         run: |
