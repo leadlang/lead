@@ -136,6 +136,7 @@ jobs:
         with:
           toolchain: nightly
           target: ${{ matrix.target }}
+          components: rust-src
 
       - name: Install Deps
         if: runner.os == 'Linux'
@@ -260,6 +261,7 @@ jobs:
         with:
           targets: ${{ matrix.target }}
           toolchain: nightly
+          components: rust-src
 
       - name: Install zip
         run: |
