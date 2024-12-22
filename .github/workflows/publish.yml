@@ -246,9 +246,11 @@ jobs:
       matrix:
         target:
           - i686-unknown-linux-gnu
+          - armv7-unknown-linux-gnueabi
           - x86_64-unknown-freebsd
           - aarch64-unknown-freebsd
           - i686-unknown-freebsd
+          - x86_64-unknown-netbsd
 
     runs-on: ubuntu-latest
 
