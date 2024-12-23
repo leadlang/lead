@@ -10,7 +10,7 @@ on:
 jobs:
   tag:
     name: Get Tag + Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       tag: ${{ steps.ver.outputs.TAG_NAME }}
       upload: ${{ steps.release.outputs.upload_url }}
@@ -45,7 +45,7 @@ jobs:
     name: Publish to cargo
     continue-on-error: true
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Initial Commit
@@ -102,7 +102,7 @@ jobs:
             runner: windows-latest
 
           - target: x86_64-unknown-linux-gnu
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
 
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-22.04
@@ -252,7 +252,7 @@ jobs:
           - i686-unknown-freebsd
           - x86_64-unknown-netbsd
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -267,7 +267,9 @@ jobs:
 
       - name: Install zip
         run: |
+          sudo apt update
           sudo apt install zip
+          sudo apt install libc6
 
       - name: Package Stuff
         run: |
@@ -303,7 +305,7 @@ jobs:
   publish:
     name: Undraft Release
     needs: [tag, publish_cargo, build, build-cross]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Initial Commit
