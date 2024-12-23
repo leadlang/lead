@@ -125,14 +125,17 @@ pub async fn get_releases() -> Vec<ReleaseData> {
 }
 
 pub fn last_update_check_file() -> u64 {
-  let data =
-    fs::read_to_string(format!("{}/versions/last_update_check", &*LEAD_ROOT_DIR)).unwrap_or_default();
+  let data = fs::read_to_string(format!("{}/versions/last_update_check", &*LEAD_ROOT_DIR))
+    .unwrap_or_default();
 
   data.parse().unwrap_or(0)
 }
 
 pub fn set_update_check(now: u64) {
-  let _ = fs::write(format!("{}/versions/last_update_check", &*LEAD_ROOT_DIR), format!("{}", now));
+  let _ = fs::write(
+    format!("{}/versions/last_update_check", &*LEAD_ROOT_DIR),
+    format!("{}", now),
+  );
 }
 
 pub async fn check_update() -> bool {

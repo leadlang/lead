@@ -168,10 +168,7 @@ async fn main() {
 
       replace::replace();
 
-      chalk
-        .green()
-        .bold()
-        .println(&"Successfully updated!");
+      chalk.green().bold().println(&"Successfully updated!");
     }
     "list" => list::list_versions(),
     e => {
