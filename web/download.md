@@ -5,7 +5,7 @@ sidebar: true
 
 # Get Lead Lang
 
-Lead lang is distributed using **leadman**. The following command can install leadman on **Windows** and **most** **UNIX-like** systems. [Read more about supported operating systems](#supported-os-with-architectures)
+Lead lang is distributed using **leadman**. The following command can install leadman on **Windows** and **most UNIX-like** systems. [Read more about supported operating systems](#supported-os-with-architectures)
 
 ## Install
 
@@ -36,9 +36,13 @@ curl -fsSL https://ahq-softwares.github.io/lead/install.sh | bash
 | Linux⭐ | x64            |    ✅     | Ubuntu 20.04 or above and equivalent |
 |         | i686 (32-bit)  |    🟨     |                                      |
 |         | arm64          |    🟨     |                                      |
-|         | armv7 (32-bit) |    ❌     |                                      |
+|         | armv7 (32-bit) |    🟨     |                                      |
 | FreeBSD | x64            |    🟨     |                                      |
 |         | i686 (32-bit)  |    🟨     |                                      |
+|         | arm64          |    🟨     |                                      |
+|         | armv7 (32-bit) |    ❌     |                                      |
+| NetBSD  | x64            |    🟨     |                                      |
+|         | i686 (32-bit)  |    ❌     |                                      |
 |         | arm64          |    ❌     |                                      |
 |         | armv7 (32-bit) |    ❌     |                                      |
 

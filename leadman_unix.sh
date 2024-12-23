@@ -20,41 +20,63 @@ tag_name=$(([[ $TAG_NAME != "" ]] && echo $TAG_NAME) || echo "latest")
 
 echo -e $info Found Lead Language Version: $tag_name
 
-if [[ $os == 'Linux' || $os == 'Darwin' || $os == 'FreeBSD' ]]; then
+if [[ $os == 'Linux' || $os == 'Darwin' || $os == 'FreeBSD' || $os == 'NetBSD' ]]; then
   echo -e "$info $os detected"
 
   case "$arch" in
-    x86_64)
-      if [[ $os == 'FreeBSD' ]]; then
-        echo -e "$info Lead Docs will fallback to using CLI on FreeBSD systems"
+    x86_64|x86-64|amd64|AMD64)
+      arch="x86_64"
+      if [[ $os == 'FreeBSD' || $os == 'NetBSD' ]]; then
+        echo -e "$info Lead Docs will fallback to using CLI on BSD systems"
       fi
 
       target="${arch}-unknown-linux-gnu"
       [[ $os == 'Darwin' ]] && target="${arch}-apple-darwin"
       [[ $os == 'FreeBSD' ]] && target="${arch}-unknown-freebsd"
+      [[ $os == 'NetBSD' ]] && target="${arch}-unknown-netbsd"
 
       echo -e "$info Getting Leadman $target"
       download="https://github.com/ahq-softwares/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
       ;;
-    aarch64)
-      if [[ $os == 'FreeBSD' ]]; then
-        echo -e "$err aarch64 version of Lead Lang is not supported on FreeBSD"
+    aarch64|arm64|AArch64)
+      arch="aarch64"
+      if [[ $os == 'NetBSD' ]]; then
+        echo -e "$err aarch64 version of lead lang is not supported on NetBSD"
         exit 1
-      elif [[ $os == 'Linux' ]]; then
-        echo -e "$info Lead Docs will fallback to using CLI on Linux aarch64 systems"
+      elif [[ $os == 'FreeBSD' || $os == 'Linux' ]]; then
+        echo -e "$info Lead Docs will fallback to using CLI on $os aarch64 systems"
       fi
       
       target="${arch}-apple-darwin"
+      [[ $os == 'FreeBSD' ]] && target="${arch}-unknown-freebsd"
       [[ $os == 'Linux' ]] && target="${arch}-unknown-linux-gnu"
 
       echo -e "$info Getting Leadman $target"
       download="https://github.com/ahq-softwares/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
       ;;
-    i386)
-      if [[ $os == 'FreeBSD' ]]; then
-        echo -e "$err Lead Docs will fallback to using CLI on FreeBSD 32 bit systems"
+    aarch32|armv7l|armv6l|armv7|armv6)
+      arch="armv7"
+      if [[ $os == 'NetBSD' || $os == 'FreeBSD' ]]; then
+        echo -e "$err aarch32 version of lead lang is not supported on BSD systems"
+        exit 1
       elif [[ $os == 'Linux' ]]; then
-        echo -e "$info Lead Docs will fallback to using CLI on FreeBSD 32 bit systems"
+        echo -e "$info Lead Docs will fallback to using CLI on $os armv7 systems"
+      fi
+      
+      # target="${arch}-apple-darwin"
+      # [[ $os == 'FreeBSD' ]] && target="${arch}-unknown-freebsd"
+      [[ $os == 'Linux' ]] && target="${arch}-unknown-linux-gnu"
+
+      echo -e "$info Getting Leadman $target"
+      download="https://github.com/ahq-softwares/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      ;;
+    i386|i486|i586|i686)
+      arch="i686"
+      if [[ $os == 'NetBSD' ]]; then
+        echo -e "$err 32-bit version of lead lang is not supported on BSD systems"
+        exit 1
+      else
+        echo -e "$err Lead Docs will fallback to using CLI on $os 32 bit systems"
       fi
       
       target="${arch}-unknown-freeebsd"

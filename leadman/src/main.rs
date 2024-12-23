@@ -2,6 +2,7 @@
 
 use chrono::{Datelike, Local};
 use indicatif::ProgressBar;
+use packages::PackageAction;
 use std::{
   env::{self, args},
   io::{stderr, Write},
@@ -106,7 +107,7 @@ async fn main() {
     let _ = err.flush();
   }));
 
-  let args = args().collect::<Vec<_>>();
+  let mut args = args().collect::<Vec<_>>();
 
   prefix(&mut chalk);
 
@@ -149,6 +150,14 @@ async fn main() {
     }
     "use" | "default" => {
       use_default::use_default(&mut chalk);
+    }
+    "add" => {
+      let args: Vec<String> = args.drain(2..).collect();
+      packages::handle(&mut chalk, PackageAction::Add, args).await;
+    }
+    "remove" => {
+      let args: Vec<String> = args.drain(2..).collect();
+      packages::handle(&mut chalk, PackageAction::Remove, args).await;
     }
     // Undocumented
     "replace" => {

@@ -101,8 +101,8 @@ pub async fn install(release: &ReleaseData, lead_home: &str, chalk: &mut Chalk) 
     .expect("This version cannot be installed");
 
   match build.as_str() {
-    // Build 1 and 2 are the same
-    "1" | "2" => {
+    // Build 1 to 5 are the similar
+    "1" | "2" | "3" | "4" | "5" => {
       build_1::install(&tag_name, lead_home).await;
     }
     "0" => {
