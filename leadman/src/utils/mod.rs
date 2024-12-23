@@ -33,7 +33,7 @@ pub static CLIENT: LazyLock<Client> = LazyLock::new(|| {
     .unwrap()
 });
 
-static RELEASES: &str = "https://api.github.com/repos/ahq-softwares/lead/releases";
+static RELEASES: &str = "https://api.github.com/repos/leadlang/lead/releases";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReleaseData {
@@ -145,7 +145,7 @@ pub async fn check_update() -> bool {
     set_update_check(now + 3600);
 
     let Some(res) = CLIENT
-      .get("https://github.com/ahq-softwares/lead/releases/latest/download/build")
+      .get("https://github.com/leadlang/lead/releases/latest/download/build")
       .send()
       .await
       .map(|x| x.bytes())

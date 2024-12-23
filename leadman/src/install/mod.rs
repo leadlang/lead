@@ -85,7 +85,7 @@ pub async fn install(release: &ReleaseData, lead_home: &str, chalk: &mut Chalk) 
   let ReleaseData { tag_name, .. } = release;
 
   let base = format!(
-    "https://github.com/ahq-softwares/lead/releases/download/{}",
+    "https://github.com/leadlang/lead/releases/download/{}",
     &tag_name
   );
 

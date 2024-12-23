@@ -55,7 +55,7 @@ else {
   $tag = "download/$tag"
 }
 
-$DOWNLOAD = "https://github.com/ahq-softwares/lead/releases/$tag/leadman_$arch-pc-windows-msvc.exe"
+$DOWNLOAD = "https://github.com/leadlang/lead/releases/$tag/leadman_$arch-pc-windows-msvc.exe"
 
 Invoke-WebRequest -Uri $DOWNLOAD -OutFile "$env:TEMP\leadman_init.exe"; "$INFO Starting leadman"; ""
 

@@ -12,7 +12,7 @@ use crate::{utils::CLIENT, TARGET};
 
 pub async fn install(tag: &str, lead_home: &str) {
   let download = format!(
-    "https://github.com/ahq-softwares/lead/releases/download/{}",
+    "https://github.com/leadlang/lead/releases/download/{}",
     &tag
   );
 

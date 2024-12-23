@@ -10,7 +10,7 @@ pub async fn update() {
 
   let leadman = CLIENT
     .get(format!(
-      "https://github.com/ahq-softwares/lead/releases/latest/download/leadman_{}{bin}",
+      "https://github.com/leadlang/lead/releases/latest/download/leadman_{}{bin}",
       TARGET
     ))
     .send()

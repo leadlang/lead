@@ -36,7 +36,7 @@ if [[ $os == 'Linux' || $os == 'Darwin' || $os == 'FreeBSD' || $os == 'NetBSD' ]
       [[ $os == 'NetBSD' ]] && target="${arch}-unknown-netbsd"
 
       echo -e "$info Getting Leadman $target"
-      download="https://github.com/ahq-softwares/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      download="https://github.com/leadlang/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
       ;;
     aarch64|arm64|AArch64)
       arch="aarch64"
@@ -52,7 +52,7 @@ if [[ $os == 'Linux' || $os == 'Darwin' || $os == 'FreeBSD' || $os == 'NetBSD' ]
       [[ $os == 'Linux' ]] && target="${arch}-unknown-linux-gnu"
 
       echo -e "$info Getting Leadman $target"
-      download="https://github.com/ahq-softwares/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      download="https://github.com/leadlang/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
       ;;
     aarch32|armv7l|armv6l|armv7|armv6)
       arch="armv7"
@@ -68,7 +68,7 @@ if [[ $os == 'Linux' || $os == 'Darwin' || $os == 'FreeBSD' || $os == 'NetBSD' ]
       [[ $os == 'Linux' ]] && target="${arch}-unknown-linux-gnu"
 
       echo -e "$info Getting Leadman $target"
-      download="https://github.com/ahq-softwares/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      download="https://github.com/leadlang/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
       ;;
     i386|i486|i586|i686)
       arch="i686"
@@ -83,7 +83,7 @@ if [[ $os == 'Linux' || $os == 'Darwin' || $os == 'FreeBSD' || $os == 'NetBSD' ]
       [[ $os == 'Linux' ]] && target="${arch}-unknown-linux-gnu"
 
       echo -e "$info Getting Leadman $target"
-      download="https://github.com/ahq-softwares/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      download="https://github.com/leadlang/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
       ;;
     *)
       echo -e "$err Unsupported architecture: $arch"

@@ -102,7 +102,7 @@ async fn main() {
     let err_str = chalk.red().bold().string(&"\n----- FILE AN ISSUE -----");
 
     let _ = err.write_all(err_str.as_bytes());
-    let _ = err.write_all(b"\nIf you are unable to understand the error, or if its some internal error, file an issue at: https://github.com/ahq-softwares/lead/issues\n\n");
+    let _ = err.write_all(b"\nIf you are unable to understand the error, or if its some internal error, file an issue at: https://github.com/leadlang/lead/issues\n\n");
 
     let _ = err.flush();
   }));
