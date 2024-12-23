@@ -17,10 +17,10 @@ pub struct Metadata {
 impl Default for Metadata {
   fn default() -> Self {
     Metadata {
-      name: "mypkg".into(),
-      version: "0.0.0".into(),
-      description: "My newest application".into(),
-      authors: vec![],
+      name: "package".into(),
+      version: "1.0.0".into(),
+      description: "".into(),
+      authors: vec!["You".into()],
       keywords: vec![],
       dependencies: HashMap::new(),
     }
