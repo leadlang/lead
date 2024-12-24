@@ -139,7 +139,7 @@ fn main() {
                 fs::copy(&path, format!("./build/{}", name)).unwrap();
             }
 
-            if name.ends_with(".dll") || name.ends_with(".so") {
+            if name.ends_with(".dll") || name.ends_with(".so") || name.ends_with(".dylib") {
                 #[cfg(debug_assertions)]
                 fs::create_dir_all(format!("./build/lib/{}", &name.split_once(".").unwrap().0))
                     .unwrap();
