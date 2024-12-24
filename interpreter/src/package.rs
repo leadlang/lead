@@ -90,11 +90,12 @@ macro_rules! doc {
   ($x:expr) => {
     fn main() {
       use std::{
-        fs::{create_dir_all, write, File},
+        fs::{create_dir_all, remove_dir_all, write, File},
         io::Write,
       };
       let modules = $x;
 
+      let _ = remove_dir_all("./docs");
       println!("📦 Creating docs dir...");
       create_dir_all("./docs").unwrap();
 

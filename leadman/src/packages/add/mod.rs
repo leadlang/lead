@@ -9,7 +9,7 @@ mod resolve;
 
 use resolve as res;
 
-pub async fn resolve(pkg: Arc<String>, bar: ProgressBar) -> (LibraryMeta, String, String) {
+async fn resolve(pkg: Arc<String>, bar: ProgressBar) -> (LibraryMeta, String, String) {
   let pkg: &str = &pkg;
 
   let (source, pkg) = pkg.split_once(":").unwrap_or(("gh", pkg));

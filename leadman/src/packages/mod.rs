@@ -69,7 +69,52 @@ pub async fn handle(chalk: &mut Chalk, action: PackageAction, args: Vec<String>)
 
       sleep(Duration::from_secs(1)).await;
     }
-    PackageAction::Remove => remove::remove().await,
+    PackageAction::Remove => {
+      let metadata = Arc::new(metadata);
+      let args: Vec<Arc<String>> = args.into_iter().map(|x| Arc::new(x)).collect();
+      println!(
+        "{} 📦 Resolving packages...",
+        chalk.bold().dim().string(&"[1/3]")
+      );
+
+      let mut handles = vec![];
+
+      for pkg in &args {
+        let pkg = pkg.clone();
+
+        let bar = ProgressBar::no_length();
+        let bar = bars.add(bar);
+        let meta = metadata.clone();
+        handles.push(tokio::spawn(async move {
+          remove::remove(meta, pkg, bar).await
+        }));
+      }
+
+      for hwnd in handles {
+        let (meta, name, version) = hwnd.await.expect("Error while installing");
+
+        let overrid = format!("      ⚠️  Overriding existing dependency {name}");
+
+        if let Some(_) = metadata.dependencies.insert(name, Dependency {
+          os: meta.platforms,
+          version
+        }) {
+          bars.suspend(|| {
+            println!("{overrid}");
+          });
+        }
+      }
+
+      // It'll be already done by now...
+      println!(
+        "{} 🗃️  Updating metadata...",
+        chalk.bold().dim().string(&"[2/3]")
+      );
+      
+      write_meta(&metadata).await;
+
+      sleep(Duration::from_secs(1)).await;
+    },
   }
 
   bars.suspend(|| {

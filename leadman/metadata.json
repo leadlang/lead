@@ -1,5 +1,5 @@
 {
-  "$schema": "../metadata.schema.json",
+  "$schema": "https://raw.githubusercontent.com/leadlang/lead/refs/heads/main/metadata.schema.json",
   "name": "package",
   "version": "1.0.0",
   "description": "",

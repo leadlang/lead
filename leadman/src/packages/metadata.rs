@@ -16,6 +16,8 @@ pub struct LibraryMeta {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Metadata {
+  #[serde(rename = "$schema")]
+  pub schema: String,
   pub name: String,
   pub version: String,
   pub description: String,
@@ -27,6 +29,7 @@ pub struct Metadata {
 impl Default for Metadata {
   fn default() -> Self {
     Metadata {
+      schema: "https://raw.githubusercontent.com/leadlang/lead/refs/heads/main/metadata.schema.json".into(),
       name: "package".into(),
       version: "1.0.0".into(),
       description: "".into(),
