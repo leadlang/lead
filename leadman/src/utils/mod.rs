@@ -1,7 +1,7 @@
 use std::{
   fmt::{self, Display, Formatter},
   fs,
-  path::PathBuf,
+  path::{Path, PathBuf},
   process::Command,
   sync::LazyLock,
   time::{SystemTime, UNIX_EPOCH},
@@ -176,4 +176,28 @@ pub fn list_versions() -> Vec<String> {
     .filter(|x| x.metadata().unwrap().is_dir())
     .map(|x| x.file_name().into_string().unwrap())
     .collect()
+}
+
+pub async fn copy_dir<T: AsRef<str>, U: AsRef<str>>(src: T, dest: U) {
+  use tokio::fs; 
+
+  let src = src.as_ref();
+  let dest = dest.as_ref();
+
+  let _ = fs::create_dir(&dest).await;
+
+  let mut dir = fs::read_dir(src).await.expect("Unable to read dir");
+
+  while let Some(entry) = dir.next_entry().await.expect("Error") {
+    let name = entry.file_name();
+    let name = name.into_string().expect("Unable to convert name into valid utf8 string");
+
+    let meta = entry.metadata().await.expect("Unable to read metadata");
+
+    if meta.is_dir() {
+      Box::pin(copy_dir(format!("{src}/{name}"), format!("{dest}/{name}"))).await;
+    } else if meta.is_file() {
+      fs::copy(format!("{src}/{name}"), format!("{dest}/{name}")).await;
+    }
+  }
 }

@@ -6,12 +6,22 @@ use tokio::fs;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LibraryMeta {
-  pub name: String,
+  pub package: String,
   pub version: String,
   pub description: String,
   pub authors: Vec<String>,
   pub keywords: Vec<String>,
+  /// We'll ignore it
   pub platforms: Vec<String>,
+
+  pub preinstall: Option<Script>,
+  pub postinstall: Option<Script>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Script {
+  pub unix: String,
+  pub windows: String
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,7 +33,7 @@ pub struct Metadata {
   pub description: String,
   pub authors: Vec<String>,
   pub keywords: Vec<String>,
-  pub dependencies: HashMap<String, Dependency>,
+  pub dependencies: HashMap<String, String>,
 }
 
 impl Default for Metadata {
@@ -38,12 +48,6 @@ impl Default for Metadata {
       dependencies: HashMap::new(),
     }
   }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Dependency {
-  pub version: String,
-  pub os: Vec<String>,
 }
 
 pub async fn get_meta() -> Metadata {

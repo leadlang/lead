@@ -40,21 +40,9 @@
       "description": "Dependencies of your project",
       "patternProperties": {
         ".*": {
-          "type": "object",
-          "properties": {
-            "version": {
-              "type": "string",
-              "description": "Version of the dependency",
-              "examples": ["1.0.0", "latest"]
-            },
-            "os": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "description": "List of supported platforms"
-            }
-          }
+          "type": "string",
+          "description": "Version of the dependency",
+          "examples": ["1.0.0", "latest"]
         }
       }
     }

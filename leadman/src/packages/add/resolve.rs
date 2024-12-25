@@ -4,12 +4,12 @@ use indicatif::ProgressBar;
 use serde_json::from_str;
 use sha256::digest;
 use std::fs;
-use tokio::task;
+use tokio::{sync::oneshot::Sender, task};
 use zip::ZipArchive;
 
-use crate::{packages::metadata::LibraryMeta, utils::CLIENT};
+use crate::{packages::{metadata::LibraryMeta, utils::progress_bar}, utils::CLIENT};
 
-pub async fn resolve(source: &str, owner: &str, repo: &str, version: &str, bar: ProgressBar) -> (LibraryMeta, String, String) {
+pub async fn resolve(source: &str, owner: &str, repo: &str, version: &str, bar: ProgressBar, tx: Sender<()>) -> (String, String) {
   match source {
     "gh" => {
       let suffix = match version {
@@ -25,7 +25,11 @@ pub async fn resolve(source: &str, owner: &str, repo: &str, version: &str, bar: 
         .await
         .expect("Unable to fetch");
 
+      bar.set_message("Downloading...");
+      bar.set_style(progress_bar());
       bar.set_length(r.content_length().unwrap_or(0));
+
+      tx.send(());
 
       let mut j = vec![];
 
@@ -37,11 +41,11 @@ pub async fn resolve(source: &str, owner: &str, repo: &str, version: &str, bar: 
       let j = Cursor::new(j);
       let digest = digest(format!("{source}:{owner}/{repo}@{version}"));
 
-      let pkg = task::spawn_blocking(move || {
+      task::spawn_blocking(move || {
         let mut archive = ZipArchive::new(j).expect("Unable to unzip");
 
         let mut pkg = archive
-          .by_name(".pkgcache")
+          .by_name("pkgcache")
           .expect("Unable to fetch the leadpkg file");
 
         let mut pkg_buf = String::new();
@@ -50,7 +54,7 @@ pub async fn resolve(source: &str, owner: &str, repo: &str, version: &str, bar: 
           .expect("Unable to read the leadpkg file");
         drop(pkg);
 
-        let pkg: LibraryMeta = from_str(&pkg_buf).expect("Unable to parse as Metadata");
+        let _: LibraryMeta = from_str(&pkg_buf).expect("Unable to parse as Metadata");
 
         drop(pkg_buf);
 
@@ -59,8 +63,6 @@ pub async fn resolve(source: &str, owner: &str, repo: &str, version: &str, bar: 
         archive
           .extract(format!("./.pkgcache/{digest}"))
           .expect("Unable to extract the package");
-
-        pkg
       })
       .await
       .unwrap();
@@ -69,7 +71,7 @@ pub async fn resolve(source: &str, owner: &str, repo: &str, version: &str, bar: 
 
       let name = format!("{source}:{owner}/{repo}");
 
-      (pkg, name, version.into())
+      (name, version.into())
     }
     e => {
       panic!("Source {e} not supported!");

@@ -4,11 +4,7 @@ use chrono::{Datelike, Local};
 use indicatif::ProgressBar;
 use packages::PackageAction;
 use std::{
-  env::{self, args},
-  io::{stderr, Write},
-  panic,
-  sync::LazyLock,
-  time::Duration,
+  env::{self, args}, io::{stderr, Write}, process, panic, sync::LazyLock, time::Duration
 };
 use tokio::time::sleep;
 use utils::check_update;
@@ -105,6 +101,8 @@ async fn main() {
     let _ = err.write_all(b"\nIf you are unable to understand the error, or if its some internal error, file an issue at: https://github.com/leadlang/lead/issues\n\n");
 
     let _ = err.flush();
+
+    process::exit(1);
   }));
 
   let mut args = args().collect::<Vec<_>>();
