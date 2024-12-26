@@ -10,7 +10,6 @@ pub use heap::*;
 use crate::runtime::RuntimeValue;
 
 pub struct Options {
-  pub marker: bool,
   pub pre: String,
   pub r_val: Option<BufValue>,
   pub r_ptr_target: String,
@@ -21,8 +20,7 @@ pub struct Options {
 impl Debug for Options {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.write_fmt(format_args!(
-      "Options {{ marker: {:?}, r_val: {:?}, r_ptr: {} }}",
-      &self.marker,
+      "Options {{ r_val: {:?}, r_ptr: {} }}",
       &self.r_val,
       match &self.r_ptr {
         BufKeyVal::None => "None",
@@ -36,17 +34,12 @@ impl Debug for Options {
 impl Options {
   pub fn new() -> Self {
     Self {
-      marker: false,
       pre: "".to_string(),
       r_ptr: BufKeyVal::None,
       r_ptr_target: "".to_string(),
       r_val: None,
       r_runtime: None,
     }
-  }
-
-  pub fn set_marker(&mut self) {
-    self.marker = true;
   }
 
   pub fn set_return_val(&mut self, val: BufValue) {

@@ -1,5 +1,5 @@
-use std::{collections::HashMap, fs};
-use crate::{types::Heap, Application};
+use std::collections::HashMap;
+use crate::{types::{set_runtime_val, Heap, RawRTValue}, Application, RespPackage};
 
 #[derive(Debug)]
 pub struct RTCreatedModule<'a> {
@@ -9,18 +9,45 @@ pub struct RTCreatedModule<'a> {
   pub drop_fn: String
 }
 
-pub fn insert_into_application(app: *mut Application, args: &Vec<String>) {
+pub fn insert_into_application(app: *mut Application, args: &Vec<String>, line: &mut usize, to_set: String) {
   let app = unsafe { &mut *app };
 
   let [a, v] = &args[..] else {
-    panic!("");
+    panic!("Invalid syntax");
   };
 
   match a.as_str() {
+    "*mark" => {
+      app.markers.insert(v.into(), *line);
+    }
+    "*goto" => {
+      *line = *app.markers.get(v).expect("No marker was found!");
+    }
+    "*import" => {
+      let RespPackage { name, methods, dyn_methods } = app.pkg_resolver.call_mut((v.as_str(),));
+
+      let mut pkg = HashMap::new();
+
+      for (sig, _, call) in methods {
+        pkg.insert(sig.to_string(), *call);
+      }
+      for (sig, _, call) in dyn_methods {
+        pkg.insert(sig.to_string(), call);
+      }
+
+      let val = RawRTValue::PKG(pkg);
+
+      set_runtime_val(to_set, {
+        let name = String::from_utf8_lossy(name);
+        let name: &'static mut str = name.to_string().leak::<'static>();
+
+        name
+      }, val);
+    }
     "*mod" => {
-      let code = fs::read_to_string(format!("./{v}.mod.pb")).map_or_else(|_| {
-        panic!("Unable to read {}", v)
-      }, |f| f);
+      let code = String::from_utf8(app.module_resolver.call_mut((format!("./{v}.mod.pb").as_str(),))).unwrap_or_else(|_| {
+        panic!("Unable to read {v}.mod.pb");
+      });
 
       for m in parse_into_modules(code) {
         let None = app.modules.insert(m.name.into(), m) else {

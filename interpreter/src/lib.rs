@@ -36,18 +36,29 @@ pub trait Package {
   }
 }
 
+pub struct RespPackage {
+  pub name: &'static [u8],
+  pub methods: MethodRes,
+  pub dyn_methods: DynMethodRes,
+}
+
 pub struct Application<'a> {
   code: HashMap<String, String>,
   pkg: LanguagePackages<'a>,
   pub modules: HashMap<String, RTCreatedModule<'a>>,
   pub rt_mod_map: HashMap<String, (&'a String, &'a str)>,
   entry: &'a str,
-  next_marker: bool,
   heap: Heap,
+  markers: HashMap<String, usize>,
+  
+  // Resolve files
+  module_resolver: Box<dyn FnMut(&str) -> Vec<u8>>,
+  // Resolve path from mod name
+  pkg_resolver: Box<dyn FnMut(&str) -> RespPackage>
 }
 
 impl<'a> Application<'a> {
-  pub fn new(file: &'a str) -> Self {
+  pub fn new<T: FnMut(&str) -> Vec<u8> + 'static, F: FnMut(&str) -> RespPackage + 'static>(file: &'a str, fs_resolver: T, dll_resolver: F) -> Self {
     let main = fs::read_to_string(&file).unwrap();
 
     let mut code = HashMap::new();
@@ -57,9 +68,11 @@ impl<'a> Application<'a> {
       pkg: LanguagePackages::new(),
       heap: Heap::new(),
       entry: &file,
-      next_marker: false,
       modules: HashMap::new(),
       rt_mod_map: HashMap::new(),
+      module_resolver: Box::new(fs_resolver),
+      markers: HashMap::new(),
+      pkg_resolver: Box::new(dll_resolver)
     }
   }
 

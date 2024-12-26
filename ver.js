@@ -4,11 +4,16 @@ const suffix = readFileSync("./suffix").toString();
 writeFileSync("./suffix", "");
 
 const date = new Date();
+
+let month = date.getMonth() + 1;
+
+if (date.getDate() == 1 && date.getMonth() == 1) {
+  month = 0;
+}
+
 const version =
   process.env.LEAD_VER ||
-  `${date.getFullYear()}.${date.getMonth() + 1}.${
-    date.getDate() == 1 ? 0 : date.getDate()
-  }` +
+  `${date.getFullYear()}.${+1}.${date.getDate() == 1 ? 0 : date.getDate()}` +
     (process.env.NIGHTLY == "true" ? `-nightly.${Date.now()}` : "") +
     suffix;
 

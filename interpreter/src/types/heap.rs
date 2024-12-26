@@ -3,9 +3,9 @@ use std::{
   ops::{Deref, DerefMut},
 };
 
-use crate::runtime::RuntimeValue;
+use crate::{error, runtime::RuntimeValue};
 
-use super::{BufValue, Options};
+use super::{BufValue, Options, PackageCallback};
 
 #[derive(Debug)]
 pub enum BufKeyVal {
@@ -23,14 +23,19 @@ pub struct PtrType {
 pub type HeapInnerMap = HashMap<String, BufValue>;
 pub type Pointer = HashMap<String, PtrType>;
 
-pub static mut RUNTIME_VAL: Option<HashMap<String, (&'static str, RuntimeValue)>> = None;
+pub enum RawRTValue {
+  RT(RuntimeValue),
+  PKG(HashMap<String, PackageCallback>)
+}
 
-fn get_ptr() -> &'static mut HashMap<String, (&'static str, RuntimeValue)> {
+pub static mut RUNTIME_VAL: Option<HashMap<String, (&'static str, RawRTValue)>> = None;
+
+fn get_ptr() -> &'static mut HashMap<String, (&'static str, RawRTValue)> {
   #[allow(static_mut_refs)]
   unsafe { RUNTIME_VAL.as_mut().unwrap() }
 }
 
-pub fn set_runtime_val(key: String, module: &'static str, val: RuntimeValue) {
+pub fn set_runtime_val(key: String, module: &'static str, val: RawRTValue) {
   let _ = get_ptr().insert(key, (module, val));
 }
 
@@ -40,13 +45,20 @@ pub fn call_runtime_val(
   a: &mut Heap,
   c: &String,
   o: &mut Options,
+  file: &str
 ) -> Option<&'static str> {
   let ptr = get_ptr();
 
   let (key, caller) = key.split_once("::")?;
   let data = ptr.get_mut(key)?;
   
-  data.1.call_ptr(caller, v, a, c, o)?;
+  match &mut data.1 {
+    RawRTValue::RT(data) => data.call_ptr(caller, v, a, c, o)?,
+    RawRTValue::PKG(pkg) => match pkg.get_mut(caller) {
+      Some(x) => x.call_mut((v, a, c, o)),
+      None => error(&format!("Unexpected `{}`", &caller), &file)
+    }
+  }
 
   Some(data.0)
 }

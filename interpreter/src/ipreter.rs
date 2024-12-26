@@ -1,5 +1,5 @@
 use crate::{
-  error, runtime::_root_syntax::insert_into_application, types::{call_runtime_val, mkbuf, set_runtime_val, MethodData, Options}, Application
+  error, runtime::_root_syntax::insert_into_application, types::{call_runtime_val, mkbuf, set_runtime_val, MethodData, Options, RawRTValue}, Application
 };
 
 pub fn interpret(file: &str, mut app: &mut Application) {
@@ -8,21 +8,22 @@ pub fn interpret(file: &str, mut app: &mut Application) {
   let file = app.code.get(file).unwrap();
 
   let file = file.replace("\r", "");
-  file.split("\n").enumerate().for_each(|(line, piece)| {
-    if piece.starts_with("!") && app.next_marker {
-      if piece == "!end" {
-        app.next_marker = false;
-      } else {
-        let piece = piece.replacen("!", "", 1);
-        tok_parse(format!("{}:{}", &file_name, line + 1), &piece, &mut app);
-      }
-    } else if !piece.starts_with("#") {
-      tok_parse(format!("{}:{}", &file_name, line + 1), piece, &mut app);
+  let file = file.split("\n").collect::<Vec<_>>();
+
+  let mut line = 0usize;
+
+  while line < file.len() {
+    let content = &file[line];
+
+    if !content.starts_with("#") {
+      tok_parse(format!("{}:{}", &file_name, line), content, &mut app, &mut line);
     }
-  });
+
+    line += 1;
+  }
 }
 
-fn tok_parse(file: String, piece: &str, app: &mut Application) {
+fn tok_parse(file: String, piece: &str, app: &mut Application, line: &mut usize) {
   let mut tokens: Vec<String> = piece.split(" ").map(|x| x.to_string()).collect();
 
   let mut caller = tokens[0].as_str();
@@ -46,21 +47,18 @@ fn tok_parse(file: String, piece: &str, app: &mut Application) {
   let mut opt = Options::new();
 
   if caller.starts_with("*") {
-    insert_into_application(app as *mut _ as _, &tokens);
+    insert_into_application(app as *mut _ as _, &tokens, line, to_set);
   } else if caller.starts_with("@") {
     if val_type == "$" {
       let _ = app.heap.set(to_set, mkbuf(&caller, &file));
     }
   } else if caller.starts_with("$") {
-    match call_runtime_val(caller, &tokens, &mut app.heap, &file, &mut opt) {
+    match call_runtime_val(caller, &tokens, &mut app.heap, &file, &mut opt, &file) {
       None => if &caller != &"" {
         error(&format!("Unexpected `{}`", &caller), &file);
       },
       Some(v) => {
         opt.pre = v.to_string();
-        if opt.marker {
-          app.next_marker = true;
-        }
 
         let runt = opt.rem_r_runtime();
 
@@ -69,7 +67,7 @@ fn tok_parse(file: String, piece: &str, app: &mut Application) {
         } else if val_type == "$" && opt.r_val.is_some() {
           let _ = app.heap.set(to_set, opt.r_val.unwrap());
         } else if val_type == "$" && runt.is_some() {
-          let _ = set_runtime_val(to_set, v, runt.unwrap());
+          let _ = set_runtime_val(to_set, v, RawRTValue::RT(runt.unwrap()));
         }
       }
     }
@@ -83,10 +81,6 @@ fn tok_parse(file: String, piece: &str, app: &mut Application) {
 
         opt.pre = pkg.to_string();
 
-        if opt.marker {
-          app.next_marker = true;
-        }
-
         let runt = opt.rem_r_runtime();
 
         if val_type == "*" {
@@ -94,7 +88,7 @@ fn tok_parse(file: String, piece: &str, app: &mut Application) {
         } else if val_type == "$" && opt.r_val.is_some() {
           let _ = app.heap.set(to_set, opt.r_val.unwrap());
         } else if val_type == "$" && runt.is_some() {
-          let _ = set_runtime_val(to_set, pkg, runt.unwrap());
+          let _ = set_runtime_val(to_set, pkg, RawRTValue::RT(runt.unwrap()));
         }
       }
       _ => {
