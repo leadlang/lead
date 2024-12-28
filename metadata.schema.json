@@ -9,6 +9,11 @@
       "description": "Name of your project",
       "examples": ["package", "myproject"]
     },
+    "entry": {
+      "type": "string",
+      "description": "Entry file of the project",
+      "examples": ["./index.pb"]
+    },
     "version": {
       "type": "string",
       "description": "Version of your project",

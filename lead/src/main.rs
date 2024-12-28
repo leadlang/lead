@@ -1,29 +1,81 @@
-use std::env::args;
+use std::{env::args, panic, io::{Write, stderr}, process};
+use chalk_rs::Chalk;
 
-mod docs;
 mod app;
+mod docs;
+
+mod help;
+
+pub(crate) mod metadata;
 
 /// The main entry point of the program.
 ///
 /// This function will be called when the program starts, and is where program execution begins.
 ///
-fn main() {
-    println!("⚠️ Under Construction ⚠️");
-    let args: Vec<String> = args().collect();
+#[tokio::main]
+async fn main() { 
+  println!("⚠️ Under Construction ⚠️");
 
-    let cmd0: &str = &args[1];
+  let mut chalk: Chalk = Chalk::new();
 
-    match cmd0 {
-        "" | "run" => {
+  panic::set_hook(Box::new(|info| {
+    let mut chalk = Chalk::new();
 
-        }
-        "docs" => {
-            docs::run_docs();
-        }
-        e => {
-            if e != "help" {
-                println!("Unknown command: {}", e);
-            }
-        }
+    let info_pay = info.payload();
+
+    let mut err = stderr();
+
+    let err_str = chalk.red().bold().string(&"-------------------------\n    An error occured!\n-------------------------");
+
+    let _ = err.write_all(err_str.as_bytes());
+    let _ = err.write_all(b"\n");
+
+    if let Some(s) = info_pay.downcast_ref::<&str>() {
+      let _ = err.write_all(format!("Error: {s}\n").as_bytes());
+    } else if let Some(s) = info_pay.downcast_ref::<String>() {
+      let _ = err.write_all(format!("Error: {s}\n").as_bytes());
+    } else {
+      let _ = err.write_all(b"Error: Unknown");
     }
+
+    let err_str = chalk.red().bold().string(&"\n----- TRACE -------------");
+
+    let _ = err.write_all(err_str.as_bytes());
+    let _ = err.write_all(b"\n");
+
+    let loc = info.location().map_or("".to_string(), |x| x.to_string());
+    let _ = err.write_all(loc.as_bytes());
+
+    let err_str = chalk.red().bold().string(&"\n----- FILE AN ISSUE -----");
+
+    let _ = err.write_all(err_str.as_bytes());
+    let _ = err.write_all(b"\nIf you are unable to understand the error, or if its some internal error, file an issue at: https://github.com/leadlang/lead/issues\n\n");
+
+    let _ = err.flush();
+
+    process::exit(1);
+  }));
+
+  let args: Vec<String> = args().collect();
+
+  let cmd0: &str = &args[1];
+
+  match cmd0 {
+    "--prod" => {
+
+    }
+    "run" => {
+        
+    }
+    "docs" => {
+      docs::run_docs();
+    }
+    e => {
+      if e != "help" {
+        println!("Unknown command: {}", e);
+      }
+
+      help::help();
+    }
+  }
 }

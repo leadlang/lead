@@ -28,6 +28,7 @@ pub struct Script {
 pub struct Metadata {
   #[serde(rename = "$schema")]
   pub schema: String,
+  pub entry: String,
   pub name: String,
   pub version: String,
   pub description: String,
@@ -40,6 +41,7 @@ impl Default for Metadata {
   fn default() -> Self {
     Metadata {
       schema: "https://raw.githubusercontent.com/leadlang/lead/refs/heads/main/metadata.schema.json".into(),
+      entry: "./index.pb".into(),
       name: "package".into(),
       version: "1.0.0".into(),
       description: "".into(),

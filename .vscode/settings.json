@@ -8,5 +8,6 @@
     ".\\packages\\core\\Cargo.toml",
     ".\\packages\\std\\Cargo.toml",
     ".\\macros\\Cargo.toml"
-  ]
+  ],
+  "editor.tabSize": 2
 }

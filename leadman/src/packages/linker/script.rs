@@ -9,8 +9,8 @@ pub async fn run_script<P: AsRef<Path>>(script: &Script, cwd: P, prog: &MultiPro
   #[cfg(windows)]
   let shell = "powershell.exe";
 
-  #[cfg(windows)]
-  let shell = "bash";
+  #[cfg(unix)]
+  let shell = "sh";
 
   let mut child = Command::new(shell)
     .arg(if cfg!(windows) {
