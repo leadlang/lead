@@ -16,7 +16,7 @@ pub(crate) mod metadata;
 async fn main() { 
   println!("⚠️ Under Construction ⚠️");
 
-  let mut chalk: Chalk = Chalk::new();
+  let _chalk: Chalk = Chalk::new();
 
   panic::set_hook(Box::new(|info| {
     let mut chalk = Chalk::new();
