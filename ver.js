@@ -39,3 +39,6 @@ for (const value of values) {
 }
 
 writeFileSync("./.version", version);
+
+const meta = readFileSync("./leadman/src/packages/metadata.rs").toString();
+writeFileSync("./lead/src/metadata.rs", meta);

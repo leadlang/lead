@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::{env::args, panic, io::{Write, stderr}, process};
 use chalk_rs::Chalk;
 
