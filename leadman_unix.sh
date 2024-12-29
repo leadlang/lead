@@ -1,12 +1,12 @@
-#!/usr/bin/env bash
+#! /bin/sh
 
 os=$(uname)
 arch=$(uname -m)
 
-BLUE="\e[34m"
-RED="\e[31m"
-GREEN="\e[32m"
-ENDCOLOR="\e[0m"
+BLUE="\033[34m"
+RED="\033[31m"
+GREEN="\033[32m"
+ENDCOLOR="\033[0m"
 
 info="${BLUE}[INFO]${ENDCOLOR}"
 err="${RED}[ERRR]${ENDCOLOR}"
@@ -14,101 +14,101 @@ succ="${GREEN}[SUCC]${ENDCOLOR}"
 
 download=""
 
-echo -e $info Checking OS
+printf "$info Checking OS\n"
 
-tag_name=$(([[ $TAG_NAME != "" ]] && echo $TAG_NAME) || echo "latest")
+tag_name="${TAG_NAME:-latest}"
 
-echo -e $info Found Lead Language Version: $tag_name
+printf "$info Found Lead Language Version: %s\n" "$tag_name"
 
-if [[ $os == 'Linux' || $os == 'Darwin' || $os == 'FreeBSD' || $os == 'NetBSD' ]]; then
-  echo -e "$info $os detected"
+if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$os" = 'NetBSD' ]; then
+  printf "$info $os detected\n"
 
   case "$arch" in
     x86_64|x86-64|amd64|AMD64)
       arch="x86_64"
-      if [[ $os == 'FreeBSD' || $os == 'NetBSD' ]]; then
-        echo -e "$info Lead Docs will fallback to using CLI on BSD systems"
+      if [ "$os" = 'FreeBSD' ] || [ "$os" = 'NetBSD' ]; then
+        printf "$info Lead Docs will fallback to using CLI on BSD systems\n"
       fi
 
       target="${arch}-unknown-linux-gnu"
-      [[ $os == 'Darwin' ]] && target="${arch}-apple-darwin"
-      [[ $os == 'FreeBSD' ]] && target="${arch}-unknown-freebsd"
-      [[ $os == 'NetBSD' ]] && target="${arch}-unknown-netbsd"
+      [ "$os" = 'Darwin' ] && target="${arch}-apple-darwin"
+      [ "$os" = 'FreeBSD' ] && target="${arch}-unknown-freebsd"
+      [ "$os" = 'NetBSD' ] && target="${arch}-unknown-netbsd"
 
-      echo -e "$info Getting Leadman $target"
-      download="https://github.com/leadlang/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      printf "$info Getting Leadman $target\n"
+      download="https://github.com/leadlang/lead/releases/$( ([ "$tag_name" = 'latest' ] && echo 'latest/download') || echo "download/$tag_name")/leadman_$target"
       ;;
     aarch64|arm64|AArch64)
       arch="aarch64"
-      if [[ $os == 'NetBSD' ]]; then
-        echo -e "$err aarch64 version of lead lang is not supported on NetBSD"
+      if [ "$os" = 'NetBSD' ]; then
+        printf "$err aarch64 version of lead lang is not supported on NetBSD\n"
         exit 1
-      elif [[ $os == 'FreeBSD' || $os == 'Linux' ]]; then
-        echo -e "$info Lead Docs will fallback to using CLI on $os aarch64 systems"
+      elif [ "$os" = 'FreeBSD' ] || [ "$os" = 'Linux' ]; then
+        printf "$info Lead Docs will fallback to using CLI on $os aarch64 systems\n"
       fi
       
       target="${arch}-apple-darwin"
-      [[ $os == 'FreeBSD' ]] && target="${arch}-unknown-freebsd"
-      [[ $os == 'Linux' ]] && target="${arch}-unknown-linux-gnu"
+      [ "$os" = 'FreeBSD' ] && target="${arch}-unknown-freebsd"
+      [ "$os" = 'Linux' ] && target="${arch}-unknown-linux-gnu"
 
-      echo -e "$info Getting Leadman $target"
-      download="https://github.com/leadlang/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      printf "$info Getting Leadman $target\n"
+      download="https://github.com/leadlang/lead/releases/$( ([ "$tag_name" = 'latest' ] && echo 'latest/download') || echo "download/$tag_name")/leadman_$target"
       ;;
     aarch32|armv7l|armv6l|armv7|armv6)
       arch="armv7"
-      if [[ $os == 'NetBSD' || $os == 'FreeBSD' ]]; then
-        echo -e "$err aarch32 version of lead lang is not supported on BSD systems"
+      if [ "$os" = 'NetBSD' ] || [ "$os" = 'FreeBSD' ]; then
+        printf "$err aarch32 version of lead lang is not supported on BSD systems\n"
         exit 1
-      elif [[ $os == 'Linux' ]]; then
-        echo -e "$info Lead Docs will fallback to using CLI on $os armv7 systems"
+      elif [ "$os" = 'Linux' ]; then
+        printf "$info Lead Docs will fallback to using CLI on $os armv7 systems\n"
       fi
       
       # target="${arch}-apple-darwin"
-      # [[ $os == 'FreeBSD' ]] && target="${arch}-unknown-freebsd"
-      [[ $os == 'Linux' ]] && target="${arch}-unknown-linux-gnu"
+      # [[ "$os" = 'FreeBSD' ]] && target="${arch}-unknown-freebsd"
+      [ "$os" = 'Linux' ] && target="${arch}-unknown-linux-gnu"
 
-      echo -e "$info Getting Leadman $target"
-      download="https://github.com/leadlang/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      printf "$info Getting Leadman $target"
+      download="https://github.com/leadlang/lead/releases/$( ([ "$tag_name" = 'latest' ] && echo 'latest/download') || echo "download/$tag_name")/leadman_$target"
       ;;
     i386|i486|i586|i686)
       arch="i686"
-      if [[ $os == 'NetBSD' ]]; then
-        echo -e "$err 32-bit version of lead lang is not supported on BSD systems"
+      if [ "$os" = 'NetBSD' ]; then
+        printf "$err 32-bit version of lead lang is not supported on BSD systems\n"
         exit 1
       else
-        echo -e "$err Lead Docs will fallback to using CLI on $os 32 bit systems"
+        printf "$err Lead Docs will fallback to using CLI on $os 32 bit systems\n"
       fi
       
       target="${arch}-unknown-freeebsd"
-      [[ $os == 'Linux' ]] && target="${arch}-unknown-linux-gnu"
+      [ "$os" = 'Linux' ] && target="${arch}-unknown-linux-gnu"
 
-      echo -e "$info Getting Leadman $target"
-      download="https://github.com/leadlang/lead/releases/$([[ $tag_name == 'latest' ]] && echo 'latest/download' || echo "download/$tag_name")/leadman_$target"
+      printf "$info Getting Leadman $target"
+      download="https://github.com/leadlang/lead/releases/$( ([ "$tag_name" = 'latest' ] && echo 'latest/download') || echo "download/$tag_name")/leadman_$target"
       ;;
     *)
-      echo -e "$err Unsupported architecture: $arch"
+      printf "$err Unsupported architecture: $arch"
       exit 1
       ;;
   esac
 else
-  echo -e "$err Unsupported OS: $os"
+  printf "$err Unsupported OS: $os"
   exit 1
 fi
 
 
 tmp=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
 
-echo -e $info Downloading Leadman $download
+printf "$info Downloading Leadman $download \n"
 
-curl -L $download -o $tmp/leadman_init
+curl -L "$download" -o "$tmp/leadman_init"
 
-chmod +x $tmp/leadman_init
+chmod +x "$tmp/leadman_init"
 
-echo -e $info Starting leadman
+printf "$info Starting leadman \n"
 
-$tmp/leadman_init create
+"$tmp/leadman_init" create
 
-rm $tmp/leadman_init
-rmdir $tmp
+rm "$tmp/leadman_init"
+rmdir "$tmp"
 
-echo -e $succ Successfully installed 🎉
+printf "$succ Successfully installed 🎉 \n"

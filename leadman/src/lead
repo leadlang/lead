@@ -1,17 +1,22 @@
-#!/usr/bin/env bash
+#! /bin/sh
 
-RED="\e[31m"
-ENDCOLOR="\e[0m"
+RED="\033[31m"
+ENDCOLOR="\033[0m"
 
 err="${RED}[ERRR]${ENDCOLOR}"
 
-if [[ $1 == "+stable" ]]; then
+if [ -z "$LEAD_HOME" ]; then
+  printf "%b\n" "$err LEAD_HOME is not set. Please reinstall lead programming language."
+  exit 1
+fi
+
+if [ "$1" = "+stable" ]; then
   channel="stable"
   ver=$(cat "$LEAD_HOME/versions/stable")
-elif [[ $1 == "+nightly" ]]; then
+elif [ "$1" = "+nightly" ]; then
   channel="nightly"
   ver=$(cat "$LEAD_HOME/versions/nightly")
-elif [[ $1 == +* && $1 != "+current" ]]; then
+elif [ "${1#?}" != "$1" ] && [ "$1" != "+current" ]; then
   channel=$1
   ver=$(echo $1 | cut -c 2-)
 else
@@ -19,12 +24,12 @@ else
   ver=$(cat "$LEAD_HOME/versions/current")
 fi
 
-if [[ $ver == "" ]]; then
-  echo "$err No version has been found for $channel. Use lead [+stable / +nightly / +version] [args]"
+if [ "$ver" = '' ]; then
+  printf "$err No version has been found for $channel. Use lead [+stable / +nightly / +version] [args]"
   exit 1
 fi
 
-if [[ $1 == +* ]]; then
+if [ "$1" = '+*' ]; then
   shift
 fi
 
