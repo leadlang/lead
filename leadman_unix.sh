@@ -34,9 +34,6 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       [ "$os" = 'Darwin' ] && target="${arch}-apple-darwin"
       [ "$os" = 'FreeBSD' ] && target="${arch}-unknown-freebsd"
       [ "$os" = 'NetBSD' ] && target="${arch}-unknown-netbsd"
-
-      printf "$info Getting Leadman $target\n"
-      download="https://github.com/leadlang/lead/releases/$( ([ "$tag_name" = 'latest' ] && echo 'latest/download') || echo "download/$tag_name")/leadman_$target"
       ;;
     aarch64|arm64|AArch64)
       arch="aarch64"
@@ -50,9 +47,6 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       target="${arch}-apple-darwin"
       [ "$os" = 'FreeBSD' ] && target="${arch}-unknown-freebsd"
       [ "$os" = 'Linux' ] && target="${arch}-unknown-linux-gnu"
-
-      printf "$info Getting Leadman $target\n"
-      download="https://github.com/leadlang/lead/releases/$( ([ "$tag_name" = 'latest' ] && echo 'latest/download') || echo "download/$tag_name")/leadman_$target"
       ;;
     aarch32|armv7l|armv6l|armv7|armv6)
       arch="armv7"
@@ -66,9 +60,6 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       # target="${arch}-apple-darwin"
       # [[ "$os" = 'FreeBSD' ]] && target="${arch}-unknown-freebsd"
       [ "$os" = 'Linux' ] && target="${arch}-unknown-linux-gnu"
-
-      printf "$info Getting Leadman $target"
-      download="https://github.com/leadlang/lead/releases/$( ([ "$tag_name" = 'latest' ] && echo 'latest/download') || echo "download/$tag_name")/leadman_$target"
       ;;
     i386|i486|i586|i686)
       arch="i686"
@@ -81,20 +72,19 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       
       target="${arch}-unknown-freeebsd"
       [ "$os" = 'Linux' ] && target="${arch}-unknown-linux-gnu"
-
-      printf "$info Getting Leadman $target"
-      download="https://github.com/leadlang/lead/releases/$( ([ "$tag_name" = 'latest' ] && echo 'latest/download') || echo "download/$tag_name")/leadman_$target"
       ;;
     *)
-      printf "$err Unsupported architecture: $arch"
+      printf "$err Unsupported architecture: $arch\n"
       exit 1
       ;;
   esac
 else
-  printf "$err Unsupported OS: $os"
+  printf "$err Unsupported OS: $os\n"
   exit 1
 fi
 
+printf "$info Getting Leadman %s\n" "$target"
+download="https://github.com/leadlang/lead/releases/$( ([ "$tag_name" = 'latest' ] && echo 'latest/download') || echo "download/$tag_name")/leadman_$target"
 
 tmp=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
 
