@@ -34,7 +34,7 @@ pub(crate) mod uninstall;
 
 pub static LEAD_ROOT_DIR: LazyLock<String> = LazyLock::new(|| {
   env::var("LEAD_HOME")
-    .expect("LEAD_HOME environment variable not set! Please reinstall the application")
+    .unwrap_or("/this/is/temp".to_string())
 });
 
 pub static TARGET: &'static str = env!("TARGET");
@@ -124,6 +124,10 @@ async fn main() {
   if args.len() < 2 {
     help();
     return;
+  }
+
+  if args[1].as_str() != "create" && &*LEAD_ROOT_DIR == "/this/is/temp" {
+    panic!("LEAD_HOME not set, consider reinstalling lead lang");
   }
 
   match args[1].as_str() {
