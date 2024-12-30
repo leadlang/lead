@@ -20,13 +20,13 @@ tag_name="${TAG_NAME:-latest}"
 
 printf "$info Found Lead Language Version: %s\n" "$tag_name"
 
-if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$os" = 'NetBSD' ]; then
+if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$os" = 'NetBSD' ] || [ "$os" = 'DragonFly' ]; then
   printf "$info $os detected\n"
 
   case "$arch" in
     x86_64|x86-64|amd64|AMD64)
       arch="x86_64"
-      if [ "$os" = 'FreeBSD' ] || [ "$os" = 'NetBSD' ]; then
+      if [ "$os" = 'FreeBSD' ] || [ "$os" = 'NetBSD' ] || [ "$os" = 'DragonFly' ]; then
         printf "$info Lead Docs will fallback to using CLI on BSD systems\n"
       fi
 
@@ -37,8 +37,8 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       ;;
     aarch64|arm64|AArch64)
       arch="aarch64"
-      if [ "$os" = 'NetBSD' ]; then
-        printf "$err aarch64 version of lead lang is not supported on NetBSD\n"
+      if [ "$os" = 'NetBSD' ] || [ "$os" = 'DragonFly' ]; then
+        printf "$err No prebuilt build for aarch64 $os\n"
         exit 1
       elif [ "$os" = 'FreeBSD' ] || [ "$os" = 'Linux' ]; then
         printf "$info Lead Docs will fallback to using CLI on $os aarch64 systems\n"
@@ -50,10 +50,10 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       ;;
     aarch32|armv7l|armv6l|armv7|armv6)
       arch="armv7"
-      if [ "$os" = 'NetBSD' ] || [ "$os" = 'FreeBSD' ]; then
-        printf "$err aarch32 version of lead lang is not supported on BSD systems\n"
+      if [ "$os" = 'NetBSD' ] || [ "$os" = 'FreeBSD' ] || [ "$os" = 'DragonFly' ]; then
+        printf "$err No prebuilt build for aarch32 $os\n"
         exit 1
-      elif [ "$os" = 'Linux' ]; then
+      elif [ "$os" = 'Linux' ] || [ "$os" = 'DragonFly' ]; then
         printf "$info Lead Docs will fallback to using CLI on $os armv7 systems\n"
       fi
       
@@ -63,24 +63,36 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       ;;
     i386|i486|i586|i686)
       arch="i686"
-      if [ "$os" = 'NetBSD' ]; then
-        printf "$err 32-bit version of lead lang is not supported on BSD systems\n"
+      if [ "$os" = 'NetBSD' ] || [ "$os" = 'FreeBSD' ]; then
+        printf "$err No prebuilt build for x86 $os\n"
         exit 1
       else
         printf "$err Lead Docs will fallback to using CLI on $os 32 bit systems\n"
       fi
       
-      target="${arch}-unknown-freeebsd"
+      target="${arch}-unknown-freebsd"
       [ "$os" = 'Linux' ] && target="${arch}-unknown-linux-gnu"
       ;;
     *)
-      printf "$err Unsupported architecture: $arch\n"
+      printf "$err No prebuilt binaries for $arch $os\n"
       exit 1
       ;;
   esac
 else
-  printf "$err Unsupported OS: $os\n"
-  exit 1
+  if [ "$os" = 'SunOS' ] && ![ "$(grep -ic solaris /etc/os-release)" -gt '0' ]; then
+    printf "$info Illumos detected\n"
+
+    if [ "$arch" != 'i86pc' ]; then
+      printf "$err No prebuilt binaries for $arch $os\n"
+      exit 1
+    fi
+
+    arch="x86_64"
+    target="x86_64-unknown-illumos"
+  else
+    printf "$err No prebuilt binaries for $arch $os\n"
+    exit 1
+  fi
 fi
 
 printf "$info Getting Leadman %s\n" "$target"
