@@ -79,7 +79,7 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       ;;
   esac
 else
-  if [ "$os" = 'SunOS' ] && ![ "$(grep -ic solaris /etc/os-release)" -gt '0' ]; then
+  if [ "$os" = 'SunOS' ] && [ "$(grep -ic solaris /etc/os-release)" -eq '0' ]; then
     printf "$info Illumos detected\n"
 
     if [ "$arch" != 'i86pc' ]; then
