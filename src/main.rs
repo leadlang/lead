@@ -25,10 +25,7 @@ fn main() {
 
     dir.push(PathBuf::from_str("./lead").unwrap());
 
-    if !target.contains("bsd")
-        && !target.contains("aarch64-unknown-linux-gnu")
-        && !target.contains("armv7-unknown-linux-gnu")
-        && !target.contains("i686-unknown-linux-gnu")
+    if target.contains("windows") || target.contains("apple") || target.contains("x86_64-unknown-linux-gnu")
     {
         dir.push(PathBuf::from_str("./lead_docs").unwrap());
     } else {
