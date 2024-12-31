@@ -9,5 +9,7 @@
     ".\\packages\\std\\Cargo.toml",
     ".\\macros\\Cargo.toml"
   ],
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "rust-analyzer.cargo.extraArgs": ["--target", "x86_64-pc-windows-msvc"],
+  "rust-analyzer.cargo.allTargets": false
 }

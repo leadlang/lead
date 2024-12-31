@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use crate::types::{Args, Heap, Options};
+use crate::types::{Args, Heap, HeapWrapper, Options};
 
-pub type PackageCallback = fn(&Args, &mut Heap, &mut Heap, &String, &mut Options) -> ();
+pub type PackageCallback = fn(&Args, &mut Heap, HeapWrapper, &String, &mut Options) -> ();
 pub type RuntimeMethodRes = HashMap<&'static str, (&'static str, PackageCallback)>;
 
-pub mod rt_module;
 pub mod _root_syntax;
 
 pub struct RuntimeValue {
@@ -27,7 +26,7 @@ impl RuntimeValue {
     &mut self,
     caller: &str,
     v: &Vec<String>,
-    a: &mut Heap,
+    a: HeapWrapper,
     c: &String,
     o: &mut Options,
   ) -> Option<()> {

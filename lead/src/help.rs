@@ -34,9 +34,10 @@ generate_help!(
 
     format!(" {val}")
   } => "",
-  "  --sysinfo" => "Show sysinfo on load",
-  "  --prod" => "Run as production, same as --log --deny-full-access",
-  "  --log" => "Log Major events",
-  "  --warn-full-access" => "Warn on Full Access requests for packages not mentioned in metadata",
-  "  --deny-full-access" => "Deny Full Access request for packages not mentioned in metadata"
+  "  --prod" => "Same as --log --deny-full-access --no-sysinfo",
+  "  --no-sysinfo" => "Do not show sysinfo on load",
+  "  --log" => "Log Full Heap Access events for packages mentioned in metadata",
+  "  --allow-full-access" => "Silently allow Full Heap Access requests (NOT RECOMMENDED)",
+  "  --warn-full-access" => "Warn on Full Heap Access requests for packages not mentioned in metadata",
+  "  --deny-full-access" => "Deny Full Heap Access request for packages not mentioned in metadata"
 );

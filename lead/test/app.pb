@@ -2,6 +2,7 @@
 
 # $1: os::name $1
 $2: @s"Hello"
+malloc string Hello World
 
 # $3: ahq::mk
 

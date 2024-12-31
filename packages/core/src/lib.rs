@@ -2,7 +2,7 @@
 #![feature(concat_idents)]
 
 use interpreter::{
-  document, error, function, generate, parse, types::{BufValue, Heap, Options}, Package
+  document, error, function, generate, parse, types::{BufValue, HeapWrapper, Options}, Package
 };
 
 mod array;
@@ -22,13 +22,13 @@ impl Package for Core {
   ) -> &'static [(
     &'static str,
     &'static str,
-    for<'a, 'b, 'c, 'd> fn(&'a Vec<String>, &'b mut Heap, &'c String, &'d mut Options),
+    for<'a, 'c, 'd> fn(&'a Vec<String>, HeapWrapper, &'c String, &'d mut Options),
   )] {
     &[
       function! {
         "unwrap",
         document!(""),
-        |args, heap, file, opt| {
+        |args, mut heap, file, opt| {
           parse!(file + heap + args: -> val);
 
           match val {
@@ -47,7 +47,7 @@ impl Package for Core {
         }
       },
       ("malloc", document!(""), malloc),
-      ("drop", document!(""), |args, heap, file, _| {
+      ("drop", document!(""), |args, mut heap, file, _| {
         parse!(file + heap + args: -> var);
         drop(var);
       }),
@@ -103,9 +103,9 @@ impl Package for Core {
   }
 }
 
-fn malloc<'a, 'b, 'c, 'd>(
+fn malloc<'a, 'c, 'd>(
   args: &'a Vec<String>,
-  _: &'b mut Heap,
+  _: HeapWrapper,
   file: &'c String,
   opt: &'d mut Options,
 ) {

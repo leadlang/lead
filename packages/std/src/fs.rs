@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs::File};
 
-use interpreter::{document, function, methods, module, parse, pkg_name, runtime::RuntimeValue, types::{AnyWrapper, BufValue, Heap, Options}};
+use interpreter::{document, function, methods, module, parse, pkg_name, runtime::RuntimeValue, types::{AnyWrapper, BufValue, Heap, HeapWrapper, Options}};
 
 module! {
   Fs,
@@ -17,7 +17,7 @@ module! {
         let file = File::open(path);
 
         let mut resp = RuntimeValue::new("fs/file", {
-          let mut map: HashMap<&'static _, (&'static _, for<'a, 'b, 'c, 'd, 'e> fn(&'a Vec<String>, &'b mut Heap, &'c mut Heap, &'d String, &'e mut Options))> = HashMap::new();
+          let mut map: HashMap<&'static _, (&'static _, for<'a, 'c, 'd, 'e> fn(&'a Vec<String>, &'c mut Heap, HeapWrapper, &'d String, &'e mut Options))> = HashMap::new();
 
           map.insert("print", ("", |_args, _inner, _outer, _, _| {
             println!();

@@ -29,7 +29,7 @@ $to_push: malloc string Hello
 
 array::push ->&$var ->$to_push
 ```
-"#, |args, heap, file, _| {
+"#, |args, mut heap, file, _| {
       parse!(file + heap + args: str arr, -> value);
 
       get_mut!(file + heap: Array arr);
@@ -46,7 +46,7 @@ array::push ->&$var ->$to_push
 array::push_if_cap_available ->&array ->$val
 ```
 
-⚠️ It may reject silent if size isn't within capacity, not recommended"#, |args, heap, file, _| {
+⚠️ It may reject silent if size isn't within capacity, not recommended"#, |args, mut heap, file, _| {
       parse!(file + heap + args: str arr, -> value);
 
       get_mut!(file + heap: Array arr);
@@ -61,7 +61,7 @@ array::pop ->&$array
 
 # If you want to collect it
 $var: array::pop ->&$array
-```    ", |args, heap, file, opt| {
+```    ", |args, mut heap, file, opt| {
       parse!(file + heap + args: str arr);
 
       get_mut!(file + heap: Array arr);
@@ -99,7 +99,7 @@ array::clear ->&array
 ```
 
 ## Note:
-It is advisable to drop() the array if you want to clear it from memory", |args, heap, file, _| {
+It is advisable to drop() the array if you want to clear it from memory", |args, mut heap, file, _| {
       parse!(file + heap + args: str arr);
 
       get_mut!(file + heap: Array arr);

@@ -5,7 +5,7 @@ use std::{
 
 use crate::{error, runtime::RuntimeValue};
 
-use super::{BufValue, Options, PackageCallback};
+use super::{BufValue, HeapWrapper, Options, PackageCallback};
 
 #[derive(Debug)]
 pub enum BufKeyVal {
@@ -42,7 +42,7 @@ pub fn set_runtime_val(key: String, module: &'static str, val: RawRTValue) {
 pub fn call_runtime_val(
   key: &str,
   v: &Vec<String>,
-  a: &mut Heap,
+  a: HeapWrapper,
   c: &String,
   o: &mut Options,
   file: &str

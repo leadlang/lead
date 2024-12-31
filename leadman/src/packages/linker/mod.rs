@@ -46,6 +46,10 @@ pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
   for (k, v) in &meta.dependencies {
     let hash = digest(format!("{k}@{v}"));
 
+    let meta = format!("./.pkgcache/{hash}/pkgcache");
+
+    let resp: LibraryMeta = from_str(&fs::read_to_string(meta).await.expect("Error reading")).expect("Unable to parse");
+
     let platform_cwd = format!("./.pkgcache/{hash}/lib/{}", TARGET);
 
     if !fs::metadata(&platform_cwd).await.expect("Unable to get metadata").is_dir() {
@@ -53,6 +57,7 @@ pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
     }
 
     copy_dir(&platform_cwd, format!("./lib/{hash}")).await;
+    fs::write(format!("./lib/{hash}/lead.lookup.lkp"), resp.package).await;
 
     let doc = format!("./lib/{hash}/docs");
 
@@ -62,6 +67,7 @@ pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
           println!("      ⚠️  Replacing file named docs in {k}@{v} for target {TARGET}");
         });
         fs::remove_file(&doc).await;
+        fs::copy(format!("./.pkgcache/{hash}/docs"), doc).await.expect("Unable to copy docs");
       }
       _ => {
         print.suspend(|| {

@@ -2,7 +2,7 @@
 #![feature(trait_alias)]
 #![feature(concat_idents)]
 
-use std::{collections::HashMap, fs, process};
+use std::{collections::HashMap, process};
 
 #[macro_use]
 pub mod macros;
@@ -54,12 +54,14 @@ pub struct Application<'a> {
   // Resolve files
   module_resolver: Box<dyn FnMut(&str) -> Vec<u8>>,
   // Resolve path from mod name
-  pkg_resolver: Box<dyn FnMut(&str) -> RespPackage>
+  pkg_resolver: Box<dyn FnMut(&str) -> RespPackage>,
+  // Log in case of full access request
+  log_info: Box<dyn FnMut(&str) -> ()>
 }
 
 impl<'a> Application<'a> {
-  pub fn new<T: FnMut(&str) -> Vec<u8> + 'static, F: FnMut(&str) -> RespPackage + 'static>(file: &'a str, fs_resolver: T, dll_resolver: F) -> Self {
-    let main = fs::read_to_string(&file).unwrap();
+  pub fn new<T: FnMut(&str) -> Vec<u8> + 'static, F: FnMut(&str) -> RespPackage + 'static, R: FnMut(&str) -> () + 'static>(file: &'a str, mut fs_resolver: T, dll_resolver: F, requested_perm: R) -> Self {
+    let main = String::from_utf8(fs_resolver(file)).expect("Invalid utf8");
 
     let mut code = HashMap::new();
     code.insert(":entry".to_string(), main);
@@ -72,7 +74,8 @@ impl<'a> Application<'a> {
       rt_mod_map: HashMap::new(),
       module_resolver: Box::new(fs_resolver),
       markers: HashMap::new(),
-      pkg_resolver: Box::new(dll_resolver)
+      pkg_resolver: Box::new(dll_resolver),
+      log_info: Box::new(requested_perm)
     }
   }
 

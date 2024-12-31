@@ -1,11 +1,13 @@
 mod alloc;
 mod fns;
 mod heap;
+mod heap_wrap;
 use std::{any::Any, collections::HashMap, fmt::Debug, ops::Deref};
 
 pub use alloc::*;
 pub use fns::*;
 pub use heap::*;
+pub use heap_wrap::*;
 
 use crate::runtime::RuntimeValue;
 

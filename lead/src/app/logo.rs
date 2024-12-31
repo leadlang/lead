@@ -23,6 +23,11 @@ fn get_sys_info() -> Vec<String> {
     let ram = sys.total_memory();
     resp.push(format!("{:<8}: {}/{} MB", "Memory", free/1000000, ram/1000000));
   }
+
+  resp.push("".into());
+  resp.push("Lead Language".into());
+  resp.push(format!("{:<8}: {}", "Version", env!("CARGO_PKG_VERSION")));
+  resp.push(format!("{:<8}: {}", "Target", env!("TARGET")));
   
   resp
 }
@@ -54,4 +59,7 @@ pub fn render_lead_logo() {
 
     write!(&mut stdout, "\n").unwrap();
   }
+
+  stdout.set_color(ColorSpec::new().set_fg(None)).unwrap();
+  writeln!(&mut stdout, "");
 }

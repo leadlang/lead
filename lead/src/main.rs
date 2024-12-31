@@ -60,14 +60,14 @@ async fn main() {
 
   let mut args: Vec<String> = args().collect();
 
-  let cmd0: &str = &args[1];
+  let cmd0: &str = if args.len() > 1 { &args[1] } else { "run-q" };
 
   match cmd0 {
-    "--prod" => {
-      app::run(&args[1..], &mut chalk);
+    "run-q" => {
+      app::run(&[], &mut chalk).await;
     }
     "run" => {
-      app::run(&args[2..], &mut chalk);
+      app::run(&args[2..], &mut chalk).await;
     }
     "docs" => {
       let args = args.drain(2..).collect::<Vec<_>>();

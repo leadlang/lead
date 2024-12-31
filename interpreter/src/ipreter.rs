@@ -1,5 +1,5 @@
 use crate::{
-  error, runtime::_root_syntax::insert_into_application, types::{call_runtime_val, mkbuf, set_runtime_val, MethodData, Options, RawRTValue}, Application
+  error, runtime::_root_syntax::insert_into_application, types::{call_runtime_val, mkbuf, set_runtime_val, HeapWrapper, MethodData, Options, RawRTValue}, Application
 };
 
 pub fn interpret(file: &str, mut app: &mut Application) {
@@ -53,7 +53,19 @@ fn tok_parse(file: String, piece: &str, app: &mut Application, line: &mut usize)
       let _ = app.heap.set(to_set, mkbuf(&caller, &file));
     }
   } else if caller.starts_with("$") {
-    match call_runtime_val(caller, &tokens, &mut app.heap, &file, &mut opt, &file) {
+    let app_ptr = app as *mut _;
+    let app_heap_ptr = &mut app.heap as *mut _;
+    let tokens_ptr = &tokens as *const _;
+    let caller_ptr = caller as *const _;
+
+    let wrap = HeapWrapper {
+      heap: unsafe { &mut *app_heap_ptr },
+      args: unsafe { &*tokens_ptr },
+      pkg_name: unsafe { &*caller_ptr },
+      app: app_ptr,
+    };
+
+    match call_runtime_val(caller, &tokens, wrap, &file, &mut opt, &file) {
       None => if &caller != &"" {
         error(&format!("Unexpected `{}`", &caller), &file);
       },
@@ -72,12 +84,23 @@ fn tok_parse(file: String, piece: &str, app: &mut Application, line: &mut usize)
       }
     }
   } else {
+    let app_ptr = app as *mut _;
+    let app_heap_ptr = &mut app.heap as *mut _;
+    let tokens_ptr = &tokens as *const _;
+
     match app.pkg.inner.get_mut(caller) {
       Some(MethodData::Static(p, v)) => {
-        v(&tokens, &mut app.heap, &file, &mut opt);
-
         let pkg: *const str = *p as *const _;
         let pkg = unsafe { &*pkg };
+
+        let wrap = HeapWrapper {
+          heap: unsafe { &mut *app_heap_ptr },
+          args: unsafe { &*tokens_ptr },
+          pkg_name: pkg,
+          app: app_ptr,
+        };
+
+        v(&tokens, wrap, &file, &mut opt);
 
         opt.pre = pkg.to_string();
 

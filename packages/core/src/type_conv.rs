@@ -7,7 +7,7 @@ module! {
     function! {
       "str::to_int",
       document!(""),
-      |args, heap, file, _| {
+      |args, mut heap, file, _| {
         parse!(file + heap + args: > main, -> second);
 
         let val = BufValue::Faillable(
@@ -20,7 +20,7 @@ module! {
           }
         );
 
-        heap.set(main.into(), val);
+        heap.upgrade().set(main.into(), val);
       }
     }
   }
