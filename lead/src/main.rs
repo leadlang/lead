@@ -18,7 +18,7 @@ pub(crate) mod metadata;
 async fn main() { 
   println!("⚠️ Under Construction ⚠️");
 
-  let _chalk: Chalk = Chalk::new();
+  let mut chalk: Chalk = Chalk::new();
 
   panic::set_hook(Box::new(|info| {
     let mut chalk = Chalk::new();
@@ -58,19 +58,20 @@ async fn main() {
     process::exit(1);
   }));
 
-  let args: Vec<String> = args().collect();
+  let mut args: Vec<String> = args().collect();
 
   let cmd0: &str = &args[1];
 
   match cmd0 {
     "--prod" => {
-
+      app::run(&args[1..], &mut chalk);
     }
     "run" => {
-        
+      app::run(&args[2..], &mut chalk);
     }
     "docs" => {
-      docs::run_docs();
+      let args = args.drain(2..).collect::<Vec<_>>();
+      docs::run_docs(&args);
     }
     e => {
       if e != "help" {

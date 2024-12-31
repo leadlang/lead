@@ -35,6 +35,9 @@ pub struct Metadata {
   pub authors: Vec<String>,
   pub keywords: Vec<String>,
   pub dependencies: HashMap<String, String>,
+
+  #[serde(rename = "allowFullAccessToPackagesNamed")]
+  pub allow_full_access_to_packages_named: Vec<String>
 }
 
 impl Default for Metadata {
@@ -48,6 +51,7 @@ impl Default for Metadata {
       authors: vec!["You".into()],
       keywords: vec![],
       dependencies: HashMap::new(),
+      allow_full_access_to_packages_named: vec![]
     }
   }
 }
