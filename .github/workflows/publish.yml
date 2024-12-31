@@ -256,8 +256,6 @@ jobs:
           - x86_64-unknown-illumos
           - x86_64-unknown-dragonfly
 
-          - x86_64-pc-solaris
-
     runs-on: ubuntu-24.04
 
     steps:
