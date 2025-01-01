@@ -16,8 +16,6 @@ pub(crate) mod metadata;
 ///
 #[tokio::main]
 async fn main() { 
-  println!("⚠️ Under Construction ⚠️");
-
   let mut chalk: Chalk = Chalk::new();
 
   panic::set_hook(Box::new(|info| {

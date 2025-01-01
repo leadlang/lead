@@ -4,8 +4,10 @@
 $2: @s"Hello"
 malloc string Hello World
 
+updrate
+
 # $3: ahq::mk
 
 # $3::test
 
-print $1 $2
+# print $1 $2

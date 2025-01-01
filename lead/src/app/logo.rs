@@ -32,7 +32,7 @@ fn get_sys_info() -> Vec<String> {
   resp
 }
 
-pub fn render_lead_logo() {
+pub fn render_lead_logo(monochrome: bool) {
   let mut stdout = StandardStream::stdout(ColorChoice::Always);
 
   let logo = include!("./logo.bin");
@@ -52,7 +52,21 @@ pub fn render_lead_logo() {
     write!(&mut stdout, "{:<60}", dat).unwrap();
 
     for [r, g, b] in stream {
-      stdout.set_color(ColorSpec::new().set_fg(Some(Color::Rgb(r, g, b)))).unwrap();
+      if monochrome {
+        let r = r as u16;
+        let g = g as u16;
+        let b = b as u16;
+
+        let avg = (r + g + b) / 3;
+
+        if avg > 128 {
+          stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black))).unwrap();
+        } else {
+          stdout.set_color(ColorSpec::new().set_fg(Some(Color::White))).unwrap();
+        }
+      } else {
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Rgb(r, g, b)))).unwrap();
+      }
 
       write!(&mut stdout, "{}", fill).unwrap();
     }

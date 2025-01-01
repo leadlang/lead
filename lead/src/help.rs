@@ -35,6 +35,7 @@ generate_help!(
     format!(" {val}")
   } => "",
   "  --prod" => "Same as --log --deny-full-access --no-sysinfo",
+  "  --monochrome-logo" => "Enables monochrome variant of the lead logo",
   "  --no-sysinfo" => "Do not show sysinfo on load",
   "  --log" => "Log Full Heap Access events for packages mentioned in metadata",
   "  --allow-full-access" => "Silently allow Full Heap Access requests (NOT RECOMMENDED)",

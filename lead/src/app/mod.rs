@@ -17,6 +17,7 @@ enum FullAccessLevel {
 
 struct Options {
   sysinfo: bool,
+  monochrome: bool,
   full_access: FullAccessLevel,
   log: bool,
 }
@@ -41,33 +42,42 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
   let data = metadata::get_meta().await;
   
   if options.sysinfo {
-    logo::render_lead_logo();
+    logo::render_lead_logo(options.monochrome);
   }
 
+  let chalk_1_mut: *mut Chalk = unsafe { chalk as *mut _ };
+  let chalk_2_mut: *mut Chalk = unsafe { chalk as *mut _ };
   let pkgmap = create_pkg_map();
 
+  // We are guaranteed that the closures run in the single thread & NOT AT THE SAME TIME.
   let mut application = Application::new(&data.entry, |path| fs::read(path).expect("Unable to read file"), |name| {
     todo!();
   }, move |pkg_name| {
-    let mut chalk = Chalk::new();
+    let chalk = unsafe { &mut *chalk_1_mut };
 
     let pkg_name: &String = &pkg_name.into();
 
     if data.allow_full_access_to_packages_named.contains(pkg_name) && options.log {
       chalk.blue().print(&"[INFO] ");
-      println!("{pkg_name} has been granted full heap access");
+      chalk.blue().print(&format!("{pkg_name} "));
+
+      println!("has been granted full heap access");
     }
 
     if !data.allow_full_access_to_packages_named.contains(pkg_name) {
       match options.full_access {
         FullAccessLevel::SilentlyAllow => {}
         FullAccessLevel::Warn => {
-          chalk.blue().print(&"[WARN] ");
-          println!("{pkg_name} was been granted full heap access");
+          chalk.yellow().print(&"[WARN] ");
+          chalk.blue().print(&format!("{pkg_name} "));
+
+          println!("was been granted full heap access");
         }
         FullAccessLevel::Deny => {
-          chalk.blue().print(&"[ERRR] ");
-          println!("{pkg_name} tried to get full heap access\n       Exiting");
+          chalk.red().print(&"[ERRR] ");
+          chalk.blue().print(&format!("{pkg_name} "));
+          
+          println!(" tried to get full heap access\n       ❌ Access Denied, Exiting");
         }
       }
     }
@@ -137,7 +147,8 @@ fn parse(args: &[String]) -> Options {
   let mut opt = Options {
     sysinfo: true,
     log: false,
-    full_access: FullAccessLevel::Warn
+    full_access: FullAccessLevel::Warn,
+    monochrome: false
   };
 
   args.iter().for_each(|v| match v.as_str() {
@@ -146,6 +157,7 @@ fn parse(args: &[String]) -> Options {
       opt.log = true;
       opt.full_access = FullAccessLevel::Deny;
     }
+    "--monochrome-logo" => opt.monochrome = true,
     "--no-sysinfo" => opt.sysinfo = false,
     "--log" => opt.log = true,
     "--warn-full-access" => opt.full_access = FullAccessLevel::Warn,
