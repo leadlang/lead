@@ -7,7 +7,7 @@ const date = new Date();
 
 let month = date.getMonth() + 1;
 
-if (date.getDate() == 1 && date.getMonth() == 1) {
+if (date.getDate() == 1 && month == 1) {
   month = 0;
 }
 
