@@ -4,8 +4,6 @@
 $2: @s"Hello"
 malloc string Hello World
 
-updrate
-
 # $3: ahq::mk
 
 # $3::test
