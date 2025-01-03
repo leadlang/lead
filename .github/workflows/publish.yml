@@ -283,7 +283,6 @@ jobs:
           - aarch64-linux-android
           - armv7-linux-androideabi
           - i686-linux-android
-          - thumbv7neon-linux-androideabi
           - x86_64-linux-android
 
     runs-on: ubuntu-24.04
