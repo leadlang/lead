@@ -229,6 +229,30 @@ jobs:
           asset_name: leadman_${{ matrix.target }}.exe
           upload_url: ${{ needs.tag.outputs.upload }}
 
+      - name: Publish Leadman SO
+        uses: shogo82148/actions-upload-release-asset@v1
+        if: matrix.runner == 'ubuntu-latest'
+        with:
+          asset_path: ./leadman/target/${{ matrix.target }}/release/libleadman_lib.so
+          asset_name: libleadman_${{ matrix.target }}.so
+          upload_url: ${{ needs.tag.outputs.upload }}
+
+      - name: Publish Leadman Dylib
+        uses: shogo82148/actions-upload-release-asset@v1
+        if: matrix.runner == 'macos-latest'
+        with:
+          asset_path: ./leadman/target/${{ matrix.target }}/release/libleadman_lib.dylib
+          asset_name: libleadman_${{ matrix.target }}.dylib
+          upload_url: ${{ needs.tag.outputs.upload }}
+
+      - name: Publish Leadman DLL
+        uses: shogo82148/actions-upload-release-asset@v1
+        if: matrix.runner == 'windows-latest'
+        with:
+          asset_path: ./leadman/target/${{ matrix.target }}/release/libleadman_lib.dll
+          asset_name: leadman_${{ matrix.target }}_lib.dll
+          upload_url: ${{ needs.tag.outputs.upload }}
+
       - name: Publish
         uses: shogo82148/actions-upload-release-asset@v1
         with:
@@ -257,7 +281,6 @@ jobs:
           - x86_64-unknown-dragonfly
 
           - aarch64-linux-android
-          - arm-linux-androideabi
           - armv7-linux-androideabi
           - i686-linux-android
           - thumbv7neon-linux-androideabi
@@ -309,11 +332,18 @@ jobs:
           cross +nightly build --target ${{ matrix.target }} --release
         working-directory: leadman
 
-      - name: Publish Linux / Macos Bin
+      - name: Publish Unix Bin
         uses: shogo82148/actions-upload-release-asset@v1
         with:
           asset_path: ./leadman/target/${{ matrix.target }}/release/leadman
           asset_name: leadman_${{ matrix.target }}
+          upload_url: ${{ needs.tag.outputs.upload }}
+
+      - name: Publish Leadman SO
+        uses: shogo82148/actions-upload-release-asset@v1
+        with:
+          asset_path: ./leadman/target/${{ matrix.target }}/release/libleadman_lib.so
+          asset_name: libleadman_${{ matrix.target }}.so
           upload_url: ${{ needs.tag.outputs.upload }}
 
       - name: Publish

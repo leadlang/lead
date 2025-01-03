@@ -24,7 +24,7 @@ macro_rules! generate_help {
 }
 
 generate_help!(
-  env!("CARGO_BIN_NAME"),
+  "lead",
   "help" => "Prints this help message",
   "docs" => "Shows the docs [runs lead_docs]",
   "run [..args]" => "Run lead script based on metadata.json",

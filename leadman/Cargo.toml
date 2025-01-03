@@ -8,6 +8,10 @@ authors = ["AHQ", "The AHQ Softwares' Lead lang Team"]
 license = "MIT"
 rust-version = "1.81"
 
+[lib]
+name = "leadman_lib"
+crate-type = ["rlib", "cdylib"]
+
 [dependencies]
 chalk_rs = "1"
 chrono = "0.4"

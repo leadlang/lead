@@ -3,6 +3,11 @@ name = "lead_docs"
 version = "0.0.0-dev-lead-lang"
 edition = "2021"
 
+
+[lib]
+name = "lead_docs_lib"
+crate-type = ["rlib", "cdylib"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

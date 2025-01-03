@@ -1,3 +1,3 @@
 fn main() {
-    println!("⚠️ Under Construction ⚠️");
+  lead_docs_lib::run();
 }
