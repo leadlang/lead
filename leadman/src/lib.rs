@@ -76,7 +76,7 @@ pub fn run(args: Vec<String>) {
     });
 }
 
-async fn main(args: Vec<String>) {
+async fn main(mut args: Vec<String>) {
   let mut chalk = Chalk::new();
 
   panic::set_hook(Box::new(|info| {
