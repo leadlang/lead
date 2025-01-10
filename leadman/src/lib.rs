@@ -4,7 +4,7 @@ use chrono::{Datelike, Local};
 use indicatif::ProgressBar;
 use packages::PackageAction;
 use std::{
-  env::{self, args}, io::{stderr, Write}, process, panic, sync::LazyLock, time::Duration
+  env::self, io::{stderr, Write}, process, panic, sync::LazyLock, time::Duration
 };
 use tokio::time::sleep;
 use utils::check_update;
@@ -64,7 +64,7 @@ fn show_update_message(chalk: &mut Chalk) {
 }
 
 #[no_mangle]
-pub fn run() {
+pub fn run(args: Vec<String>) {
   use tokio::runtime::Builder;
 
   Builder::new_multi_thread()
@@ -72,11 +72,11 @@ pub fn run() {
     .build()
     .unwrap()
     .block_on(async {
-      main().await;
+      main(args).await;
     });
 }
 
-async fn main() {
+async fn main(args: Vec<String>) {
   let mut chalk = Chalk::new();
 
   panic::set_hook(Box::new(|info| {
@@ -117,8 +117,6 @@ async fn main() {
     process::exit(1);
   }));
 
-  let mut args = args().collect::<Vec<_>>();
-
   prefix(&mut chalk);
 
   let bar = ProgressBar::new_spinner().with_message("Checking for self update...");
@@ -132,6 +130,8 @@ async fn main() {
   if update {
     show_update_message(&mut chalk);
   }
+
+  println!("[DEBUG] Args {args:?}");
 
   if args.len() < 2 {
     help();
