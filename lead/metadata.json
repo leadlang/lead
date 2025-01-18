@@ -6,6 +6,7 @@
   "description": "",
   "authors": ["You"],
   "keywords": [],
+  "pkver": 1,
   "dependencies": {
     "gh:leadlang/pkg": "latest"
   },

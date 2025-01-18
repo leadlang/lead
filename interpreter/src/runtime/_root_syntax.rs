@@ -28,10 +28,10 @@ pub fn insert_into_application(app: *mut Application, args: &Vec<String>, line: 
 
       let mut pkg = HashMap::new();
 
-      for (sig, _, call) in methods {
+      for (sig, call) in methods {
         pkg.insert(sig.to_string(), *call);
       }
-      for (sig, _, call) in dyn_methods {
+      for (sig, call) in dyn_methods {
         pkg.insert(sig.to_string(), call);
       }
 

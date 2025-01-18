@@ -4,7 +4,7 @@ use chrono::{Datelike, Local};
 use indicatif::ProgressBar;
 use packages::PackageAction;
 use std::{
-  env::self, io::{stderr, Write}, process, panic, sync::LazyLock, time::Duration
+  env, io::{stderr, Write}, process, panic, sync::LazyLock, time::Duration
 };
 use tokio::time::sleep;
 use utils::check_update;
@@ -172,6 +172,15 @@ async fn main(mut args: Vec<String>) {
     "remove" => {
       let args: Vec<String> = args.drain(2..).collect();
       packages::handle(&mut chalk, PackageAction::Remove, args).await;
+    }
+    "link" => {
+      packages::link(&mut chalk).await;
+    }
+    "pkgs" => {
+      packages::list(&mut chalk).await;
+    }
+    "reinstall" | "rei" | "i" | "install" => {
+      packages::install(&mut chalk).await;
     }
     // Undocumented
     "replace" => {

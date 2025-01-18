@@ -1,13 +1,12 @@
 {
   "rust-analyzer.linkedProjects": [
-    ".\\Cargo.toml",
     ".\\interpreter\\Cargo.toml",
     ".\\lead\\Cargo.toml",
+    ".\\lead_docs_lib\\Cargo.toml",
     ".\\lead_docs_cli\\Cargo.toml",
     ".\\leadman\\Cargo.toml",
     ".\\packages\\core\\Cargo.toml",
-    ".\\packages\\std\\Cargo.toml",
-    ".\\macros\\Cargo.toml"
+    ".\\packages\\std\\Cargo.toml"
   ],
   "editor.tabSize": 2,
   "rust-analyzer.cargo.extraArgs": ["--target", "x86_64-pc-windows-msvc"],

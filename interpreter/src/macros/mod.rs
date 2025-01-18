@@ -56,10 +56,9 @@ macro_rules! document {
 
 #[macro_export]
 macro_rules! function {
-  ($name:literal, $docs:expr, $($x:tt)*) => {
+  ($name:literal, $($x:tt)*) => {
     {
-      const DOC: &'static str = $docs;
-      ($name, DOC, $($x)*
+      ($name, $($x)*
       )
     }
   };

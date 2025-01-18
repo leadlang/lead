@@ -1,5 +1,5 @@
 use std::{
-  fs::{self, create_dir_all},
+  fs,
   path::PathBuf,
   process::Command,
   str::FromStr,
@@ -42,68 +42,19 @@ fn main() {
         "run",
         "nightly",
         "cargo",
-        {
-          if path.to_string_lossy().contains("lead") {
-            "build"
-          } else {
-            "run"
-          }
-        },
+        "build",
         #[cfg(not(debug_assertions))]
         "--release",
       ])
     } else {
       cmd.args([
         "+nightly",
-        {
-          if path.to_string_lossy().contains("lead") {
-            "build"
-          } else {
-            "run"
-          }
-        },
+        "build",
         #[cfg(not(debug_assertions))]
         "--release",
       ])
     };
-
-    if !path.to_string_lossy().contains("lead") {
-      // Build for target necessary
-      if cross {
-        let mut cmd = Command::new("cross");
-        cmd.args([
-          "+nightly",
-          "build",
-          "--target",
-          target,
-          #[cfg(not(debug_assertions))]
-          "--release",
-        ]);
-        cmd
-      } else {
-        let mut cmd = Command::new("rustup");
-        cmd.args([
-          "run",
-          "nightly",
-          "cargo",
-          "build",
-          "--target",
-          target,
-          #[cfg(not(debug_assertions))]
-          "--release",
-        ]);
-
-        cmd
-      }
-      .current_dir(&path)
-      .spawn()
-      .unwrap()
-      .wait()
-      .unwrap();
-    } else {
-      // Build for target necessary
-      cmd.args(["--target", target]);
-    }
+    cmd.args(["--target", target]);
 
     let cmd = cmd
       .current_dir(&path)
@@ -153,23 +104,6 @@ fn main() {
         fs::copy(&path, format!("./build/lib/{}", name)).unwrap();
       }
     }
-  }
-
-  let pkg_docs = [
-    ("./packages/core/docs/", "./build/docs/core"),
-    ("./packages/std/docs/", "./build/docs/std"),
-  ];
-
-  use fs_extra::dir::{copy, CopyOptions};
-
-  let mut options = CopyOptions::new();
-  options.overwrite = true;
-  options.content_only = true;
-  options.copy_inside = true;
-
-  for (pkg, out) in pkg_docs {
-    create_dir_all(&out).unwrap();
-    copy(&pkg, &out, &options).unwrap();
   }
 
   #[cfg(windows)]

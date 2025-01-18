@@ -2,7 +2,7 @@
 #![feature(concat_idents)]
 
 use interpreter::{
-  document, error, function, generate, parse, types::{BufValue, HeapWrapper, Options}, Package
+  error, function, generate, parse, types::{BufValue, HeapWrapper, Options}, Package
 };
 
 mod array;
@@ -21,13 +21,11 @@ impl Package for Core {
     &self,
   ) -> &'static [(
     &'static str,
-    &'static str,
     for<'a, 'c, 'd> fn(&'a Vec<String>, HeapWrapper, &'c String, &'d mut Options),
   )] {
     &[
       function! {
         "unwrap",
-        document!(""),
         |args, mut heap, file, opt| {
           parse!(file + heap + args: -> val);
 
@@ -46,12 +44,12 @@ impl Package for Core {
           }
         }
       },
-      ("malloc", document!(""), malloc),
-      ("drop", document!(""), |args, mut heap, file, _| {
+      ("malloc",  malloc),
+      ("drop",  |args, mut heap, file, _| {
         parse!(file + heap + args: -> var);
         drop(var);
       }),
-      ("typeof", document!(""), |args, heap, file, opt| {
+      ("typeof",  |args, heap, file, opt| {
         let [_, var,] = &args[..] else {
           error(
             r#"Invalid arguments in :typeof
@@ -68,7 +66,7 @@ impl Package for Core {
           None => error(&format!("Variable {} not found", var), file),
         }
       }),
-      ("comp", document!(""), |args, val, file, opt| {
+      ("comp",  |args, val, file, opt| {
         let [_, a, f, b] = &args[..] else {
           error(
             r#"Invalid arguments in :comp

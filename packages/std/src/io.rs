@@ -1,11 +1,11 @@
-use interpreter::{document, function, methods, module, pkg_name, runtime::RuntimeValue, types::{BufValue, *}, Chalk};
-use std::collections::HashMap;
+use interpreter::{function, methods, module, pkg_name, runtime::RuntimeValue, types::{BufValue, *}, Chalk};
+use std::{collections::HashMap, env::consts::{OS, ARCH}};
 
 module!(
   IO,
   pkg_name! {"📦 Lead Programming Language / IO"}
   methods! {
-    function!("print", document!(), |args, heap, _, _| {
+    function!("print", |args, heap, _, _| {
       let args = &args[1..];
       let args = args
         .iter()
@@ -30,17 +30,8 @@ module!(
     }),
     function! {
       "os::name",
-      document!(""),
       |_, _, _, opt| {
-        opt.set_return_val(if cfg!(windows) {
-          BufValue::Str("Win32".into())
-        } else if cfg!(target_os = "macos") {
-          BufValue::Str("MacOS".into())
-        } else if cfg!(target_os = "linux") {
-          BufValue::Str("Linux".into())
-        } else {
-          BufValue::Str("Unknown".into())
-        });
+        opt.set_return_val(BufValue::Str(format!("{OS}_{ARCH}")));
       }
     }
   }
@@ -52,7 +43,6 @@ module!(
   methods! {
     function! {
       "ahq::mk",
-      document!(""),
       |_, _, _, opt| {
         opt.set_r_runtime(RuntimeValue::new("core/str_string", {
           let mut map: HashMap<&'static _, (&'static _, for<'a, 'b, 'd, 'e> fn(&'a Vec<String>, &'b mut Heap, HeapWrapper, &'d String, &'e mut Options))> = HashMap::new();

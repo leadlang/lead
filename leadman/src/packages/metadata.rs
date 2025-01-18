@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string_pretty};
 use tokio::fs;
 
+const METADATA_VER: u16 = 1;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LibraryMeta {
   pub package: String,
@@ -36,6 +38,8 @@ pub struct Metadata {
   pub keywords: Vec<String>,
   pub dependencies: HashMap<String, String>,
 
+  pub pkver: u16,
+
   #[serde(rename = "allowFullAccessToPackagesNamed")]
   pub allow_full_access_to_packages_named: Vec<String>
 }
@@ -48,6 +52,7 @@ impl Default for Metadata {
       name: "package".into(),
       version: "1.0.0".into(),
       description: "".into(),
+      pkver: METADATA_VER,
       authors: vec!["You".into()],
       keywords: vec![],
       dependencies: HashMap::new(),

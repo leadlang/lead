@@ -4,7 +4,7 @@ use std::{collections::HashMap, fs};
 use std::env::consts::{DLL_PREFIX, DLL_EXTENSION};
 use chalk_rs::Chalk;
 use interpreter::types::{DynMethodRes, MethodRes};
-use interpreter::Application;
+use interpreter::{Application, Package as Pkg};
 
 use super::metadata;
 use dlopen2::wrapper::{Container, WrapperApi};
@@ -28,7 +28,7 @@ static mut LIBS: Option<HashMap<usize, Container<Package>>> = None;
 
 #[derive(WrapperApi)]
 struct Package {
-  modules: fn() -> Vec<(&'static [u8], MethodRes, DynMethodRes)>,
+  modules: fn() -> Vec<Box<dyn Pkg>>,
 }
 
 
@@ -93,7 +93,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
     let pkgs = a.modules();
 
     for pkg in pkgs {
-      application.add_pkg_raw(pkg.0, pkg.1, pkg.2);
+      application.add_pkg_box(pkg);
     }
   }
 

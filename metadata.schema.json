@@ -32,6 +32,11 @@
       "description": "Authors of your project",
       "examples": [["You"], ["You", "Me"]]
     },
+    "pkver": {
+      "type": "integer",
+      "description": "Leadman Manifest Version",
+      "examples": [1]
+    },
     "keywords": {
       "type": "array",
       "items": {

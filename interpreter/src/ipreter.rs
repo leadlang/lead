@@ -1,5 +1,5 @@
 use crate::{
-  error, runtime::_root_syntax::insert_into_application, types::{call_runtime_val, mkbuf, set_runtime_val, HeapWrapper, MethodData, Options, RawRTValue}, Application
+  error, runtime::_root_syntax::insert_into_application, types::{call_runtime_val, mkbuf, set_runtime_val, HeapWrapper, Options, RawRTValue}, Application
 };
 
 pub fn interpret(file: &str, mut app: &mut Application) {
@@ -89,7 +89,7 @@ fn tok_parse(file: String, piece: &str, app: &mut Application, line: &mut usize)
     let tokens_ptr = &tokens as *const _;
 
     match app.pkg.inner.get_mut(caller) {
-      Some(MethodData::Static(p, v)) => {
+      Some((p, v)) => {
         let pkg: *const str = *p as *const _;
         let pkg = unsafe { &*pkg };
 

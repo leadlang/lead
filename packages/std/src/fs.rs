@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs::File};
 
-use interpreter::{document, function, methods, module, parse, pkg_name, runtime::RuntimeValue, types::{AnyWrapper, BufValue, Heap, HeapWrapper, Options}};
+use interpreter::{function, methods, module, parse, pkg_name, runtime::RuntimeValue, types::{AnyWrapper, BufValue, Heap, HeapWrapper, Options}};
 
 module! {
   Fs,
@@ -8,9 +8,6 @@ module! {
   methods! {
     function! {
       "fs::open",
-      document!(r"Opens a file
-  
-      "),
       |args, _heap, file, opt| {
         parse!(file + _heap + args: str path);
 
@@ -32,7 +29,6 @@ module! {
     },
     function! {
       "fs::create",
-      document!(""),
       |_, _, _, opt| {
         opt.set_return_val(BufValue::Str("Hello World".into()));
       }

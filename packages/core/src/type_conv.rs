@@ -1,4 +1,4 @@
-use interpreter::{document, function, methods, module, parse, pkg_name, types::BufValue};
+use interpreter::{function, methods, module, parse, pkg_name, types::BufValue};
 
 module! {
   Types,
@@ -6,7 +6,7 @@ module! {
   methods! {
     function! {
       "str::to_int",
-      document!(""),
+      
       |args, mut heap, file, _| {
         parse!(file + heap + args: > main, -> second);
 

@@ -47,5 +47,7 @@ generate_help!(
     chalk.bold();
     format!("Remove lead packages\n  {:<20} Use {} to specify the version, use space to specify multiple packages", "", chalk.string(&"@"))
   },
+  " reinstall, rei, i, install" => "Reinstall dependencies by downloading & relinking",
+  " link" => "Link dependencies... aka relink using data from .pkgcache",
   " packages, pkgs" => "List the packages that are installed"
 );

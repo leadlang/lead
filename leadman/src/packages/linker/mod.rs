@@ -40,6 +40,8 @@ pub async fn run_script(meta: Arc<MetaPtr>, class: ScriptClass, print: MultiProg
 pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
   let meta = unsafe { &*meta.0 };
 
+  let is0 = meta.pkver == 0;
+
   let _ = fs::remove_dir_all("./lib").await;
   fs::create_dir_all("./lib").await.expect("Unable to rebuild links");
 
@@ -59,21 +61,24 @@ pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
     copy_dir(&platform_cwd, format!("./lib/{hash}")).await;
     fs::write(format!("./lib/{hash}/lead.lookup.lkp"), resp.package).await;
 
-    let doc = format!("./lib/{hash}/docs");
+    if is0 {
+      
+      let doc = format!("./lib/{hash}/docs");
 
-    match fs::metadata(&doc).await {
-      Ok(m) => if m.is_file() {
-        print.suspend(|| {
-          println!("      ⚠️  Replacing file named docs in {k}@{v} for target {TARGET}");
-        });
-        fs::remove_file(&doc).await;
-        fs::copy(format!("./.pkgcache/{hash}/docs"), doc).await.expect("Unable to copy docs");
-      }
-      _ => {
-        print.suspend(|| {
-          println!("      ⚠️  No docs found for {k}@{v} for target {TARGET}, using generic docs");
-        });
-        fs::copy(format!("./.pkgcache/{hash}/docs"), doc).await.expect("Unable to copy docs");
+      match fs::metadata(&doc).await {
+        Ok(m) => if m.is_file() {
+          print.suspend(|| {
+            println!("      ⚠️  Replacing file named docs in {k}@{v} for target {TARGET}");
+          });
+          fs::remove_file(&doc).await;
+          fs::copy(format!("./.pkgcache/{hash}/docs"), doc).await.expect("Unable to copy docs");
+        }
+        _ => {
+          print.suspend(|| {
+            println!("      ⚠️  No docs found for {k}@{v} for target {TARGET}, using generic docs");
+          });
+          fs::copy(format!("./.pkgcache/{hash}/docs"), doc).await.expect("Unable to copy docs");
+        }
       }
     }
   }
