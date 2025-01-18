@@ -1,0 +1,8 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lead_lang_macros = { path = ".." }
+lead_lang_interpreter = { path = "../../interpreter" }

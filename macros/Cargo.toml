@@ -10,10 +10,10 @@ repository = "https://github.com/leadlang/lead"
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0.89"
-quote = "1.0.37"
-syn = "2.0.87"
-lead_lang_interpreter = { version = "0.0.0-dev-lead-lang" }
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["full"] }
+lead_lang_interpreter = { path = "../interpreter", version = "0.0.0-dev-lead-lang" }
 
 [patch.crates-io]
 lead_lang_interpreter = { path = "../interpreter" }

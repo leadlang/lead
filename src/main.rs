@@ -28,6 +28,7 @@ fn main() {
   if target.contains("windows")
     || target.contains("apple")
     || target.contains("x86_64-unknown-linux-gnu")
+    || target.contains("aarch64-unknown-linux-gnu")
   {
     dir.push(PathBuf::from_str("./lead_docs").unwrap());
   } else {
