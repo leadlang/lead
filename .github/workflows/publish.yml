@@ -162,11 +162,12 @@ jobs:
       - name: Install Deps
         if: runner.os == 'Linux'
         run: |
+          echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list
           sudo apt update
 
-          sudo apt install gcc-aarch64-linux-gnu gcc-mips64-linux-gnu mips64el-linux-musl-gcc mipsel-linux-musl-gcc mips-linux-musl-gcc musl-tools clang lld
+          sudo apt install gcc-aarch64-linux-gnu musl-tools clang lld
 
-          sudo apt install zip
+          sudo apt install flex zip texinfo
           sudo apt install build-essential \
             curl \
             wget \
@@ -185,6 +186,14 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             libgtk-3-dev
+
+          curl http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.26.0.tar.xz -o tool.tar.xz
+
+          cd crosstool-ng-1.26.0
+          ./bootstrap
+          ./configure --prefix=$HOME/bin
+          make
+          make install
 
       - name: Build Lead Docs UI
         run: pnpm install; pnpm build
