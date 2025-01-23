@@ -90,7 +90,7 @@ jobs:
     needs: [tag]
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - target: x86_64-pc-windows-msvc
@@ -150,7 +150,7 @@ jobs:
         run: |
           sudo apt update
 
-          sudo apt install gcc-aarch64-linux-gnu musl-gcc clang lld
+          sudo apt install gcc-aarch64-linux-gnu musl-tools clang lld
 
           sudo apt install zip
           sudo apt install build-essential \
@@ -249,7 +249,7 @@ jobs:
     needs: [tag]
 
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         target:
           - i686-unknown-linux-gnu
