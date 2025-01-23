@@ -164,7 +164,7 @@ jobs:
         run: |
           sudo apt update
 
-          sudo apt install gcc-aarch64-linux-gnu musl-tools clang lld
+          sudo apt install gcc-aarch64-linux-gnu gcc-mips64-linux-gnu mips64el-linux-musl-gcc mipsel-linux-musl-gcc mips-linux-musl-gcc musl-tools clang lld
 
           sudo apt install zip
           sudo apt install build-essential \
