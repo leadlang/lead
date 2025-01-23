@@ -108,12 +108,6 @@ jobs:
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-22.04-arm
 
-          - target: x86_64-unknown-linux-musl
-            runner: ubuntu-latest
-
-          - target: aarch64-unknown-linux-musl
-            runner: ubuntu-latest
-
           - target: x86_64-apple-darwin
             runner: macos-latest
 
@@ -252,11 +246,25 @@ jobs:
       fail-fast: true
       matrix:
         target:
+          - aarch64-unknown-linux-musl
+          - x86_64-unknown-linux-musl
+
           - i686-unknown-linux-gnu
+
+          - i586-unknown-linux-gnu
+          - i586-unknown-linux-musl
+
           - armv7-unknown-linux-gnueabi
+          - armv7-unknown-linux-gnueabihf
+          - arm-unknown-linux-gnueabi
           - arm-unknown-linux-gnueabihf
 
+          - armv5te-unknown-linux-gnueabi
+          - armv5te-unknown-linux-musleabi
+
           # MUSL
+          - armv7-unknown-linux-musleabi
+          - armv7-unknown-linux-musleabihf
           - arm-unknown-linux-musleabi
           - arm-unknown-linux-musleabihf
 
