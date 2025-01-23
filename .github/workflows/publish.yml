@@ -151,11 +151,13 @@ jobs:
           LEAD_VER: ${{ needs.tag.outputs.tag }}
 
       - name: Install Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: nightly
-          target: ${{ matrix.target }}
-          components: rust-src
+        run: |
+          rustup toolchain add nightly --profile minimal
+
+          rustup target add ${{ matrix.target }}
+          rustup component add rust-src
+
+          rustup default nightly
 
       - name: Install Deps
         if: runner.os == 'Linux'
