@@ -155,7 +155,7 @@ jobs:
           rustup toolchain add nightly --profile minimal
 
           rustup target add ${{ matrix.target }}
-          rustup component add rust-src
+          rustup component add rust-src --toolchain nightly-${{matrix.target}}
 
           rustup default nightly
 
