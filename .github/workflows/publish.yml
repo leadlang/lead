@@ -150,7 +150,7 @@ jobs:
         run: |
           sudo apt update
 
-          sudo apt install gcc-aarch64-linux-gnu clang lld
+          sudo apt install gcc-aarch64-linux-gnu musl-gcc clang lld
 
           sudo apt install zip
           sudo apt install build-essential \
