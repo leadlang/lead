@@ -77,7 +77,16 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       clear
       printf "$warn This script cannot detect settings for $arch $os\n"
       printf "$err Using target select install script\n"
-      curl -fsSl "" | sh
+      
+      curl -fsSl
+      tmp=$(mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir')
+
+      curl -fsSL "https://raw.githubusercontent.com/leadlang/lead/refs/heads/main/leadman_unix_avd.sh" -o "$tmp/inst.sh"
+      chmod +x "$tmp/inst.sh"
+      sh "$tmp/inst.sh"
+
+      rm "$tmp/inst.sh"
+      rmdir "$tmp"
       exit 0
       ;;
   esac
