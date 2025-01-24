@@ -108,11 +108,9 @@ jobs:
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-22.04-arm
 
-          - target: x86_64-unknown-linux-musl
-            runner: ubuntu-22.04
-
-          - target: aarch64-unknown-linux-musl
-            runner: ubuntu-22.04-arm
+          - target: x86_64-20.04-linux-gnu
+            ctarget: x86_64-unknown-linux-gnu
+            runner: ubuntu-20.04
 
           - target: x86_64-apple-darwin
             runner: macos-latest
@@ -195,7 +193,7 @@ jobs:
 
       - name: Build Leadman
         run: |
-          cargo +nightly build --target ${{ matrix.target }} --release
+          cargo +nightly build --target ${{ matrix.ctarget || matrix.target }} --release
         working-directory: leadman
 
       - name: Publish Linux / Macos Bin
@@ -218,7 +216,7 @@ jobs:
         uses: shogo82148/actions-upload-release-asset@v1
         if: runner.os == 'Linux'
         with:
-          asset_path: ./leadman/target/${{ matrix.target }}/release/libleadman_lib.so
+          asset_path: ./leadman/target/${{ matrix.ctarget || matrix.target }}/release/libleadman_lib.so
           asset_name: libleadman_${{ matrix.target }}.so
           upload_url: ${{ needs.tag.outputs.upload }}
 
@@ -255,6 +253,9 @@ jobs:
       fail-fast: false
       matrix:
         target:
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
+
           - i686-unknown-linux-gnu
 
           - armv7-unknown-linux-gnueabi

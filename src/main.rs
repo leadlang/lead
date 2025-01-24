@@ -6,7 +6,14 @@ use std::{
 };
 
 fn main() {
-  let target = env!("TARGET");
+  let c_target = env!("TARGET");
+
+  let target = if c_target == "x86_64-20.04-linux-gnu" {
+    "x86_64-unknown-linux-gnu"
+  } else {
+    c_target
+  };
+
   let cross = option_env!("USE_CROSS").map_or(false, |_| true);
 
   #[cfg(not(debug_assertions))]
@@ -25,10 +32,10 @@ fn main() {
 
   dir.push(PathBuf::from_str("./lead").unwrap());
 
-  if target.contains("windows")
-    || target.contains("apple")
-    || target.contains("x86_64-unknown-linux-gnu")
-    || target.contains("aarch64-unknown-linux-gnu")
+  if c_target.contains("windows")
+    || c_target.contains("apple")
+    || c_target.contains("x86_64-unknown-linux-gnu")
+    || c_target.contains("aarch64-unknown-linux-gnu")
   {
     dir.push(PathBuf::from_str("./lead_docs").unwrap());
   } else {
