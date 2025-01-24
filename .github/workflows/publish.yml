@@ -277,11 +277,11 @@ jobs:
           - mips64el-unknown-linux-gnuabi64
           - mipsel-unknown-linux-gnu
 
-          # MIPS MUSL
-          - mips-unknown-linux-musl
-          - mips64-unknown-linux-muslabi64
-          - mips64el-unknown-linux-muslabi64
-          - mipsel-unknown-linux-musl
+          # MIPS MUSL (to be fixed)
+          # - mips-unknown-linux-musl
+          # - mips64-unknown-linux-muslabi64
+          # - mips64el-unknown-linux-muslabi64
+          # - mipsel-unknown-linux-musl
 
           # LongArch
           - loongarch64-unknown-linux-gnu

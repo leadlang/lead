@@ -1,2 +1,5 @@
 [target.mips64-unknown-linux-gnuabi64]
 build-std = ["core", "std", "alloc", "proc_macro"]
+
+[target.mips-unknown-linux-musl]
+image = "ghcr.io/cross-rs/mips-unknown-linux-musl:main"
