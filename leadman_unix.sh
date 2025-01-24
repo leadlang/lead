@@ -115,5 +115,3 @@ printf "$info Starting leadman \n"
 
 rm "$tmp/leadman_init"
 rmdir "$tmp"
-
-printf "$succ Successfully installed 🎉 \n"
