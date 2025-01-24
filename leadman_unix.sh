@@ -74,9 +74,11 @@ if [ "$os" = 'Linux' ] || [ "$os" = 'Darwin' ] || [ "$os" = 'FreeBSD' ] || [ "$o
       [ "$os" = 'Linux' ] && target="${arch}-unknown-linux-gnu"
       ;;
     *)
+      clear
       printf "$warn This script cannot detect settings for $arch $os\n"
       printf "$err Using target select install script\n"
       curl -fsSl "" | sh
+      exit 0
       ;;
   esac
 else
