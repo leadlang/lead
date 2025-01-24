@@ -200,7 +200,7 @@ jobs:
         uses: shogo82148/actions-upload-release-asset@v1
         if: matrix.runner != 'windows-latest'
         with:
-          asset_path: ./leadman/target/${{ matrix.target }}/release/leadman
+          asset_path: ./leadman/target/${{ matrix.ctarget || matrix.target }}/release/leadman
           asset_name: leadman_${{ matrix.target }}
           upload_url: ${{ needs.tag.outputs.upload }}
 
@@ -208,7 +208,7 @@ jobs:
         uses: shogo82148/actions-upload-release-asset@v1
         if: runner.os == 'Windows'
         with:
-          asset_path: ./leadman/target/${{ matrix.target }}/release/leadman.exe
+          asset_path: ./leadman/target/${{ matrix.ctarget || matrix.target }}/release/leadman.exe
           asset_name: leadman_${{ matrix.target }}.exe
           upload_url: ${{ needs.tag.outputs.upload }}
 
@@ -224,7 +224,7 @@ jobs:
         uses: shogo82148/actions-upload-release-asset@v1
         if: runner.os == 'macOS'
         with:
-          asset_path: ./leadman/target/${{ matrix.target }}/release/libleadman_lib.dylib
+          asset_path: ./leadman/target/${{ matrix.ctarget || matrix.target }}/release/libleadman_lib.dylib
           asset_name: libleadman_${{ matrix.target }}.dylib
           upload_url: ${{ needs.tag.outputs.upload }}
 
