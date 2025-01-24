@@ -150,7 +150,6 @@ jobs:
       - name: Install Deps
         if: runner.os == 'Linux'
         run: |
-          echo "deb http://ftp.de.debian.org/debian sid main" >> /etc/apt/sources.list
           sudo apt update
 
           sudo apt install gcc-aarch64-linux-gnu musl-tools clang lld
