@@ -206,6 +206,8 @@ jobs:
         run: |
           cargo +nightly build --target ${{ matrix.ctarget || matrix.target }} --release
         working-directory: leadman
+        env:
+          CFG_TARGET: ${{ matrix.target }}
 
       - name: Publish Linux / Macos Bin
         uses: shogo82148/actions-upload-release-asset@v1
