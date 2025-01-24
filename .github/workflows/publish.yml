@@ -145,6 +145,17 @@ jobs:
 
           rustup default nightly
 
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: ${{ matrix.target }}-${{ matrix.runner }}
+          workspaces: |
+            . -> target
+            ./lead -> target
+            ./lead_docs -> target
+            ./lead_docs_cli -> target
+            ./leadman -> target
+
       - name: Install Deps
         if: runner.os == 'Linux'
         run: |
