@@ -208,7 +208,7 @@ jobs:
 
       - name: Publish Windows Bin
         uses: shogo82148/actions-upload-release-asset@v1
-        if: matrix.runner == 'windows-latest'
+        if: runner.os == 'Windows'
         with:
           asset_path: ./leadman/target/${{ matrix.target }}/release/leadman.exe
           asset_name: leadman_${{ matrix.target }}.exe
@@ -216,7 +216,7 @@ jobs:
 
       - name: Publish Leadman SO
         uses: shogo82148/actions-upload-release-asset@v1
-        if: matrix.runner == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         with:
           asset_path: ./leadman/target/${{ matrix.target }}/release/libleadman_lib.so
           asset_name: libleadman_${{ matrix.target }}.so
@@ -224,7 +224,7 @@ jobs:
 
       - name: Publish Leadman Dylib
         uses: shogo82148/actions-upload-release-asset@v1
-        if: matrix.runner == 'macos-latest'
+        if: runner.os == 'macOS'
         with:
           asset_path: ./leadman/target/${{ matrix.target }}/release/libleadman_lib.dylib
           asset_name: libleadman_${{ matrix.target }}.dylib
@@ -232,7 +232,7 @@ jobs:
 
       - name: Publish Leadman DLL
         uses: shogo82148/actions-upload-release-asset@v1
-        if: matrix.runner == 'windows-latest'
+        if: runner.os == 'Windows'
         with:
           asset_path: ./leadman/target/${{ matrix.target }}/release/leadman_lib.dll
           asset_name: leadman_${{ matrix.target }}_lib.dll
