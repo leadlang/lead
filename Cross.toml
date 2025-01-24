@@ -1,0 +1,2 @@
+[target.mips64-unknown-linux-gnuabi64]
+build-std = ["core", "std", "alloc", "proc_macro"]

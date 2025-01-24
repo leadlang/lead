@@ -7,7 +7,6 @@ linker = "aarch64-linux-gnu-gcc"
 linker = "aarch64-linux-musl-gcc"
 rustflags = ["-C", "target-feature=+crt-static", "-C", "link-arg=-s"]
 
-
 [target.mips-unknown-linux-musl]
 linker = "mips-linux-musl-gcc"
 rustflags = ["-C", "target-feature=+crt-static", "-C", "link-arg=-s"]
