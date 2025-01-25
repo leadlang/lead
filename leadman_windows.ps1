@@ -35,11 +35,16 @@ switch ($architecture) {
     break
   }
   "ARM64" {
+    $arch = "aarch64"
+
     if ($isWin11) {
-      $arch = "arm64ec"
-    }
-    else {
-      $arch = "aarch64"
+      "$INFO Lead Language will soon introduce ARM64EC support for Windows 11 once Microsoft supports it on GitHub"
+      #Write-Host -NoNewline "$INFO Would you like to use the ARM64EC version? [Y/n]"
+      #$ask = (Read-Host).ToLower()
+      
+      #if ($ask -eq "y") {
+      #  $arch = "arm64ec"
+      #}
     }
     break
   }
@@ -66,7 +71,8 @@ $nt = [Environment]::OSVersion.Version.Major
 
 $DOWNLOAD = "https://github.com/leadlang/lead/releases/$tag/leadman_$arch-pc-windows-msvc.exe"
 
-if ($nt -lt 10) {
+if ($nt -eq 10) {
+  "$INFO Using win7 compat binary as NT Version $nt is less than NT 10.0"
   $DOWNLOAD = "https://github.com/leadlang/lead/releases/$tag/leadman_$arch-win7-windows-msvc.exe"
 }
 
