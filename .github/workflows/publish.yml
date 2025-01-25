@@ -102,8 +102,8 @@ jobs:
           - target: aarch64-pc-windows-msvc
             runner: windows-latest
 
-          # - target: arm64ec-pc-windows-msvc
-          #   runner: windows-latest
+          - target: arm64ec-pc-windows-msvc
+            runner: windows-latest
 
           - target: i686-win7-windows-msvc
             runner: windows-latest

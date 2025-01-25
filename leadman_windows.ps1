@@ -25,19 +25,26 @@ else {
   "$INFO Provided Leadman Version $tag"
 }
 
+$isWin11 = (Get-WmiObject Win32_OperatingSystem).Caption -Match "Windows 11"
+
 "$INFO Found Leadman Version $tag"
 
-$arch = switch ($architecture) {
+switch ($architecture) {
   "AMD64" {
-    "x86_64"
+    $arch = "x86_64"
     break
   }
   "ARM64" {
-    "aarch64"
+    if ($isWin11) {
+      $arch = "arm64ec"
+    }
+    else {
+      $arch = "aarch64"
+    }
     break
   }
   "x86" {
-    "i686"
+    $arch = "i686"
     break
   }
   default {
@@ -55,7 +62,13 @@ else {
   $tag = "download/$tag"
 }
 
+$nt = [Environment]::OSVersion.Version.Major
+
 $DOWNLOAD = "https://github.com/leadlang/lead/releases/$tag/leadman_$arch-pc-windows-msvc.exe"
+
+if ($nt -lt 10) {
+  $DOWNLOAD = "https://github.com/leadlang/lead/releases/$tag/leadman_$arch-win7-windows-msvc.exe"
+}
 
 Invoke-WebRequest -Uri $DOWNLOAD -OutFile "$env:TEMP\leadman_init.exe"; "$INFO Starting leadman"; ""
 

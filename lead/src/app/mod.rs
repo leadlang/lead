@@ -7,7 +7,7 @@ use interpreter::types::{DynMethodRes, MethodRes};
 use interpreter::{Application, Package as Pkg};
 
 use super::metadata;
-use dlopen2::wrapper::{Container, WrapperApi};
+use libloading::Library;
 
 enum FullAccessLevel {
   SilentlyAllow,
@@ -24,11 +24,25 @@ struct Options {
 
 mod logo;
 
-static mut LIBS: Option<HashMap<usize, Container<Package>>> = None;
+static mut LIBS: Option<HashMap<usize, Package>> = None;
 
-#[derive(WrapperApi)]
 struct Package {
   modules: fn() -> Vec<Box<dyn Pkg>>,
+  _lib: Library
+}
+
+impl Package {
+  fn new(path: &str) -> Self {
+    unsafe {
+      let library = Library::new(path).expect("Unable to load library");
+      let f = library.get::<fn() -> Vec<Box<dyn Pkg>>>(b"modules").expect("Unable to get module export");
+
+      Self {
+        modules: *f,
+        _lib: library
+      }
+    }
+  }
 }
 
 
@@ -90,7 +104,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
   };
 
   for (_, a) in libs.iter() {
-    let pkgs = a.modules();
+    let pkgs = (a.modules)();
 
     for pkg in pkgs {
       application.add_pkg_box(pkg);
@@ -112,7 +126,7 @@ fn load_lib() {
   for (k, entry) in fs::read_dir(path).expect("Path").enumerate() {
     let entry = entry.expect("OS Error").path();
 
-    let val: Container<Package> = unsafe { Container::load(entry).expect("Unable to load dll") };
+    let val = Package::new(entry.to_str().expect("Unable to read as string"));
 
     libs.insert(k, val);
   }

@@ -2,6 +2,9 @@ use std::{env::consts::{ARCH, OS, FAMILY}, io::Write};
 use chalk_rs::Chalk;
 use termcolor::{StandardStream, ColorChoice, ColorSpec, Color, WriteColor};
 
+#[cfg(windows)]
+mod sysinfo;
+
 use sysinfo::{System, IS_SUPPORTED_SYSTEM};
 
 fn get_sys_info() -> Vec<String> {
@@ -16,11 +19,17 @@ fn get_sys_info() -> Vec<String> {
     let mut sys = System::new_all();
     sys.refresh_all();
 
-    let name = sys.cpus()[0].brand().trim();
+    let name = sys.cpus()[0].brand();
+    let name = name.trim();
     resp.push(format!("{:<8}: {}", "CPU", name));
 
     let free = sys.used_memory();
     let ram = sys.total_memory();
+
+    #[cfg(windows)]
+    resp.push(format!("{:<8}: {}/{} MB", "Memory", free/1048576, ram/1048576));
+    
+    #[cfg(not(windows))]
     resp.push(format!("{:<8}: {}/{} MB", "Memory", free/1000000, ram/1000000));
   }
 
