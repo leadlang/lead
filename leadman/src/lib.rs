@@ -137,8 +137,6 @@ async fn main(mut args: Vec<String>) {
     show_update_message(&mut chalk);
   }
 
-  println!("[DEBUG] Args {args:?}");
-
   if args.len() < 2 {
     help();
     return;
