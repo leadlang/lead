@@ -31,7 +31,7 @@ pub async fn create(chalk: &mut Chalk) {
         "Select your channel",
         vec![
           format!("Stable ({})", &latest.tag_name),
-          format!("Prerelease ({})", &prerelease.tag_name),
+          format!("Nightly ({})", &prerelease.tag_name),
         ],
       )
       .prompt()
@@ -59,6 +59,16 @@ pub async fn create(chalk: &mut Chalk) {
   dir.push("lead");
 
   fs::write(&dir, include_str!("../lead")).expect("Unable to add lead shell script");
+
+  dir.pop();
+  dir.push("leadc.ps1");
+
+  fs::write(&dir, include_str!("../leadc.ps1")).expect("Unable to add lead.ps1");
+
+  dir.pop();
+  dir.push("leadc");
+
+  fs::write(&dir, include_str!("../leadc")).expect("Unable to add lead shell script");
 
   dir.pop();
   dir.push("temp");

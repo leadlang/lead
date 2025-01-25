@@ -9,7 +9,8 @@ if ($args.Count -gt 0 -and $args[0].StartsWith("+")) {
 
     $path = "$env:LEAD_HOME/versions/$channel"
     if (!(Test-Path $path)) {
-      Write-Error "$ERR The channel $channel is not yet installed. Use $($PSStyle.Foreground.Green)leadman install$($PSStyle.Reset)"
+      "$ERR The channel $channel is not yet installed. Use $($PSStyle.Foreground.Green)leadman install$($PSStyle.Reset)"
+      exit 1
     }
     $ver = Get-Content $path
   }
@@ -22,20 +23,21 @@ else {
 
   $path = "$env:LEAD_HOME/versions/current"
   if (!(Test-Path $path)) {
-    Write-Error "$ERR The channel $channel is not yet installed. Use $($PSStyle.Foreground.Green)leadman install$($PSStyle.Reset)"
+    "$ERR The channel $channel is not yet installed. Use $($PSStyle.Foreground.Green)leadman install$($PSStyle.Reset)"
+    exit 1
   }
   $ver = Get-Content $path
 }
 
 if ($ver.Length -eq 0) {
-  Write-Error "$ERR No version has been marked as $($PSStyle.Foreground.Cyan)$channel$($PSStyle.Reset). Use $($PSStyle.Foreground.Green)lead [+stable / +nightly / +version] [args]$($PSStyle.Reset)"
+  Write-Error "$ERR No version has been marked as $($PSStyle.Foreground.Cyan)$channel$($PSStyle.Reset). Use $($PSStyle.Foreground.Green)leadc [+stable / +nightly / +version] [args]$($PSStyle.Reset)"
   exit 1
 }
 
-$exec = "$env:LEAD_HOME/versions/$ver/lead.exe"
+$exec = "$env:LEAD_HOME/versions/$ver/leadc.exe"
 
 if (!(Test-Path -Path $exec)) {
-  Write-Error "$ERR Your provided version $($PSStyle.Foreground.Cyan)$ver$($PSStyle.Reset) is invalid or not installed. Use $($PSStyle.Foreground.Green)lead [+stable / +nightly / +version] [args]$($PSStyle.Reset)"
+  Write-Error "$ERR Your provided version $($PSStyle.Foreground.Cyan)$ver$($PSStyle.Reset) does not seem to make leadc compiler. Was leadc introduced in that version?"
 }
 
 $arglist = @()

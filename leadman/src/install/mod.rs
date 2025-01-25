@@ -101,6 +101,11 @@ pub async fn install(release: &ReleaseData, lead_home: &str, chalk: &mut Chalk) 
     .expect("This version cannot be installed");
 
   match build.as_str() {
+    // Build 6 introduces build version monitoring
+    "6" => {
+      build_1::install(&tag_name, lead_home).await;
+      tokio::fs::write(format!("{lead_home}/versions/{tag_name}/.lbuild"), tag_name).await;
+    }
     // Build 1 to 5 are the similar
     "1" | "2" | "3" | "4" | "5" => {
       build_1::install(&tag_name, lead_home).await;

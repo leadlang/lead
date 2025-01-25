@@ -5,7 +5,7 @@ use serde_json::from_str;
 use sha256::digest;
 use tokio::fs;
 
-use crate::{utils::copy_dir, TARGET};
+use crate::{utils::copy_dir, OTHER_TARGET, TARGET};
 
 use super::{metadata::LibraryMeta, MetaPtr};
 
@@ -52,10 +52,13 @@ pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
 
     let resp: LibraryMeta = from_str(&fs::read_to_string(meta).await.expect("Error reading")).expect("Unable to parse");
 
-    let platform_cwd = format!("./.pkgcache/{hash}/lib/{}", TARGET);
+    let mut platform_cwd = format!("./.pkgcache/{hash}/lib/{}", TARGET);
 
     if !fs::metadata(&platform_cwd).await.expect("Unable to get metadata").is_dir() {
-      panic!("No Build for {k}@{v} is availble for {TARGET}");
+      platform_cwd = format!("./.pkgcache/{hash}/lib/{}", *OTHER_TARGET);
+      if !fs::metadata(&platform_cwd).await.expect("Unable to get metadata").is_dir() {
+        panic!("No Build for {k}@{v} is availble for {TARGET}");
+      }
     }
 
     copy_dir(&platform_cwd, format!("./lib/{hash}")).await;

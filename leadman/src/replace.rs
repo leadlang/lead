@@ -11,14 +11,18 @@ pub fn replace() {
   #[cfg(unix)]
   fs::copy(src, format!("{}/leadman", &*LEAD_ROOT_DIR)).expect("Unable to process IO Action");
 
-  fs::write(
-    format!("{}/lead", &*LEAD_ROOT_DIR),
-    include_bytes!("./lead"),
-  )
-  .expect("Could not update lead");
-  fs::write(
-    format!("{}/lead.ps1", &*LEAD_ROOT_DIR),
-    include_bytes!("./lead.ps1"),
-  )
-  .expect("Could not update lead.ps1");
+  let files = [
+    ("lead", include_str!("./lead")), 
+    ("leadc", include_str!("./leadc")), 
+    ("lead.ps1", include_str!("./lead.ps1")), 
+    ("leadc.ps1", include_str!("./leadc.ps1")),
+  ];
+
+  for (exec, data) in files {
+    fs::write(
+      format!("{}/{exec}", &*LEAD_ROOT_DIR),
+      data,
+    )
+    .expect("Could not update scripts");
+  }
 }

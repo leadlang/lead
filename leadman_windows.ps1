@@ -4,12 +4,12 @@ $INFO = "$($PSStyle.Foreground.Blue)[INFO]$($PSStyle.Reset)"
 $ERR = "$($PSStyle.Foreground.Red)$($PSStyle.Bold)[ERRR]$($PSStyle.Reset)"
 $SUCC = "$($PSStyle.Foreground.Green)$($PSStyle.Bold)[SUCC]$($PSStyle.Reset)"
 
-$architecture = [System.Environment]::GetEnvironmentVariable("PROCESSOR_ARCHITECTURE")
-$tag = [System.Environment]::GetEnvironmentVariable("TAG_NAME")
+$architecture = $env:PROCESSOR_ARCHITECTURE
+$tag = $env:TAG_NAME
 
 "$INFO Checking OS"
 
-if (![System.OperatingSystem]::IsWindows()) {
+if ([System.Environment]::OSVersion.Platform -ne "Win32NT") {
   Write-Err "$ERR Unsupported Operating System, run this in $($PSStyle.Bold)Windows$($PSStyle.Reset) or use the $($PSStyle.Bold)bash script$($PSStyle.Reset)"
   exit 1
 }
@@ -62,6 +62,12 @@ Invoke-WebRequest -Uri $DOWNLOAD -OutFile "$env:TEMP\leadman_init.exe"; "$INFO S
 $result = Start-Process -Wait -NoNewWindow -FilePath "$env:TEMP\leadman_init.exe" -ArgumentList "create" -PassThru
 
 if ($result.ExitCode -eq 0) {
-  "$SUCC Successfully installed 🎉"
+  "$SUCC Successfully installed"
   Start-Sleep -Seconds 1
+}
+
+$ver = $PSVersionTable.PSVersion.Major
+
+if (-not $PSVersionTable -or $ver -lt 7) {
+  "$INFO We recommend you to upgrade to PowerShell 7.0 or higher. Current version: $($PSVersionTable.PSVersion)"
 }
