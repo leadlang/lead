@@ -100,6 +100,7 @@ fn main() {
       if name.ends_with(".dll") || name.ends_with(".so") || name.ends_with(".dylib") {
         #[cfg(debug_assertions)]
         fs::create_dir_all(format!("./build/lib/{}", &name.split_once(".").unwrap().0)).unwrap();
+
         #[cfg(debug_assertions)]
         fs::copy(
           &path,
@@ -108,7 +109,13 @@ fn main() {
         .unwrap();
 
         #[cfg(not(debug_assertions))]
-        fs::copy(&path, format!("./build/lib/{}", name)).unwrap();
+        {
+          if name.ends_with("_lib.so") || name.ends_with("_lib.dll") || name.ends_with("_lib.dll") {
+            fs::copy(&path, format!("./build/{}", name)).unwrap();
+          } else {
+            fs::copy(&path, format!("./build/lib/{}", name)).unwrap();
+          }
+        }
       }
     }
   }
