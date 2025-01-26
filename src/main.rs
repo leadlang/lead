@@ -63,6 +63,10 @@ fn main() {
     };
     cmd.args(["--target", target]);
 
+    if target.contains("musl") {
+      cmd.env("RUSTFLAGS", "-C target-feature=-crt-static");
+    }
+
     let cmd = cmd
       .current_dir(&path)
       .spawn()
