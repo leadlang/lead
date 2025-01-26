@@ -1,5 +1,5 @@
 use crate::{
-  error, runtime::_root_syntax::insert_into_application, types::{call_runtime_val, mkbuf, set_runtime_val, HeapWrapper, Options, RawRTValue}, Application
+  error, runtime::_root_syntax::insert_into_application, types::{call_runtime_val, mkbuf, set_runtime_val, BufValue, HeapWrapper, Options, RawRTValue}, Application
 };
 
 pub fn interpret(file: &str, mut app: &mut Application) {
@@ -46,7 +46,35 @@ fn tok_parse(file: String, piece: &str, app: &mut Application, line: &mut usize)
 
   let mut opt = Options::new();
 
-  if caller.starts_with("*") {
+  if caller.starts_with("*if$") {
+    let caller = tokens.remove(0);
+
+    let caller = caller.replacen("*if", "", 1);
+
+    let BufValue::Bool(x) = app.heap.get(&caller).expect("Unable to get the value") else {
+      panic!("Invalid type, expected boolean in *if");
+    };
+
+    let piece = tokens.join(" ");
+
+    if *x {
+      tok_parse(file, &piece, app, line);
+    }
+  } else if caller.starts_with("*else$") {
+    let caller = tokens.remove(0);
+
+    let caller = caller.replacen("*else", "", 1);
+
+    let BufValue::Bool(x) = app.heap.get(&caller).expect("Unable to get the value") else {
+      panic!("Invalid type, expected boolean in *if");
+    };
+
+    let piece = tokens.join(" ");
+
+    if !*x {
+      tok_parse(file, &piece, app, line);
+    }
+  } else if caller.starts_with("*") {
     insert_into_application(app as *mut _ as _, &tokens, line, to_set);
   } else if caller.starts_with("@") {
     if val_type == "$" {
@@ -116,6 +144,9 @@ fn tok_parse(file: String, piece: &str, app: &mut Application, line: &mut usize)
       }
       _ => {
         match app.modules.get_mut(caller) {
+          Some(v) => {
+            
+          }
           _ => if &caller != &"" {
             error(&format!("Unexpected `{}`", &caller), &file);
           }

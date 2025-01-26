@@ -1,4 +1,3 @@
-*mark alloc
+*mod test/hello
 
-$2: @s"Hello"
-print $2
+hello

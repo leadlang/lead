@@ -129,5 +129,7 @@ pub fn parse_into_modules<'a>(code: String) -> Vec<RTCreatedModule<'a>> {
     }
   }
 
+  println!("{:?}", data);
+
   data
 }
