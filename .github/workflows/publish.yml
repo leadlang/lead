@@ -148,7 +148,7 @@ jobs:
 
       - name: Install Rust
         run: |
-          rustup toolchain add nightly --profile minimal
+          rustup toolchain add 1.86.0-2025-01-25 --profile minimal
 
           rustup target add ${{ matrix.target }} --toolchain nightly || true
           rustup component add rust-src --toolchain nightly
@@ -346,7 +346,7 @@ jobs:
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: 1.86.0-2025-01-25
           components: rust-src
           override: true
 
