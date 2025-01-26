@@ -150,10 +150,10 @@ jobs:
         run: |
           rustup toolchain add 1.86.0-2025-01-25 --profile minimal
 
-          rustup target add ${{ matrix.target }} --toolchain nightly || true
-          rustup component add rust-src --toolchain nightly
+          rustup target add ${{ matrix.target }} --toolchain 1.86.0-2025-01-25 || true
+          rustup component add rust-src --toolchain 1.86.0-2025-01-25
 
-          rustup default nightly
+          rustup default 1.86.0-2025-01-25
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2

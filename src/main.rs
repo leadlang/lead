@@ -47,7 +47,7 @@ fn main() {
     let cmd = if !cross {
       cmd.args([
         "run",
-        "nightly",
+        "1.86.0-2025-01-25",
         "cargo",
         "build",
         #[cfg(not(debug_assertions))]
@@ -55,7 +55,7 @@ fn main() {
       ])
     } else {
       cmd.args([
-        "+nightly",
+        "+1.86.0-2025-01-25",
         "build",
         #[cfg(not(debug_assertions))]
         "--release",
