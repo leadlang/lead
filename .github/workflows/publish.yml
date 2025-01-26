@@ -148,12 +148,12 @@ jobs:
 
       - name: Install Rust
         run: |
-          rustup toolchain add 1.86.0-2025-01-25 --profile minimal
+          rustup toolchain add nightly-2025-01-25 --profile minimal
 
-          rustup target add ${{ matrix.target }} --toolchain 1.86.0-2025-01-25 || true
-          rustup component add rust-src --toolchain 1.86.0-2025-01-25
+          rustup target add ${{ matrix.target }} --toolchain nightly-2025-01-25 || true
+          rustup component add rust-src --toolchain nightly-2025-01-25
 
-          rustup default 1.86.0-2025-01-25
+          rustup default nightly-2025-01-25
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -346,7 +346,7 @@ jobs:
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.86.0-2025-01-25
+          toolchain: nightly-2025-01-25
           components: rust-src
           override: true
 
