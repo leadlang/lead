@@ -144,7 +144,7 @@ fn tok_parse(file: String, piece: &str, app: &mut Application, line: &mut usize)
       }
       _ => {
         match app.modules.get_mut(caller) {
-          Some(v) => {
+          Some(_v) => {
             
           }
           _ => if &caller != &"" {
