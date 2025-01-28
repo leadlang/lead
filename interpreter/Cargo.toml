@@ -13,3 +13,5 @@ name = "interpreter"
 
 [dependencies]
 chalk_rs = { git = "https://github.com/leadlang/chalk.git" }
+
+
