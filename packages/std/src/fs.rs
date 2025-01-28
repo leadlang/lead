@@ -14,7 +14,7 @@ module! {
         let file = File::open(path);
 
         let mut resp = RuntimeValue::new("fs/file", {
-          let mut map: HashMap<&'static _, (&'static _, for<'a, 'c, 'd, 'e> fn(&'a Vec<String>, &'c mut Heap, HeapWrapper, &'d String, &'e mut Options))> = HashMap::new();
+          let mut map: HashMap<&'static _, (&'static _, for<'a, 'c, 'd, 'e> fn(&'a Vec<*const str>, &'c mut Heap, HeapWrapper, &'d String, &'e mut Options))> = HashMap::new();
 
           map.insert("print", ("", |_args, _inner, _outer, _, _| {
             println!();

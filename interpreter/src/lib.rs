@@ -54,17 +54,26 @@ pub struct Application<'a> {
   entry: &'a str,
   heap: Heap,
   markers: HashMap<String, usize>,
-  
+
   // Resolve files
   module_resolver: Box<dyn FnMut(&str) -> Vec<u8>>,
   // Resolve path from mod name
   pkg_resolver: Box<dyn FnMut(&str) -> RespPackage>,
   // Log in case of full access request
-  log_info: Box<dyn FnMut(&str) -> ()>
+  log_info: Box<dyn FnMut(&str) -> ()>,
 }
 
 impl<'a> Application<'a> {
-  pub fn new<T: FnMut(&str) -> Vec<u8> + 'static, F: FnMut(&str) -> RespPackage + 'static, R: FnMut(&str) -> () + 'static>(file: &'a str, mut fs_resolver: T, dll_resolver: F, requested_perm: R) -> Self {
+  pub fn new<
+    T: FnMut(&str) -> Vec<u8> + 'static,
+    F: FnMut(&str) -> RespPackage + 'static,
+    R: FnMut(&str) -> () + 'static,
+  >(
+    file: &'a str,
+    mut fs_resolver: T,
+    dll_resolver: F,
+    requested_perm: R,
+  ) -> Self {
     let main = String::from_utf8(fs_resolver(file)).expect("Invalid utf8");
 
     let mut code = HashMap::new();
@@ -79,7 +88,7 @@ impl<'a> Application<'a> {
       module_resolver: Box::new(fs_resolver),
       markers: HashMap::new(),
       pkg_resolver: Box::new(dll_resolver),
-      log_info: Box::new(requested_perm)
+      log_info: Box::new(requested_perm),
     }
   }
 
@@ -107,7 +116,7 @@ impl<'a> Application<'a> {
     let pkg = ImplPackage {
       name,
       methods,
-      dyn_methods
+      dyn_methods,
     };
 
     self.pkg.import(pkg);

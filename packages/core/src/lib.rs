@@ -2,7 +2,7 @@
 #![feature(concat_idents)]
 
 use interpreter::{
-  error, function, generate, parse, types::{BufValue, HeapWrapper, Options}, Package
+  error, function, generate, parse, types::{BufValue, HeapWrapper, MethodRes, Options}, Package
 };
 
 mod array;
@@ -19,10 +19,7 @@ impl Package for Core {
 
   fn methods(
     &self,
-  ) -> &'static [(
-    &'static str,
-    for<'a, 'c, 'd> fn(&'a Vec<String>, HeapWrapper, &'c String, &'d mut Options),
-  )] {
+  ) -> MethodRes {
     &[
       function! {
         "unwrap",
@@ -59,6 +56,8 @@ impl Package for Core {
           );
         };
 
+        let var = unsafe { &**var };
+
         match heap.get(var) {
           Some(v) => {
             opt.set_return_val(BufValue::Str(v.type_of()));
@@ -82,11 +81,15 @@ impl Package for Core {
           );
         };
 
+        let a = unsafe { &**a };
+        let f = unsafe { &**f };
+        let b = unsafe { &**b };
+
         let a = val.get(a).expect("Unable to get value of 1st variable");
         let b = val.get(b).expect("Unable to get value of 2nd variable");
 
         opt.set_return_val(
-          BufValue::Bool(match f.as_str() {
+          BufValue::Bool(match f {
             "==" => a.eq(b),
             "!=" => !a.eq(b),
             "<" => a.lt(&b),
@@ -102,7 +105,7 @@ impl Package for Core {
 }
 
 fn malloc<'a, 'c, 'd>(
-  args: &'a Vec<String>,
+  args: &'a Vec<*const str>,
   _: HeapWrapper,
   file: &'c String,
   opt: &'d mut Options,
@@ -124,10 +127,12 @@ Types ---
     );
   };
 
-  let data = args[2..].join(" ");
+  let typ = unsafe { &**typ };
+
+  let data = args[2..].iter().map(|x| unsafe { &**x }).collect::<Vec<_>>().join(" ");
 
   opt.set_return_val(
-    match typ.as_str() {
+    match typ {
       "bool" => BufValue::Bool(&data == "true"),
       "int" => BufValue::Int(
         data

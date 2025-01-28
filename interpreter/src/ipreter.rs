@@ -1,17 +1,24 @@
 use crate::{
-  error, runtime::_root_syntax::insert_into_application, types::{call_runtime_val, mkbuf, set_runtime_val, BufValue, Heap, HeapWrapper, Options, RawRTValue}, Application
+  error,
+  runtime::_root_syntax::insert_into_application,
+  types::{
+    call_runtime_val, mkbuf, set_runtime_val, BufValue, Heap, HeapWrapper, Options, RawRTValue,
+  },
+  Application,
 };
 
 pub fn interpret(file: &str, mut app: &mut Application) {
   let file_name = if file == ":entry" { app.entry } else { file };
 
-  let app_ptr =  app as *mut Application;
+  let app_ptr = app as *mut Application;
 
   let file = app.code.get(file).unwrap_or_else(move || {
     let app = unsafe { &mut *app_ptr };
     let data = app.module_resolver.call_mut((&format!("./{file}.pb"),));
 
-    app.code.insert(file.into(), String::from_utf8(data).unwrap());
+    app
+      .code
+      .insert(file.into(), String::from_utf8(data).unwrap());
 
     app.code.get(file).expect("Impossible")
   });
@@ -29,38 +36,50 @@ pub fn interpret(file: &str, mut app: &mut Application) {
     let content = &file[line];
 
     if !content.starts_with("#") {
-      tok_parse(format!("{}:{}", &file_name, line), content, &mut app, &mut app2.heap, &mut line);
+      unsafe {tok_parse(
+        format!("{}:{}", &file_name, line),
+        content,
+        &mut app,
+        &mut app2.heap,
+        &mut line,
+      );}
     }
 
     line += 1;
   }
 }
 
-pub(crate) fn tok_parse(file: String, piece: &str, app: &mut Application, heap: &mut Heap, line: &mut usize) {
-  let mut tokens: Vec<String> = piece.split(" ").map(|x| x.to_string()).collect();
+pub(crate) unsafe fn tok_parse(
+  file: String,
+  piece: &str,
+  app: &mut Application,
+  heap: &mut Heap,
+  line: &mut usize,
+) {
+  let mut tokens: Vec<*const str> = piece.split(" ").map(|x| x as *const str).collect();
 
-  let mut caller = tokens[0].as_str();
+  let mut caller = unsafe { &*tokens[0] };
   let mut val_type = "<-none->";
 
   let mut to_set = String::new();
 
-  if tokens[0].ends_with(":") && (tokens[0].starts_with("*") || tokens[0].starts_with("$")) {
-    if tokens[0].starts_with("*") {
+  if caller.ends_with(":") && (caller.starts_with("*") || caller.starts_with("$")) {
+    if caller.starts_with("*") {
       val_type = "*";
     } else {
       val_type = "$";
     }
 
-    to_set = tokens.remove(0);
-    to_set = to_set.split_at(to_set.len() - 1).0.into();
+    let l = unsafe { &*tokens.remove(0) };
+    to_set = l.split_at(l.len() - 1).0.into();
 
-    caller = tokens[0].as_str();
+    caller = unsafe { &*tokens[0] };
   }
 
   let mut opt = Options::new();
 
   if caller.starts_with("*if$") {
-    let caller = tokens.remove(0);
+    let caller = unsafe { &*tokens.remove(0) };
 
     let caller = caller.replacen("*if", "", 1);
 
@@ -68,13 +87,17 @@ pub(crate) fn tok_parse(file: String, piece: &str, app: &mut Application, heap: 
       panic!("Invalid type, expected boolean in *if");
     };
 
-    let piece = tokens.join(" ");
+    let piece = tokens
+      .into_iter()
+      .map(|x| unsafe { &*x })
+      .collect::<Vec<_>>()
+      .join(" ");
 
     if *x {
       tok_parse(file, &piece, app, heap, line);
     }
   } else if caller.starts_with("*else$") {
-    let caller = tokens.remove(0);
+    let caller = unsafe { &*tokens.remove(0) };
 
     let caller = caller.replacen("*else", "", 1);
 
@@ -82,7 +105,11 @@ pub(crate) fn tok_parse(file: String, piece: &str, app: &mut Application, heap: 
       panic!("Invalid type, expected boolean in *if");
     };
 
-    let piece = tokens.join(" ");
+    let piece = tokens
+      .into_iter()
+      .map(|x| unsafe { &*x })
+      .collect::<Vec<_>>()
+      .join(" ");
 
     if !*x {
       tok_parse(file, &piece, app, heap, line);
@@ -107,9 +134,11 @@ pub(crate) fn tok_parse(file: String, piece: &str, app: &mut Application, heap: 
     };
 
     match call_runtime_val(heap, caller, &tokens, wrap, &file, &mut opt, &file) {
-      None => if &caller != &"" {
-        error(&format!("Unexpected `{}`", &caller), &file);
-      },
+      None => {
+        if &caller != &"" {
+          error(&format!("Unexpected `{}`", &caller), &file);
+        }
+      }
       Some(v) => {
         opt.pre = v.to_string();
 
@@ -157,26 +186,47 @@ pub(crate) fn tok_parse(file: String, piece: &str, app: &mut Application, heap: 
       }
       _ => {
         let app2 = app as *mut Application;
-        
+
         match app.modules.get_mut(caller) {
           Some(v) => {
             let tkns = tokens.drain(2..).collect::<Vec<_>>();
-            let token0 = tokens.remove(1);
+            let token0 = &*tokens.remove(1);
 
             v.run_method(app2, &token0, &file, move |fn_heap, app_heap, args| {
               if tkns.len() != args.len() {
-                error("Not all arguments provided", ":interpreter:loadmodule:heap:check");
+                error(
+                  "Not all arguments provided",
+                  ":interpreter:loadmodule:heap:check",
+                );
               }
 
               tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
-                let from = app_heap.remove(&token).unwrap_or_else(|| error(format!("Unable to get {token} from Heap"), ":interpreter:loadmodule")).unwrap_or_else(|| error(format!("Unable to get {token} from Heap"), ":interpreter:loadmodule"));
+                let token = unsafe { &*token };
+                let from = app_heap
+                  .remove(token)
+                  .unwrap_or_else(|| {
+                    error(
+                      format!("Unable to get {token} from Heap"),
+                      ":interpreter:loadmodule",
+                    )
+                  })
+                  .unwrap_or_else(|| {
+                    error(
+                      format!("Unable to get {token} from Heap"),
+                      ":interpreter:loadmodule",
+                    )
+                  });
 
-                fn_heap.set((*arg as &str).replacen("->$", "$", 1), from).unwrap();
+                fn_heap
+                  .set((*arg as &str).replacen("->$", "$", 1), from)
+                  .unwrap();
               });
             });
           }
-          _ => if &caller != &"" {
-            error(&format!("Unexpected `{}`", &caller), &file);
+          _ => {
+            if &caller != &"" {
+              error(&format!("Unexpected `{}`", &caller), &file);
+            }
           }
         }
       }

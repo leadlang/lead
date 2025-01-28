@@ -26,7 +26,7 @@ pub type Pointer = HashMap<String, PtrType>;
 #[derive(Debug)]
 pub enum RawRTValue {
   RT(RuntimeValue),
-  PKG(HashMap<String, PackageCallback>)
+  PKG(HashMap<String, PackageCallback>),
 }
 
 fn get_ptr(heap: &mut Heap) -> &mut HashMap<String, (&'static str, RawRTValue)> {
@@ -40,23 +40,23 @@ pub fn set_runtime_val(heap: &mut Heap, key: String, module: &'static str, val: 
 pub fn call_runtime_val(
   heap: &mut Heap,
   key: &str,
-  v: &Vec<String>,
+  v: &Vec<*const str>,
   a: HeapWrapper,
   c: &String,
   o: &mut Options,
-  file: &str
+  file: &str,
 ) -> Option<&'static str> {
   let ptr = get_ptr(heap);
 
   let (key, caller) = key.split_once("::")?;
   let data = ptr.get_mut(key)?;
-  
+
   match &mut data.1 {
     RawRTValue::RT(data) => data.call_ptr(caller, v, a, c, o)?,
     RawRTValue::PKG(pkg) => match pkg.get_mut(caller) {
       Some(x) => x.call_mut((v, a, c, o)),
-      None => error(&format!("Unexpected `{}`", &caller), &file)
-    }
+      None => error(&format!("Unexpected `{}`", &caller), &file),
+    },
   }
 
   Some(data.0)
@@ -74,7 +74,7 @@ impl Heap {
     Self {
       data: HashMap::new(),
       pointer: HashMap::new(),
-      runtimes: HashMap::new()
+      runtimes: HashMap::new(),
     }
   }
 
@@ -117,7 +117,7 @@ impl Heap {
     Some(())
   }
 
-  fn get_ptr<'a>(&'a self, key: &'a String) -> Option<(&'a String, &'a BufKeyVal)> {
+  fn get_ptr<'a>(&'a self, key: &'a str) -> Option<(&'a str, &'a BufKeyVal)> {
     if key.starts_with("*") {
       let ptr = self.pointer.get(key)?;
       Some((&ptr.key, &ptr.val))
@@ -126,7 +126,7 @@ impl Heap {
     }
   }
 
-  pub fn get(&self, key: &String) -> Option<&BufValue> {
+  pub fn get(&self, key: &str) -> Option<&BufValue> {
     let key = key.replacen("->", "", 1).replacen("&", "", 1);
 
     let (ky, typ) = self.get_ptr(&key)?;
@@ -143,7 +143,7 @@ impl Heap {
     }
   }
 
-  pub fn get_mut(&mut self, key: &String) -> Option<&mut BufValue> {
+  pub fn get_mut(&mut self, key: &str) -> Option<&mut BufValue> {
     if !key.starts_with("->&$") {
       return None;
     };
@@ -171,7 +171,7 @@ impl Heap {
     }
   }
 
-  pub fn remove(&mut self, key: &String) -> Option<Option<BufValue>> {
+  pub fn remove(&mut self, key: &str) -> Option<Option<BufValue>> {
     if !key.starts_with("->$") {
       return None;
     }

@@ -1,5 +1,7 @@
-use crate::{types::{DynMethodRes, MethodRes, PackageCallback}, Package};
-
+use crate::{
+  types::{DynMethodRes, MethodRes, PackageCallback},
+  Package,
+};
 
 #[derive(Default)]
 /// ImplPackage is not meant to create a package out of
@@ -44,7 +46,7 @@ macro_rules! generate {
     pub fn ver() -> u16 {
       interpreter::VERSION_INT
     }
-    
+
     #[no_mangle]
     pub fn modules() -> Vec<Box<dyn interpreter::Package>> {
       use interpreter::Package;
@@ -79,11 +81,7 @@ impl ImplPackage {
     self
   }
 
-  pub fn add_method(
-    mut self,
-    name: &'static str,
-    callback: PackageCallback,
-  ) -> Self {
+  pub fn add_method(mut self, name: &'static str, callback: PackageCallback) -> Self {
     self.dyn_methods.push((name, callback));
     self
   }

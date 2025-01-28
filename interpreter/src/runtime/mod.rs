@@ -26,7 +26,7 @@ impl RuntimeValue {
   pub fn call_ptr(
     &mut self,
     caller: &str,
-    v: &Vec<String>,
+    v: &Vec<*const str>,
     a: HeapWrapper,
     c: &String,
     o: &mut Options,

@@ -94,7 +94,7 @@ pub enum BufValue {
   Array(Vec<BufValue>),
   Object(HashMap<String, Box<BufValue>>),
   Faillable(Result<Box<BufValue>, String>),
-  Runtime(AnyWrapper)
+  Runtime(AnyWrapper),
 }
 
 impl BufValue {
@@ -110,7 +110,7 @@ impl BufValue {
       BufValue::Faillable(res) => match res {
         Ok(t) => format!("<success {}>", t.type_of()),
         Err(t) => format!("<err {}>", &t),
-      }
+      },
       BufValue::Runtime(d) => format!("<runtime {:?}>", d.type_id()),
     }
   }

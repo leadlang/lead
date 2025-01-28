@@ -72,6 +72,10 @@ macro_rules! parse {
       interpreter::error("Invalid Format!", $file);
     };
 
+    $(
+      let $y = unsafe { &**$y };
+    )*
+
     $(interpreter::modify!($file + $heap: $x $y);)*;
   };
 }

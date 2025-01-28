@@ -5,14 +5,14 @@ use std::collections::HashMap;
 use super::{HeapWrapper, Options};
 
 //pub trait DynPackageCallback = FnMut(&Args, &mut Heap, &mut bool);
-pub type Args = Vec<String>;
+pub type Args = Vec<*const str>;
 pub type PackageCallback = fn(&Args, HeapWrapper, &String, &mut Options) -> ();
 
 pub type DynMethodRes = Vec<(&'static str, PackageCallback)>;
 pub type MethodRes = &'static [(&'static str, PackageCallback)];
 
 pub struct LanguagePackages<'a> {
-  pub inner: HashMap<&'static str, (&'a str, PackageCallback)>
+  pub inner: HashMap<&'static str, (&'a str, PackageCallback)>,
 }
 
 impl<'a> LanguagePackages<'a> {
@@ -54,7 +54,7 @@ impl<'a> LanguagePackages<'a> {
         chalk.red().print(&format!("{}- ", no + 1));
         chalk.yellow().bold().print(&syntax);
         print!(" from ");
-        chalk.reset_weight().blue().println(&name);      
+        chalk.reset_weight().blue().println(&name);
       });
   }
 }

@@ -1,16 +1,25 @@
 use std::{fmt::Display, process, sync::LazyLock};
 
-static INFO: LazyLock<String> = LazyLock::new(|| String::from_utf8_lossy(&[
-  27, 91, 51, 52, 109, 27, 91, 49, 109, 73, 78, 70, 79, 58, 32, 27, 91, 109,
-]).to_string());
+static INFO: LazyLock<String> = LazyLock::new(|| {
+  String::from_utf8_lossy(&[
+    27, 91, 51, 52, 109, 27, 91, 49, 109, 73, 78, 70, 79, 58, 32, 27, 91, 109,
+  ])
+  .to_string()
+});
 
-static WARN: LazyLock<String> = LazyLock::new(|| String::from_utf8_lossy(&[
-  27, 91, 51, 51, 109, 27, 91, 49, 109, 87, 65, 82, 78, 58, 32, 27, 91, 109,
-]).to_string());
+static WARN: LazyLock<String> = LazyLock::new(|| {
+  String::from_utf8_lossy(&[
+    27, 91, 51, 51, 109, 27, 91, 49, 109, 87, 65, 82, 78, 58, 32, 27, 91, 109,
+  ])
+  .to_string()
+});
 
-static ERROR: LazyLock<String> = LazyLock::new(|| String::from_utf8_lossy(&[
-  27, 91, 51, 49, 109, 27, 91, 49, 109, 69, 82, 82, 58, 32, 27, 91, 109,
-]).to_string());
+static ERROR: LazyLock<String> = LazyLock::new(|| {
+  String::from_utf8_lossy(&[
+    27, 91, 51, 49, 109, 27, 91, 49, 109, 69, 82, 82, 58, 32, 27, 91, 109,
+  ])
+  .to_string()
+});
 
 pub fn info<T: Display>(msg: T) {
   println!("{}{msg}", *INFO);
