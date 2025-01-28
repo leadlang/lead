@@ -144,7 +144,7 @@ Types ---
           .parse()
           .map_or_else(|_| error("Unable to convert to FLOAT", file), |x| x),
       ),
-      "string" => BufValue::Str(data),
+      "string" => BufValue::Str(serde_json::from_str(&data).map_or_else(|_| error("Unable to convert to STRING", file), |x| x)),
       e => error(&format!("Invalid type, {e}"), file),
     },
   );

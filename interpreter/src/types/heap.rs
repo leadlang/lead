@@ -23,23 +23,22 @@ pub struct PtrType {
 pub type HeapInnerMap = HashMap<String, BufValue>;
 pub type Pointer = HashMap<String, PtrType>;
 
+#[derive(Debug)]
 pub enum RawRTValue {
   RT(RuntimeValue),
   PKG(HashMap<String, PackageCallback>)
 }
 
-pub static mut RUNTIME_VAL: Option<HashMap<String, (&'static str, RawRTValue)>> = None;
-
-fn get_ptr() -> &'static mut HashMap<String, (&'static str, RawRTValue)> {
-  #[allow(static_mut_refs)]
-  unsafe { RUNTIME_VAL.as_mut().unwrap() }
+fn get_ptr(heap: &mut Heap) -> &mut HashMap<String, (&'static str, RawRTValue)> {
+  &mut heap.runtimes
 }
 
-pub fn set_runtime_val(key: String, module: &'static str, val: RawRTValue) {
-  let _ = get_ptr().insert(key, (module, val));
+pub fn set_runtime_val(heap: &mut Heap, key: String, module: &'static str, val: RawRTValue) {
+  let _ = get_ptr(heap).insert(key, (module, val));
 }
 
 pub fn call_runtime_val(
+  heap: &mut Heap,
   key: &str,
   v: &Vec<String>,
   a: HeapWrapper,
@@ -47,7 +46,7 @@ pub fn call_runtime_val(
   o: &mut Options,
   file: &str
 ) -> Option<&'static str> {
-  let ptr = get_ptr();
+  let ptr = get_ptr(heap);
 
   let (key, caller) = key.split_once("::")?;
   let data = ptr.get_mut(key)?;
@@ -67,19 +66,28 @@ pub fn call_runtime_val(
 pub struct Heap {
   data: HeapInnerMap,
   pointer: Pointer,
+  runtimes: HashMap<String, (&'static str, RawRTValue)>,
 }
 
 impl Heap {
   pub fn new() -> Self {
-    unsafe { RUNTIME_VAL = Some(HashMap::new()) };
-
     Self {
       data: HashMap::new(),
       pointer: HashMap::new(),
+      runtimes: HashMap::new()
     }
   }
 
+  pub fn clear(&mut self) {
+    *self = Self::new();
+  }
+
+  #[deprecated]
   pub fn inner(&mut self) -> &mut HeapInnerMap {
+    &mut self.data
+  }
+
+  pub fn inner_heap(&mut self) -> &mut HeapInnerMap {
     &mut self.data
   }
 
@@ -98,6 +106,7 @@ impl Heap {
     if let BufKeyVal::None = val {
       return None;
     }
+
     self.pointer.insert(
       key,
       PtrType {

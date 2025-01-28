@@ -1,12 +1,41 @@
 use std::collections::HashMap;
-use crate::{types::{set_runtime_val, Heap, RawRTValue}, Application, RespPackage};
+use crate::{error, ipreter::{interpret, tok_parse}, types::{set_runtime_val, Heap, RawRTValue}, Application, RespPackage};
 
 #[derive(Debug)]
 pub struct RTCreatedModule<'a> {
-  pub name: &'a str,
-  pub heap: Heap,
-  pub methods: HashMap<&'a str, (Vec<&'a str>, String)>,
-  pub drop_fn: String
+  pub(crate) name: &'a str,
+  pub(crate) heap: Heap,
+  pub(crate) methods: HashMap<&'a str, (Vec<&'a str>, String)>,
+  pub(crate) drop_fn: String
+}
+
+impl<'a> RTCreatedModule<'a> {
+  pub(crate) fn run_method<T: FnOnce(&mut Heap, &mut Heap, &Vec<&str>) -> ()>(&mut self, app: *mut Application, method: &str, file: &str, into_heap: T) {
+    let app = unsafe { &mut *app };
+
+    let (args, method_code) = self.methods.get(&method).unwrap_or_else(|| error("Unable to find :method", file));
+    into_heap(&mut self.heap, &mut app.heap, args);
+
+    // run
+    let file_name = ":fn";
+    
+    let file = method_code.replace("\r", "");
+    let file = file.split("\n").collect::<Vec<_>>();
+
+    let mut line = 0usize;
+  
+    while line < file.len() {
+      let content = &file[line];
+  
+      if !content.starts_with("#") {
+        tok_parse(format!("{}:{}", &file_name, line), content, app, &mut self.heap, &mut line);
+      }
+  
+      line += 1;
+    }
+
+    self.heap.clear();
+  }
 }
 
 pub fn insert_into_application(app: *mut Application, args: &Vec<String>, line: &mut usize, to_set: String) {
@@ -17,6 +46,9 @@ pub fn insert_into_application(app: *mut Application, args: &Vec<String>, line: 
   };
 
   match a.as_str() {
+    "*run" => {
+      interpret(&v, app);
+    }
     "*mark" => {
       app.markers.insert(v.into(), *line);
     }
@@ -37,7 +69,7 @@ pub fn insert_into_application(app: *mut Application, args: &Vec<String>, line: 
 
       let val = RawRTValue::PKG(pkg);
 
-      set_runtime_val(to_set, {
+      set_runtime_val(&mut app.heap, to_set, {
         let name = String::from_utf8_lossy(name);
         let name: &'static mut str = name.to_string().leak::<'static>();
 
@@ -95,6 +127,11 @@ pub fn parse_into_modules<'a>(code: String) -> Vec<RTCreatedModule<'a>> {
           ctx = tok.remove(0);
           in_ctx = true;
           
+          for t in &tok {
+            if (!t.starts_with("->")) || (t.starts_with("->&")) {
+              error(format!("Arguments of module parameters can ONLY be move! {t} is not move!"), ":core:parser");
+            }
+          }
           tok_arg = tok.clone();
         }
         "_drop" => {
@@ -128,8 +165,6 @@ pub fn parse_into_modules<'a>(code: String) -> Vec<RTCreatedModule<'a>> {
       }
     }
   }
-
-  println!("{:?}", data);
 
   data
 }

@@ -28,7 +28,7 @@ generate_help!(
   "help" => "Prints this help message",
   "docs" => "Shows the docs [runs lead_docs]",
   "run [..args]" => "Run lead script based on metadata.json",
-  { 
+  {
     let mut chalk = Chalk::new();
     let val = chalk.underline().string(&"args");
 

@@ -22,7 +22,7 @@ pub use val::*;
 
 pub use chalk_rs::Chalk;
 
-pub static VERSION_INT: u16 = 2;
+pub static VERSION_INT: u16 = 3;
 
 pub trait Package {
   fn name(&self) -> &'static [u8];

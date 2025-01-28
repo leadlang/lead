@@ -13,6 +13,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 lead_lang_interpreter = { path = "../../interpreter" }
+serde_json = "1.0.137"
 
 [features]
 doc = []

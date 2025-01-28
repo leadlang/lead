@@ -1,6 +1,9 @@
-use std::{env::consts::{ARCH, OS, FAMILY}, io::Write};
 use chalk_rs::Chalk;
-use termcolor::{StandardStream, ColorChoice, ColorSpec, Color, WriteColor};
+use std::{
+  env::consts::{ARCH, FAMILY, OS},
+  io::Write,
+};
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 #[cfg(windows)]
 mod sysinfo;
@@ -27,17 +30,27 @@ fn get_sys_info() -> Vec<String> {
     let ram = sys.total_memory();
 
     #[cfg(windows)]
-    resp.push(format!("{:<8}: {}/{} MB", "Memory", free/1048576, ram/1048576));
-    
+    resp.push(format!(
+      "{:<8}: {}/{} MB",
+      "Memory",
+      free / 1048576,
+      ram / 1048576
+    ));
+
     #[cfg(not(windows))]
-    resp.push(format!("{:<8}: {}/{} MB", "Memory", free/1000000, ram/1000000));
+    resp.push(format!(
+      "{:<8}: {}/{} MB",
+      "Memory",
+      free / 1000000,
+      ram / 1000000
+    ));
   }
 
   resp.push("".into());
   resp.push("Lead Language".into());
   resp.push(format!("{:<8}: {}", "Version", env!("CARGO_PKG_VERSION")));
   resp.push(format!("{:<8}: {}", "Target", env!("TARGET")));
-  
+
   resp
 }
 
@@ -48,7 +61,7 @@ pub fn render_lead_logo(monochrome: bool) {
 
   // Full Box
   let fill = "██";
-  
+
   let mut sysinfo = get_sys_info();
   for stream in logo {
     let mut dat = String::new();
@@ -57,7 +70,9 @@ pub fn render_lead_logo(monochrome: bool) {
       dat = sysinfo.remove(0);
     }
 
-    stdout.set_color(ColorSpec::new().set_fg(Some(Color::White))).unwrap();
+    stdout
+      .set_color(ColorSpec::new().set_fg(Some(Color::White)))
+      .unwrap();
     write!(&mut stdout, "{:<60}", dat).unwrap();
 
     for [r, g, b] in stream {
@@ -69,12 +84,18 @@ pub fn render_lead_logo(monochrome: bool) {
         let avg = (r + g + b) / 3;
 
         if avg > 128 {
-          stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black))).unwrap();
+          stdout
+            .set_color(ColorSpec::new().set_fg(Some(Color::Black)))
+            .unwrap();
         } else {
-          stdout.set_color(ColorSpec::new().set_fg(Some(Color::White))).unwrap();
+          stdout
+            .set_color(ColorSpec::new().set_fg(Some(Color::White)))
+            .unwrap();
         }
       } else {
-        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Rgb(r, g, b)))).unwrap();
+        stdout
+          .set_color(ColorSpec::new().set_fg(Some(Color::Rgb(r, g, b))))
+          .unwrap();
       }
 
       write!(&mut stdout, "{}", fill).unwrap();

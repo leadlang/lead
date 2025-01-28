@@ -1,10 +1,10 @@
-use std::env;
-use std::ptr::addr_of_mut;
-use std::{collections::HashMap, fs};
-use std::env::consts::{DLL_PREFIX, DLL_EXTENSION};
 use chalk_rs::Chalk;
 use interpreter::types::{DynMethodRes, MethodRes};
 use interpreter::{Application, Package as Pkg};
+use std::env;
+use std::env::consts::{DLL_EXTENSION, DLL_PREFIX};
+use std::ptr::addr_of_mut;
+use std::{collections::HashMap, fs};
 
 use super::metadata;
 use libloading::Library;
@@ -12,7 +12,7 @@ use libloading::Library;
 enum FullAccessLevel {
   SilentlyAllow,
   Warn,
-  Deny
+  Deny,
 }
 
 struct Options {
@@ -28,23 +28,24 @@ static mut LIBS: Option<HashMap<usize, Package>> = None;
 
 struct Package {
   modules: fn() -> Vec<Box<dyn Pkg>>,
-  _lib: Library
+  _lib: Library,
 }
 
 impl Package {
   fn new(path: &str) -> Self {
     unsafe {
       let library = Library::new(path).expect("Unable to load library");
-      let f = library.get::<fn() -> Vec<Box<dyn Pkg>>>(b"modules").expect("Unable to get module export");
+      let f = library
+        .get::<fn() -> Vec<Box<dyn Pkg>>>(b"modules")
+        .expect("Unable to get module export");
 
       Self {
         modules: *f,
-        _lib: library
+        _lib: library,
       }
     }
   }
 }
-
 
 pub async fn run(args: &[String], chalk: &mut Chalk) {
   unsafe {
@@ -52,9 +53,9 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
   }
 
   let options = parse(args);
-  
+
   let data = metadata::get_meta().await;
-  
+
   if options.sysinfo {
     logo::render_lead_logo(options.monochrome);
   }
@@ -64,44 +65,47 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
   let pkgmap = create_pkg_map();
 
   // We are guaranteed that the closures run in the single thread & NOT AT THE SAME TIME.
-  let mut application = Application::new(&data.entry, |path| fs::read(path).expect("Unable to read file"), |name| {
-    todo!();
-  }, move |pkg_name| {
-    let chalk = unsafe { &mut *chalk_1_mut };
+  let mut application = Application::new(
+    &data.entry,
+    |path| fs::read(path).expect("Unable to read file"),
+    |name| {
+      todo!();
+    },
+    move |pkg_name| {
+      let chalk = unsafe { &mut *chalk_1_mut };
 
-    let pkg_name: &String = &pkg_name.into();
+      let pkg_name: &String = &pkg_name.into();
 
-    if data.allow_full_access_to_packages_named.contains(pkg_name) && options.log {
-      chalk.blue().print(&"[INFO] ");
-      chalk.blue().print(&format!("{pkg_name} "));
+      if data.allow_full_access_to_packages_named.contains(pkg_name) && options.log {
+        chalk.blue().print(&"[INFO] ");
+        chalk.blue().print(&format!("{pkg_name} "));
 
-      println!("has been granted full heap access");
-    }
+        println!("has been granted full heap access");
+      }
 
-    if !data.allow_full_access_to_packages_named.contains(pkg_name) {
-      match options.full_access {
-        FullAccessLevel::SilentlyAllow => {}
-        FullAccessLevel::Warn => {
-          chalk.yellow().print(&"[WARN] ");
-          chalk.blue().print(&format!("{pkg_name} "));
+      if !data.allow_full_access_to_packages_named.contains(pkg_name) {
+        match options.full_access {
+          FullAccessLevel::SilentlyAllow => {}
+          FullAccessLevel::Warn => {
+            chalk.yellow().print(&"[WARN] ");
+            chalk.blue().print(&format!("{pkg_name} "));
 
-          println!("was been granted full heap access");
-        }
-        FullAccessLevel::Deny => {
-          chalk.red().print(&"[ERRR] ");
-          chalk.blue().print(&format!("{pkg_name} "));
-          
-          println!(" tried to get full heap access\n       ❌ Access Denied, Exiting");
+            println!("was been granted full heap access");
+          }
+          FullAccessLevel::Deny => {
+            chalk.red().print(&"[ERRR] ");
+            chalk.blue().print(&format!("{pkg_name} "));
+
+            println!(" tried to get full heap access\n       ❌ Access Denied, Exiting");
+          }
         }
       }
-    }
-  });
+    },
+  );
 
   load_lib();
 
-  let libs = unsafe {
-    (&mut *addr_of_mut!(LIBS)).as_mut().unwrap()
-  };
+  let libs = unsafe { (&mut *addr_of_mut!(LIBS)).as_mut().unwrap() };
 
   for (_, a) in libs.iter() {
     let pkgs = (a.modules)();
@@ -115,9 +119,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
 }
 
 fn load_lib() {
-  let libs = unsafe {
-    (&mut *addr_of_mut!(LIBS)).as_mut().unwrap()
-  };
+  let libs = unsafe { (&mut *addr_of_mut!(LIBS)).as_mut().unwrap() };
 
   let path = env::var("LEAD_HOME").expect("Unable to get LEAD_HOME, is lead installed?");
 
@@ -145,7 +147,8 @@ fn create_pkg_map() -> HashMap<String, String> {
 
       let mut path = entry.path();
 
-      let lookup = fs::read_to_string(format!("./lib/{name}/lead.lookup.lkp")).expect("Unable to process lead lookup file");
+      let lookup = fs::read_to_string(format!("./lib/{name}/lead.lookup.lkp"))
+        .expect("Unable to process lead lookup file");
 
       let libpath = format!("{DLL_PREFIX}{lookup}.{DLL_EXTENSION}");
       path.push(libpath);
@@ -162,7 +165,7 @@ fn parse(args: &[String]) -> Options {
     sysinfo: true,
     log: false,
     full_access: FullAccessLevel::Warn,
-    monochrome: false
+    monochrome: false,
   };
 
   args.iter().for_each(|v| match v.as_str() {

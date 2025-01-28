@@ -1,7 +1,11 @@
 #![allow(unused)]
 
-use std::{env::args, panic, io::{Write, stderr}, process};
 use chalk_rs::Chalk;
+use std::{
+  env::args,
+  io::{stderr, Write},
+  panic, process,
+};
 
 mod app;
 mod docs;
@@ -37,7 +41,10 @@ async fn main() {
 
     let mut err = stderr();
 
-    let err_str = chalk.red().bold().string(&"-------------------------\n    An error occured!\n-------------------------");
+    let err_str = chalk
+      .red()
+      .bold()
+      .string(&"-------------------------\n    An error occured!\n-------------------------");
 
     let _ = err.write_all(err_str.as_bytes());
     let _ = err.write_all(b"\n");

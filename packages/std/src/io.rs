@@ -19,9 +19,9 @@ module!(
               &BufValue::Float(x) => chalk.blue().string(&format!("{x}")),
               &BufValue::Array(x) => chalk.yellow().string(&format!("{:?}", &x)),
               &BufValue::Object(x) => chalk.yellow().string(&format!("{:?}", &x)),
-              x => format!("{:?}", &x),
+              x => chalk.cyan().string(&format!("{:?}", &x)),
             },
-            _ => format!("NONE"),
+            _ => chalk.red().string(&"null"),
           }
         })
         .collect::<Vec<_>>();

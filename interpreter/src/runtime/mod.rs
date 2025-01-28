@@ -7,6 +7,7 @@ pub type RuntimeMethodRes = HashMap<&'static str, (&'static str, PackageCallback
 
 pub mod _root_syntax;
 
+#[derive(Debug)]
 pub struct RuntimeValue {
   pub r#type: String,
   pub _inner: Heap,

@@ -38,6 +38,9 @@ jobs:
         with:
           tag_name: ${{ steps.ver.outputs.TAG_NAME }}
           prerelease: ${{ github.event_name == 'push' }}
+          generate_release_notes: true
+          release_name: OpenLead v${{ steps.ver.outputs.TAG_NAME }}
+          body: A build of Lead Language with interpreter v${{ steps.ver.outputs.TAG_NAME }}
           draft: true
 
   publish_cargo:

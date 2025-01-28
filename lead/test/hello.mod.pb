@@ -1,7 +1,7 @@
 __declare_global hello
-  _fn init
-    $1: @s"Hello World"
-    print $1
+  _fn init ->$ap
+    $1: malloc string "Hello World"
+    print $1 $ap
   _end
 
   _drop

@@ -1,3 +1,7 @@
 *mod test/hello
 
-hello
+*run test/index
+
+$a: malloc bool true
+
+hello init ->$a

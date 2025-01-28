@@ -1,24 +1,23 @@
 use windows::{
   core::*,
   Win32::{
-    Foundation::*, 
+    Foundation::*,
     System::{
-      Com::*, 
-      Variant::{VariantToStringAlloc, VARIANT}, 
+      Com::*,
+      SystemInformation::*,
+      Variant::{VariantToStringAlloc, VARIANT},
       Wmi::*,
-      SystemInformation::*
-    }
+    },
   },
 };
 
 pub static IS_SUPPORTED_SYSTEM: bool = true;
 
 pub struct System {
-  pub(self) memory: MEMORYSTATUSEX
+  pub(self) memory: MEMORYSTATUSEX,
 }
 
 impl System {
-
   pub fn new_all() -> Self {
     unsafe {
       CoInitializeEx(None, COINIT_MULTITHREADED);
@@ -32,7 +31,7 @@ impl System {
         RPC_C_IMP_LEVEL_IMPERSONATE,
         None,
         EOAC_NONE,
-        None
+        None,
       );
     }
 
@@ -43,9 +42,7 @@ impl System {
       GlobalMemoryStatusEx(&mut memory);
     }
 
-    Self {
-      memory
-    }
+    Self { memory }
   }
 
   pub fn refresh_all(&mut self) -> &mut Self {
@@ -70,47 +67,46 @@ pub struct Cpu;
 impl Cpu {
   pub fn brand(&self) -> String {
     unsafe {
-      let wmi: IWbemLocator = CoCreateInstance(&WbemLocator, None, CLSCTX_INPROC_SERVER).expect("Unable to get WbemLocator");
+      let wmi: IWbemLocator = CoCreateInstance(&WbemLocator, None, CLSCTX_INPROC_SERVER)
+        .expect("Unable to get WbemLocator");
 
-      let service = wmi.ConnectServer(
-        &BSTR::from("ROOT\\CIMV2"), 
-        &BSTR::default(), 
-        &BSTR::default(), 
-        &BSTR::default(), 
-        0, 
-        &BSTR::default(), 
-        None
-      ).expect("Error");
+      let service = wmi
+        .ConnectServer(
+          &BSTR::from("ROOT\\CIMV2"),
+          &BSTR::default(),
+          &BSTR::default(),
+          &BSTR::default(),
+          0,
+          &BSTR::default(),
+          None,
+        )
+        .expect("Error");
 
-      let query = service.ExecQuery(
-        &BSTR::from("WQL"), 
-        &BSTR::from("SELECT Name FROM Win32_Processor"), 
-        WBEM_FLAG_FORWARD_ONLY, 
-        None
-      ).expect("Error getting cpu name");
+      let query = service
+        .ExecQuery(
+          &BSTR::from("WQL"),
+          &BSTR::from("SELECT Name FROM Win32_Processor"),
+          WBEM_FLAG_FORWARD_ONLY,
+          None,
+        )
+        .expect("Error getting cpu name");
 
       let mut objs: [Option<IWbemClassObject>; 1] = [None];
       let mut returned = 0;
-      
+
       query.Next(WBEM_INFINITE, &mut objs, &mut returned).unwrap();
 
       let [obj] = objs;
       let obj = obj.unwrap();
 
       let mut value = VARIANT::default();
-      obj.Get(
-        w!("Name"),
-        0,
-        &mut value,
-        None,
-        None
-      );
+      obj.Get(w!("Name"), 0, &mut value, None, None);
 
       let mut resp = PWSTR::null();
 
       let typ = value.vt();
       let brand = VariantToStringAlloc(&value).unwrap().to_string().unwrap();
-      
+
       brand
     }
   }
