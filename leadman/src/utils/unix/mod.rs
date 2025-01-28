@@ -2,7 +2,7 @@ use super::bashrc;
 use std::fs::{read_to_string, write};
 
 pub async fn postinstall(path: &str) {
-  super::chmod(path);
+  super::chmod(&format!("{path}/*"));
 
   #[cfg(any(target_os = "linux", target_os = "macos"))]
   install_path(path);
