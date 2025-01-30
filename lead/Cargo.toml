@@ -35,4 +35,8 @@ windows = { version = "0.59.0", features = [
 sysinfo = { version = "0.33", default-features = false, features = ["system"] }
 
 [build-dependencies]
-tauri-winres = "0.2"
+tauri-winres = "0.3"
+
+[package.metadata.tauri-winres]
+OriginalFilename = "lead.exe"
+LegalCopyright = "Copyright © 2024 - The AHQ Softwares' Lead lang Team"

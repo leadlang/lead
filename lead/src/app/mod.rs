@@ -137,7 +137,7 @@ fn load_lib() {
 fn create_pkg_map() -> HashMap<String, String> {
   let mut pkgmap = HashMap::new();
 
-  let dir = fs::read_dir("./lib");
+  let dir = fs::read_dir("./.lead_libs");
 
   if let Ok(dir) = dir {
     for entry in dir {
@@ -147,7 +147,7 @@ fn create_pkg_map() -> HashMap<String, String> {
 
       let mut path = entry.path();
 
-      let lookup = fs::read_to_string(format!("./lib/{name}/lead.lookup.lkp"))
+      let lookup = fs::read_to_string(format!("./.lead_libs/{name}/lead.lookup.lkp"))
         .expect("Unable to process lead lookup file");
 
       let libpath = format!("{DLL_PREFIX}{lookup}.{DLL_EXTENSION}");

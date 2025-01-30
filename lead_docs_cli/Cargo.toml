@@ -3,10 +3,22 @@ name = "lead_docs"
 version = "0.0.0-dev-lead-lang"
 edition = "2021"
 
-
 [lib]
 name = "lead_docs_lib"
 crate-type = ["rlib", "cdylib"]
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+inquire = { version = "0.7.5", default-features = false, features = [
+  "fuzzy",
+  "macros",
+  "console",
+] }
+lead_lang_interpreter = { version = "0.0.0-dev-lead-lang", path = "../interpreter" }
+libloading = "0.8.6"
+
+[target.'cfg(windows)'.build-dependencies]
+tauri-winres = "0.3"
+
+[package.metadata.tauri-winres]
+OriginalFilename = "lead_docs.exe"
+LegalCopyright = "Copyright © 2024 - The AHQ Softwares' Lead lang Team"

@@ -1,8 +1,10 @@
 #![feature(vec_push_within_capacity)]
 #![feature(concat_idents)]
 
+use std::collections::HashMap;
+use indoc::indoc;
 use interpreter::{
-  error, function, generate, parse, types::{BufValue, HeapWrapper, MethodRes, Options}, Package
+  error, function, generate, hashmap, parse, types::{BufValue, HeapWrapper, MethodRes, Options}, Package
 };
 
 mod array;
@@ -15,6 +17,58 @@ pub struct Core;
 impl Package for Core {
   fn name(&self) -> &'static [u8] {
     "📦 Lead Programming Language / Core".as_bytes()
+  }
+
+  fn doc(&self) -> HashMap<&'static str, &'static str> {
+    hashmap! {
+      "unwrap" => indoc! {"
+        Unwraps a value in place
+
+        ## Format:
+        ```
+        $val: unwrap ->$result
+        ```
+      "},
+      "malloc" => indoc!{"
+        Memory allocate
+
+        ## Format:
+        ```
+        $val: malloc %type% %data%
+        ```
+
+        Types ---
+          - bool Boolean (eg. true)
+          - int Integer (eg. -3, 3)
+          - u_int Unsigned Integer (eg. 3)
+          - float Floating point number (eg. 1.04)
+          - string String (eg. Hello World)
+      "},
+      "drop" => indoc! {"
+        Drops a value
+
+        ## Format:
+        ```
+        drop ->$val
+        ```
+
+        ## Note:
+          - This function is not magic, it can be reproduced in lead lang too using lead interpreter modules. Example:
+            ```
+            __declare_global custom
+              _fn drop ->$ap
+              
+              _end
+            __end
+            ```
+
+            and can be called as such
+            ```
+            custom drop ->$val
+            ```
+          - This function is better optimized than the above
+      "}
+    }
   }
 
   fn methods(

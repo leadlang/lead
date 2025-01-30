@@ -27,7 +27,7 @@ pub static VERSION_INT: u16 = 3;
 pub trait Package {
   fn name(&self) -> &'static [u8];
 
-  fn doc(&self) -> HashMap<&'static str, HashMap<&'static str, &'static str>> {
+  fn doc(&self) -> HashMap<&'static str, &'static str> {
     HashMap::new()
   }
 

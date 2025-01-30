@@ -1,36 +1,52 @@
-#! /bin/sh
+#!/bin/sh
 
-RED="\033[31m"
-ENDCOLOR="\033[0m"
+set -e  # Equivalent to `$ErrorActionPreference = "Stop"`
 
-err="${RED}[ERRR]${ENDCOLOR}"
+ERR="\033[31m\033[1m[ERRR]\033[0m"  # Red and bold "[ERRR]"
 
-if [ -z "$LEAD_HOME" ]; then
-  printf "%b\n" "$err LEAD_HOME is not set. Please reinstall lead programming language."
-  exit 1
-fi
+if [ $# -gt 0 ] && [ "$(printf %s "$1" | cut -c 1)" = "+" ]; then
+  data="+stable +nightly +current"
+  if echo "$data" | grep -q -- "$1"; then
+    channel=$(printf %s "$1" | cut -c 2-)
 
-if [ "$1" = "+stable" ]; then
-  channel="stable"
-  ver=$(cat "$LEAD_HOME/versions/stable")
-elif [ "$1" = "+nightly" ]; then
-  channel="nightly"
-  ver=$(cat "$LEAD_HOME/versions/nightly")
-elif [ "${1#?}" != "$1" ] && [ "$1" != "+current" ]; then
-  channel=$1
-  ver=$(echo $1 | cut -c 2-)
+    path="$LEAD_HOME/versions/$channel"
+    if [ ! -e "$path" ]; then
+      echo "$ERR The channel $channel is not yet installed. Use \033[32mleadman install\033[0m" >&2
+      exit 1
+    fi
+    ver=$(cat "$path")
+  else
+    ver=$(printf %s "$1" | tr -d '+')
+  fi
 else
   channel="current"
-  ver=$(cat "$LEAD_HOME/versions/current")
+
+  path="$LEAD_HOME/versions/current"
+  if [ ! -e "$path" ]; then
+    echo "$ERR The channel $channel is not yet installed. Use \033[32mleadman install\033[0m" >&2
+    exit 1
+  fi
+  ver=$(cat "$path")
 fi
 
-if [ "$ver" = '' ]; then
-  printf "$err No version has been found for $channel. Use lead [+stable / +nightly / +version] [args]"
+if [ -z "$ver" ]; then
+  echo "$ERR No version has been marked as \033[36m$channel\033[0m. Use \033[32mlead [+stable / +nightly / +version] [args]\033[0m" >&2
   exit 1
 fi
 
-if [ "$1" = '+*' ]; then
-  shift
+exec_path="$LEAD_HOME/versions/$ver/lead"
+
+if [ ! -e "$exec_path" ]; then
+  echo "$ERR Your provided version \033[36m$ver\033[0m is invalid or not installed. Use \033[32mlead [+stable / +nightly / +version] [args]\033[0m" >&2
+  exit 1
 fi
 
-$LEAD_HOME/versions/$ver/lead "$@"
+if [ $# -gt 0 ] && [ "$(printf %s "$1" | cut -c 1)" = "+" ]; then
+  set -- "${@:2}" 
+fi
+
+if [ $# -eq 0 ]; then
+  "$exec_path"
+else
+  "$exec_path" "$@"
+fi

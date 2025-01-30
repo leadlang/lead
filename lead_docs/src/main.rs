@@ -38,7 +38,7 @@ fn main() {
         .build(&app)
         .unwrap();
 
-    let is_workspace = fs::read_dir("./lib").is_ok();
+    let is_workspace = fs::read_dir("./.lead_libs").is_ok();
 
     let webview = WebViewBuilder::new()
         .with_initialization_script(&format!("window.leadver = {:?}; window.os = {OS:?}; window.arch = {ARCH:?};\nwindow.workspace = {is_workspace}", env!("CARGO_PKG_VERSION")))

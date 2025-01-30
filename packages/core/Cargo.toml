@@ -12,6 +12,7 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+indoc = "2.0.5"
 lead_lang_interpreter = { path = "../../interpreter" }
 serde_json = "1.0.137"
 

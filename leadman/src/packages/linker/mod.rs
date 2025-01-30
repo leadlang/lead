@@ -42,8 +42,8 @@ pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
 
   let is0 = meta.pkver == 0;
 
-  let _ = fs::remove_dir_all("./lib").await;
-  fs::create_dir_all("./lib").await.expect("Unable to rebuild links");
+  let _ = fs::remove_dir_all("./.lead_libs").await;
+  fs::create_dir_all("./.lead_libs").await.expect("Unable to rebuild links");
 
   for (k, v) in &meta.dependencies {
     let hash = digest(format!("{k}@{v}"));
@@ -61,12 +61,12 @@ pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
       }
     }
 
-    copy_dir(&platform_cwd, format!("./lib/{hash}")).await;
-    fs::write(format!("./lib/{hash}/lead.lookup.lkp"), resp.package).await;
+    copy_dir(&platform_cwd, format!("./.lead_libs/{hash}")).await;
+    fs::write(format!("./.lead_libs/{hash}/lead.lookup.lkp"), resp.package).await;
 
     if is0 {
       
-      let doc = format!("./lib/{hash}/docs");
+      let doc = format!("./.lead_libs/{hash}/docs");
 
       match fs::metadata(&doc).await {
         Ok(m) => if m.is_file() {

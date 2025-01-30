@@ -125,7 +125,7 @@ pub async fn link(chalk: &mut Chalk) {
 
 pub async fn install(chalk: &mut Chalk) {
   fs::remove_dir_all("./.pkgcache").await;
-  fs::remove_dir_all("./lib").await;
+  fs::remove_dir_all("./.lead_libs").await;
 
   let mut metadata = get_meta().await;
 

@@ -14,7 +14,7 @@ tao = { version = "0.31", features = ["rwh_06"] }
 wry = "0.48"
 
 [target.'cfg(windows)'.build-dependencies]
-tauri-winres = "0.2"
+tauri-winres = "0.3"
 
 [package.metadata.tauri-winres]
 OriginalFilename = "lead_docs.exe"
