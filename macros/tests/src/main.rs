@@ -1,11 +1,20 @@
+use interpreter::types::BufValue;
 use lead_lang_macros::define;
 
 fn main() {
-    println!("Hello, world!");
-    _call_call("".into(), "".into())
+  println!("Hello, world!");
 }
 
-#[define]
-fn call(a: String, b: String) {
-    println!("{a} {b}");
+#[define((
+  desc: "Print two variables",
+  usage: [
+    (
+      desc: "Print two variables",
+      code: "$data: print $a $b"
+    )
+  ],
+  notes: Some("This is a simple print function for macro test")
+))]
+fn print(_a: &str, _b: &mut BufValue) -> BufValue {
+  BufValue::Bool(true)
 }

@@ -1,4 +1,4 @@
-use chalk_rs::Chalk;
+use lealang_chalk_rs::Chalk;
 use std::{
   env::consts::{ARCH, FAMILY, OS},
   io::Write,

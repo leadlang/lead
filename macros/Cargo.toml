@@ -14,6 +14,8 @@ proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["full"] }
 lead_lang_interpreter = { version = "0.0.0-dev-lead-lang" }
+serde = { version = "1.0.217", features = ["derive"] }
+ron = "0.8.1"
 
 [patch.crates-io]
 lead_lang_interpreter = { path = "../interpreter" }

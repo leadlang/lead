@@ -1,5 +1,5 @@
 use crate::Package;
-use chalk_rs::Chalk;
+use lealang_chalk_rs::Chalk;
 use std::collections::HashMap;
 
 use super::{HeapWrapper, Options};

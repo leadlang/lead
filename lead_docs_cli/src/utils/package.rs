@@ -1,16 +1,19 @@
 use interpreter::Package as TraitPackage;
 use libloading::Library;
-use std::{collections::HashMap, ffi::OsStr};
+use std::collections::HashMap;
+
+use super::docs::PackageEntry;
 
 pub struct Package {
+  pub name: String,
   pub doc: HashMap<String, HashMap<&'static str, &'static str>>,
-  pub display: String,
   _inner: Library,
 }
 
 impl Package {
-  pub fn new<T: AsRef<OsStr>>(path: T, display: String) -> Self {
+  pub fn new(pkg: &PackageEntry) -> Self {
     unsafe {
+      let path = &pkg.file;
       let library = Library::new(path).expect("Unable to load library");
 
       let pkgs = library
@@ -28,7 +31,7 @@ impl Package {
 
       Self {
         _inner: library,
-        display,
+        name: pkg.display.clone(),
         doc,
       }
     }

@@ -1,70 +1,72 @@
-use std::collections::HashMap;
+pub mod docs;
+pub mod package;
 
-use inquire::Select;
+// pub fn make_sel() {
+//   let select = vec!["📚 Lead Default", "⚒️  Workspace"];
 
-mod docs;
-mod package;
+//   let category = Select::new("Select", select)
+//     .prompt()
+//     .expect("You must select one...");
 
-pub fn make_sel() {
-  let select = vec!["📚 Lead Default", "⚒️  Workspace"];
+//   let data = match category {
+//     "📚 Lead Default" => docs::lead_lib(),
+//     "⚒️  Workspace" => docs::lead_ws(),
+//     _ => panic!("Invalid category"),
+//   };
 
-  let category = Select::new("Select", select)
-    .prompt()
-    .expect("You must select one...");
+//   let package = docs::prompt(data);
+//   let doc: HashMap<String, HashMap<&str, &str>> = package.doc;
 
-  let data = match category {
-    "📚 Lead Default" => docs::lead_lib(),
-    "⚒️  Workspace" => docs::lead_ws(),
-    _ => panic!("Invalid category"),
-  };
+//   navigate(&package.display, &doc);
+// }
 
-  let package = docs::prompt(data);
-  let doc: HashMap<String, HashMap<&str, &str>> = package.doc;
+// fn navigate(display: &str, doc: &HashMap<String, HashMap<&str, &str>>) {
+//   let mut root: Option<&str> = None;
 
-  println!("{doc:?}");
-  navigate(&package.display, &doc);
-}
+//   #[allow(unused_assignments)]
+//   let mut last = None;
 
-fn navigate(display: &str, doc: &HashMap<String, HashMap<&str, &str>>) {
-  let mut root: Option<&str> = None;
+//   let mut current_level: u8 = 0;
 
-  #[allow(unused_assignments)]
-  let mut last = None;
+//   loop {
+//     if current_level == 2 {
+//       let doc = doc.get(*root.as_ref().unwrap()).unwrap().get(*last.as_ref().unwrap()).unwrap();
 
-  let mut current_level: u8 = 0;
+//       println!("{doc}");
+//       //show_cursive(include_str!("../../../LICENSE"));
 
-  loop {
-    let mut choices = if current_level == 0 { vec![] } else { vec![".."] };
-    let mut c = match current_level {
-      1 => doc.get(*root.as_ref().unwrap()).unwrap().iter().map(|(a,_)| a as &str).collect::<Vec<_>>(),
-      0 => doc.iter().map(|(a, _)| a as &str).collect::<Vec<_>>(),
-      _ => panic!("Unknown Level")
-    };
-    
-    choices.append(&mut c);
-    choices.push("❌ Quit");
+//       current_level -= 1;
+//       continue;
+//     }
 
-    let sel = Select::new(&format!("Inside of {display}"), choices).prompt().expect("You must select one...");
+//     let mut choices = if current_level == 0 { vec![] } else { vec![".."] };
+//     let mut c = match current_level {
+//       1 => doc.get(*root.as_ref().unwrap()).unwrap().iter().map(|(a,_)| a as &str).collect::<Vec<_>>(),
+//       0 => doc.iter().map(|(a, _)| a as &str).collect::<Vec<_>>(),
+//       _ => panic!("Unknown Level")
+//     };
 
-    match sel {
-      ".." => {
-        current_level -= 1;
-      },
-      "❌ Quit" => return (),
-      e => {
-        current_level += 1;
+//     choices.append(&mut c);
+//     choices.push("❌ Quit");
 
-        match current_level {
-          1 => root = Some(e),
-          2 => {
-            last = Some(e);
-            break;
-          },
-          _ => panic!("Unknown Level")
-        }
-      }
-    }
-  }
+//     let sel = Select::new(&format!("Inside of {display}"), choices).prompt().expect("You must select one...");
 
-  println!("? {last:?}");
-}
+//     match sel {
+//       ".." => {
+//         current_level -= 1;
+//       },
+//       "❌ Quit" => return (),
+//       e => {
+//         current_level += 1;
+
+//         match current_level {
+//           1 => root = Some(e),
+//           2 => {
+//             last = Some(e);
+//           },
+//           _ => panic!("Unknown Level")
+//         }
+//       }
+//     }
+//   }
+// }

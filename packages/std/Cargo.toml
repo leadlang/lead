@@ -14,3 +14,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 inquire = "0.7.4"
 lead_lang_interpreter = { path = "../../interpreter" }
+lead_lang_macros = { path = "../../macros" }
+
+[patch.crates-io]
+lead_lang_interpreter = { path = "../../interpreter" }

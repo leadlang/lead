@@ -1,6 +1,6 @@
 use std::{ptr::addr_of, sync::Arc, time::{Duration, SystemTime, UNIX_EPOCH}};
 
-use chalk_rs::Chalk;
+use lealang_chalk_rs::Chalk;
 use indicatif::{HumanDuration, MultiProgress, ProgressBar};
 use linker::ScriptClass;
 use metadata::{get_meta, write_meta, Metadata};

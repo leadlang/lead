@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use chalk_rs::Chalk;
+use lealang_chalk_rs::Chalk;
 use std::{
   env::args,
   io::{stderr, Write},

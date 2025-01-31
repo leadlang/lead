@@ -1,10 +1,10 @@
-use interpreter::{error, function, get_as, get_mut, methods, module, parse, pkg_name, types::{BufKeyVal, BufValue}};
+use interpreter::{error, function, get_as, get_mut, module, parse, pkg_name, types::{BufKeyVal, BufValue, MethodRes}};
 
 module!(
   Array,
   pkg_name! { "📦 Core / Array" }
-  methods! {
-    function!(
+  fn methods(&self) -> MethodRes {
+    &[function!(
       "array::malloc", 
 //       r#"Allocate an array in memory
 // ## Format:
@@ -162,5 +162,6 @@ module!(
         opt.set_return_ptr(arr.into(), BufKeyVal::Array(index));
       }
     })
+    ]
   }
 );

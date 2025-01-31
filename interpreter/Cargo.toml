@@ -12,6 +12,4 @@ name = "interpreter"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chalk_rs = { git = "https://github.com/leadlang/chalk.git" }
-
-
+lealang_chalk_rs = "1"

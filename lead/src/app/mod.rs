@@ -1,4 +1,4 @@
-use chalk_rs::Chalk;
+use lealang_chalk_rs::Chalk;
 use interpreter::types::{DynMethodRes, MethodRes};
 use interpreter::{Application, Package as Pkg};
 use std::env;

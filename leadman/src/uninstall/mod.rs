@@ -1,6 +1,6 @@
 use std::{env, fmt::format, fs};
 
-use chalk_rs::Chalk;
+use lealang_chalk_rs::Chalk;
 use inquire::Select;
 
 use crate::{utils::list_versions, LEAD_ROOT_DIR};

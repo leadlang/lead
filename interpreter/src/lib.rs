@@ -20,7 +20,7 @@ use runtime::_root_syntax::RTCreatedModule;
 use types::{DynMethodRes, Heap, LanguagePackages, MethodRes};
 pub use val::*;
 
-pub use chalk_rs::Chalk;
+pub use lealang_chalk_rs::Chalk;
 
 pub static VERSION_INT: u16 = 3;
 

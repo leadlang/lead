@@ -1,4 +1,4 @@
-use chalk_rs::Chalk;
+use lealang_chalk_rs::Chalk;
 
 macro_rules! generate_help {
   ($app_name:expr, $($option:expr => $description:expr),*) => {

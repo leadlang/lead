@@ -36,16 +36,24 @@ macro_rules! pkg_name {
   };
 }
 
-#[macro_export]
-macro_rules! methods {
-  ($($x:tt)*) => {
-    fn methods(&self) -> interpreter::types::MethodRes {
-      &[
-        $($x)*
-      ]
-    }
-  };
-}
+// #[macro_export]
+// macro_rules! methods {
+//   ($($x:ident),*) => {
+//     fn doc(&self) -> std::collections::HashMap<&'static str, &'static str> {
+//       interpreter::hashmap! {
+//         $(stringify!($x) => _call_$x_doc),*
+//       }
+//     }
+
+//     fn methods(&self) -> interpreter::types::MethodRes {
+//       &[
+//         $({
+//           (stringify!($x), $x)
+//         }),*
+//       ]
+//     }
+//   };
+// }
 
 #[macro_export]
 macro_rules! document {
@@ -99,6 +107,12 @@ macro_rules! modify {
 
   ($file:ident + $heap:ident: & $y:ident) => {
     let Some($y) = $heap.get($y) else {
+      interpreter::error("Invalid Format or Varible not found!", $file);
+    };
+  };
+
+  ($file:ident + $heap:ident: mut $y:ident) => {
+    let Some($y) = $heap.get_mut($y) else {
       interpreter::error("Invalid Format or Varible not found!", $file);
     };
   };

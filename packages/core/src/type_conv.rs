@@ -1,10 +1,10 @@
-use interpreter::{function, methods, module, parse, pkg_name, types::BufValue};
+use interpreter::{function, module, parse, pkg_name, types::BufValue, types::MethodRes};
 
 module! {
   Types,
   pkg_name! { "📦 Lead Programming Language / Types" }
-  methods! {
-    function! {
+  fn methods(&self) -> MethodRes {
+    &[function! {
       "str::to_int",
       
       |args, mut heap, file, _| {
@@ -22,6 +22,6 @@ module! {
 
         heap.upgrade().set(main.into(), val);
       }
-    }
+    }]
   }
 }

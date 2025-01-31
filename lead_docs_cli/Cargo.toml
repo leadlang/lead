@@ -8,6 +8,10 @@ name = "lead_docs_lib"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
+cursive = { git = "https://github.com/gyscos/cursive.git", default-features = false, features = [
+  "crossterm-backend",
+  "markdown",
+] }
 inquire = { version = "0.7.5", default-features = false, features = [
   "fuzzy",
   "macros",

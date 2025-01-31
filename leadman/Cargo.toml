@@ -13,7 +13,7 @@ name = "leadman_lib"
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-chalk_rs = { git = "https://github.com/leadlang/chalk.git" }
+lealang_chalk_rs = "1"
 chrono = "0.4"
 dirs = "6"
 indicatif = "0.17"

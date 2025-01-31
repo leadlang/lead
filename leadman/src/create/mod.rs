@@ -4,7 +4,7 @@ use std::{
   path::PathBuf,
 };
 
-use chalk_rs::Chalk;
+use lealang_chalk_rs::Chalk;
 use inquire::Select;
 
 use crate::{

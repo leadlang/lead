@@ -9,7 +9,7 @@ use std::{
 use tokio::time::sleep;
 use utils::check_update;
 
-use chalk_rs::Chalk;
+use lealang_chalk_rs::Chalk;
 
 pub(crate) mod utils;
 

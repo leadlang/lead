@@ -5,10 +5,6 @@ use std::{
   sync::LazyLock,
 };
 
-use inquire::Select;
-
-use crate::utils::package::Package;
-
 static VERSION: &'static str = env!("CARGO_PKG_VERSION");
 static LEAD_HOME: LazyLock<String> =
   LazyLock::new(|| std::env::var("LEAD_HOME").expect("LEAD_HOME must be set"));
@@ -63,14 +59,6 @@ pub fn lead_ws() -> Vec<PackageEntry> {
     .collect::<Vec<_>>();
 
   data
-}
-
-pub(crate) fn prompt(data: Vec<PackageEntry>) -> Package {
-  let PackageEntry { display, file } = Select::new("Please select your package", data)
-    .prompt()
-    .expect("You must respond");
-
-  Package::new(file, display)
 }
 
 pub fn get_display(a: &str) -> String {
