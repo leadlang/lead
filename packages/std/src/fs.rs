@@ -1,12 +1,12 @@
 use std::{collections::HashMap, fs::File};
 
-use interpreter::{function, methods, module, parse, pkg_name, runtime::RuntimeValue, types::{AnyWrapper, BufValue, Heap, HeapWrapper, Options}};
+use interpreter::{function, types::MethodRes, module, parse, pkg_name, runtime::RuntimeValue, types::{AnyWrapper, BufValue, Heap, HeapWrapper, Options}};
 
 module! {
   Fs,
   pkg_name! { "📦 Lead Programming Language / File System" }
-  methods! {
-    function! {
+  fn methods(&self) -> MethodRes {
+    &[function! {
       "fs::open",
       |args, _heap, file, opt| {
         parse!(file + _heap + args: str path);
@@ -32,7 +32,7 @@ module! {
       |_, _, _, opt| {
         opt.set_return_val(BufValue::Str("Hello World".into()));
       }
-    },
+    }]
   }
 }
 

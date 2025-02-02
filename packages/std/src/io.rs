@@ -1,11 +1,11 @@
-use interpreter::{function, methods, module, pkg_name, runtime::RuntimeValue, types::{BufValue, *}, Chalk};
+use interpreter::{types::MethodRes, function, module, pkg_name, runtime::RuntimeValue, types::{BufValue, *}, Chalk};
 use std::{collections::HashMap, env::consts::{OS, ARCH}};
 
 module!(
   IO,
   pkg_name! {"📦 Lead Programming Language / IO"}
-  methods! {
-    function!("print", |args, heap, _, _| {
+  fn methods(&self) -> MethodRes {
+    &[function!("print", |args, heap, _, _| {
       let args = &args[1..];
       let args = args
         .iter()
@@ -34,15 +34,15 @@ module!(
       |_, _, _, opt| {
         opt.set_return_val(BufValue::Str(format!("{OS}_{ARCH}")));
       }
-    }
+    }]
   }
 );
 
 module!(
   AHQ,
   pkg_name! {"📦 Lead Programming Language / AHQ"}
-  methods! {
-    function! {
+  fn methods(&self) -> MethodRes {
+    &[function! {
       "ahq::mk",
       |_, _, _, opt| {
         opt.set_r_runtime(RuntimeValue::new("core/str_string", {
@@ -55,6 +55,6 @@ module!(
           map
         }));
       }
-    }
+    }]
   }
 );

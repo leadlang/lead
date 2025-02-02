@@ -1,13 +1,18 @@
 [package]
-name = "lead_docs"
+name = "lead_docs_gui"
 version = "0.0.0-dev-lead-lang"
 edition = "2021"
+
+[[bin]]
+name = "lead_docs"
+path = "./src/main.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 image = { version = "0.25", default-features = false, features = ["png"] }
 include_dir = "0.7"
+lead_docs = { path = "../lead_docs_cli", default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tao = { version = "0.31", features = ["rwh_06"] }

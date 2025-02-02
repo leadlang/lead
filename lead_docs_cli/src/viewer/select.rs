@@ -130,7 +130,7 @@ pub fn show_doc(c: &mut Cursive) {
   let doc = doc.get(name).unwrap();
   let doc = doc.get(unsafe { &*page.to_show_doc.as_ref().unwrap().0 }).unwrap();
 
-  let parsed = parse(*doc);
+  let parsed = parse(doc.replace("\n\n", "\n").replace("\n", "\n\n"));
   
   c.add_layer( 
     Dialog::around(

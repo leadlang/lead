@@ -1,23 +1,26 @@
-use std::{env::consts::{OS, ARCH}, fs, path::Path, process};
+use std::{env::{args, consts::{ARCH, OS}}, fs};
 
-use serde::{Deserialize, Serialize};
+use lead_docs_lib::utils::package::Package;
 use serde_json::to_string_pretty;
 use tao::{
     dpi::LogicalSize, event::{Event, WindowEvent}, event_loop::{ControlFlow, EventLoop}, window::{Icon, WindowBuilder}
 };
-use wry::{http::{HeaderValue, Response, StatusCode}, WebViewBuilder};
+use wry::{http::{HeaderValue, Response, StatusCode}, WebViewBuilder, WebViewBuilderExtWindows};
 
 #[cfg(not(debug_assertions))]
 use include_dir::{include_dir, Dir};
 
-use crate::module::LeadModule;
-
 #[cfg(not(debug_assertions))]
 static FILES: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/ui/dist");
 
-mod module;
-
 fn main() {
+    let arg = args().last().unwrap_or("".to_string());
+
+    if &arg == "--cli" {
+        lead_docs_lib::run();
+        return;
+    }
+
     let app = EventLoop::new();
 
     let window = WindowBuilder::new()
@@ -41,7 +44,8 @@ fn main() {
     let is_workspace = fs::read_dir("./.lead_libs").is_ok();
 
     let webview = WebViewBuilder::new()
-        .with_initialization_script(&format!("window.leadver = {:?}; window.os = {OS:?}; window.arch = {ARCH:?};\nwindow.workspace = {is_workspace}", env!("CARGO_PKG_VERSION")))
+        .with_initialization_script(&format!("window.leadver = {:?}; window.target = {:?}; window.os = {OS:?}; window.arch = {ARCH:?};\nwindow.workspace = {is_workspace}", env!("CARGO_PKG_VERSION"), env!("TARGET")))
+        .with_https_scheme(true)
         .with_asynchronous_custom_protocol("app".into(), |_, req, res| {
             #[cfg(not(debug_assertions))]
             {
@@ -75,9 +79,25 @@ fn main() {
 
             let mut status = StatusCode::NOT_FOUND;
             let mut body = String::new();
-            if pathname == "/base_pkg" {
+            
+            if pathname == "/core" {
                 status = StatusCode::OK;
-                body = to_string_pretty(&base_docs()).unwrap_or("".into());
+
+                let docs = lead_docs_lib::utils::docs::lead_lib()
+                    .into_iter()
+                    .map(|x| Package::new(&x))
+                    .collect::<Vec<_>>();
+
+                body = to_string_pretty(&docs).unwrap_or("".into());
+            } else if pathname == "/workspace" {
+                status = StatusCode::OK;
+
+                let docs = lead_docs_lib::utils::docs::lead_ws()
+                    .into_iter()
+                    .map(|x| Package::new(&x))
+                    .collect::<Vec<_>>();
+
+                body = to_string_pretty(&docs).unwrap_or("".into());
             }
 
             res.respond(Response::builder()
@@ -89,10 +109,10 @@ fn main() {
         });
 
     #[cfg(debug_assertions)]
-    let webview = webview.with_devtools(true).with_url("http://localhost:5173");
+    let webview = webview.with_devtools(true).with_url("http://localhost:3000");
 
     #[cfg(all(windows, not(debug_assertions)))]
-    let webview = webview.with_url("http://app.localhost/index.html");
+    let webview = webview.with_url("https://app.localhost/index.html");
 
     #[cfg(all(not(windows), not(debug_assertions)))]
     let webview = webview.with_url("app://localhost/index.html");
@@ -114,52 +134,4 @@ fn main() {
             _ => {}
         }
     });
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct LeadPackage {
-    pub name: String,
-    pub modules: Vec<LeadModule>
-}
-
-fn base_docs() -> Vec<LeadPackage> {
-    use std::env::var;
-
-    let Ok(lead_home) = var("LEAD_HOME") else {
-        println!("ERR ** LEAD_HOME environment variable not set");
-        process::exit(1);
-    };
-    let path = Path::new(&lead_home);
-    let mut path = path.to_owned();
-
-    path.push("docs");
-
-    let mut res = vec![];
-
-    for pkg in fs::read_dir(&path).unwrap() {
-        let pkg = pkg.unwrap();
-
-        let own = pkg.file_name();
-        let own = own.to_str().unwrap_or("unknown");
-
-        let mut path = pkg.path();
-        path.push("pkg");
-
-        let packages = fs::read_to_string(&path).expect("Failed to read pkg entry");
-        let pkgs = packages.split("\n")
-            .filter(|x| x.contains("->"))
-            .collect::<Vec<_>>();
-
-        path.pop();
-        path.push("file");
-        let map_file = fs::read_to_string(&path).expect("File read failed somehow");
-        let refs = map_file.split("\n")
-            .filter(|x| x.contains("->"))
-            .collect::<Vec<_>>();
-
-        let docs = LeadModule::new(own, refs, pkgs, true);
-        res.push(LeadPackage { name: own.into(), modules: docs });
-    }
-
-    res
 }

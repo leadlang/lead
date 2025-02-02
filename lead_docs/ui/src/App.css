@@ -1,0 +1,43 @@
+@reference "tailwindcss";
+
+@config "../tailwind.config.cjs";
+
+#root {
+  @apply w-screen h-screen flex flex-col p-2 gap-2 overflow-hidden;
+}
+
+.markdown {
+  ul {
+    @apply list-inside list-disc;
+  }
+
+  button,
+  a {
+    @apply cursor-pointer;
+  }
+
+  p:has(code),
+  pre:has(code) {
+    @apply px-2 py-1 font-mono w-full bg-accent rounded-md;
+  }
+
+  * {
+    @apply my-3;
+  }
+
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  h3 {
+    @apply text-xl;
+  }
+
+  h4 {
+    @apply text-lg;
+  }
+}

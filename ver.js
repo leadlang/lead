@@ -13,7 +13,7 @@ if (date.getDate() == 1 && month == 1) {
 
 const version =
   process.env.LEAD_VER ||
-  `${date.getFullYear()}.${+1}.${date.getDate() == 1 ? 0 : date.getDate()}` +
+  `${date.getFullYear()}.${month}.${date.getDate() == 1 ? 0 : date.getDate()}` +
     (process.env.NIGHTLY == "true" ? `-nightly.${Date.now()}` : "") +
     suffix;
 

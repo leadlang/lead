@@ -1,5 +1,6 @@
 use interpreter::Package as TraitPackage;
 use libloading::Library;
+use serde::Serialize;
 use std::collections::HashMap;
 
 use super::docs::PackageEntry;
@@ -8,6 +9,27 @@ pub struct Package {
   pub name: String,
   pub doc: HashMap<String, HashMap<&'static str, &'static str>>,
   _inner: Library,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UnsafePkg<'a> {
+  #[serde(borrow)]
+  pub name: &'a str,
+  #[serde(borrow)]
+  pub doc: &'a HashMap<String, HashMap<&'static str, &'static str>>,
+}
+
+impl Serialize for Package {
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+      where
+          S: serde::Serializer {
+      let pkg = UnsafePkg {
+        doc: &self.doc,
+        name: &self.name
+      };
+
+      pkg.serialize(serializer)
+  }
 }
 
 impl Package {

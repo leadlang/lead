@@ -1,9 +1,30 @@
-/* @refresh reload */
-import { render } from 'solid-js/web'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
 
-import './index.css'
-import App from './app/index'
+import "./globals.css"
+import { initTheme } from './utils/theme';
+import { Page } from './utils/const';
 
-const root = document.getElementById('root')
+declare global {
+  interface Window {
+    leadver: string;
+    os: string;
+    arch: string;
+    target: string;
+    workspace: boolean;
 
-render(() => <App />, root!)
+    setPage: (_: Page) => void;
+  }
+}
+
+initTheme();
+const rootEl = document.getElementById('root');
+if (rootEl) {
+  const root = ReactDOM.createRoot(rootEl);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+}

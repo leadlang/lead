@@ -4,11 +4,13 @@ use std::{
   fs,
   sync::LazyLock,
 };
+use serde::{Serialize, Deserialize};
 
 static VERSION: &'static str = env!("CARGO_PKG_VERSION");
 static LEAD_HOME: LazyLock<String> =
   LazyLock::new(|| std::env::var("LEAD_HOME").expect("LEAD_HOME must be set"));
 
+#[derive(Serialize, Deserialize)]
 pub struct PackageEntry {
   pub display: String,
   pub file: String,
