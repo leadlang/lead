@@ -1,6 +1,6 @@
 export default function root() {
   if (window.os == "windows") {
-    return "https://api.localhost"
+    return "http://api.localhost"
   } else {
     return "api://localhost"
   }

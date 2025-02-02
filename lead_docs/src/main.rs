@@ -45,7 +45,6 @@ fn main() {
 
     let webview = WebViewBuilder::new()
         .with_initialization_script(&format!("window.leadver = {:?}; window.target = {:?}; window.os = {OS:?}; window.arch = {ARCH:?};\nwindow.workspace = {is_workspace}", env!("CARGO_PKG_VERSION"), env!("TARGET")))
-        .with_https_scheme(true)
         .with_asynchronous_custom_protocol("app".into(), |_, req, res| {
             #[cfg(not(debug_assertions))]
             {
@@ -112,7 +111,7 @@ fn main() {
     let webview = webview.with_devtools(true).with_url("http://localhost:3000");
 
     #[cfg(all(windows, not(debug_assertions)))]
-    let webview = webview.with_url("https://app.localhost/index.html");
+    let webview = webview.with_url("http://app.localhost/index.html");
 
     #[cfg(all(not(windows), not(debug_assertions)))]
     let webview = webview.with_url("app://localhost/index.html");
