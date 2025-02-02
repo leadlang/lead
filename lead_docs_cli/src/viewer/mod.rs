@@ -1,5 +1,5 @@
 use cursive::{
-  event::Key, menu::Tree, theme::Theme, view::Resizable, views::{Dialog, SelectView, TextContent, TextView}, Cursive, CursiveExt
+  event::Key, menu::Tree, theme::Theme, view::{Resizable, Scrollable}, views::{Dialog, SelectView, TextContent, TextView}, Cursive, CursiveExt
 };
 use select::{open_pkg, sel_method, select_pkg, show_doc};
 
@@ -99,6 +99,8 @@ pub fn run_cursive() {
 }
 
 pub fn home(siv: &mut Cursive) {
+  while let Some(_) = siv.pop_layer() {}
+
   let len = siv.menubar().len();
   siv.menubar().remove(len - 1);
   siv.menubar().add_leaf(
@@ -137,6 +139,7 @@ pub fn home(siv: &mut Cursive) {
         .on_submit(move |c, v| {
           handle(c, *v);
         })
+        .scrollable()
         .fixed_size((20, 6)),
     )
     .title("Select")

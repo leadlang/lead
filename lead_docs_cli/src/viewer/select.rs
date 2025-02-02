@@ -1,7 +1,7 @@
 use cursive::{utils::markup::markdown::parse, view::{Resizable, Scrollable}, views::{Dialog, SelectView, TextView}, Cursive, With};
 
 use crate::utils::{docs::{self, PackageEntry}, package::Package};
-use super::{ApplicationRoot, ApplicationState, RawPtr};
+use super::{home, ApplicationRoot, ApplicationState, RawPtr};
 
 pub fn select_pkg(c: &mut Cursive) {
   while let Some(_) = c.pop_layer() {}
@@ -35,9 +35,10 @@ pub fn select_pkg(c: &mut Cursive) {
 
   c.add_layer( 
     Dialog::around(
-      view
+      view.scrollable()
     )
     .title("Select package")
+    .button("↰ Back", |siv| home(siv))
     .dismiss_button("Close")
     .full_screen(),
   );
@@ -71,9 +72,10 @@ pub fn open_pkg(c: &mut Cursive) {
 
   c.add_layer( 
     Dialog::around(
-      view
+      view.scrollable()
     )
     .title(unsafe { &*name })
+    .button("↰ Back", |siv| select_pkg(siv))
     .dismiss_button("Close")
     .full_screen(),
   );
@@ -108,9 +110,10 @@ pub fn sel_method(c: &mut Cursive) {
 
   c.add_layer( 
     Dialog::around(
-      view
+      view.scrollable()
     )
     .title(name)
+    .button("↰ Back", |siv| open_pkg(siv))
     .dismiss_button("Close")
     .full_screen(),
   );
@@ -139,6 +142,7 @@ pub fn show_doc(c: &mut Cursive) {
         .scrollable()
     )
     .title(name)
+    .button("↰ Back", |siv| sel_method(siv))
     .dismiss_button("Close")
     .full_screen(),
   );
