@@ -1,10 +1,10 @@
+use serde::{Deserialize, Serialize};
 use std::{
   env::consts::{DLL_PREFIX, DLL_SUFFIX},
   fmt::Display,
   fs,
   sync::LazyLock,
 };
-use serde::{Serialize, Deserialize};
 
 static VERSION: &'static str = env!("CARGO_PKG_VERSION");
 static LEAD_HOME: LazyLock<String> =

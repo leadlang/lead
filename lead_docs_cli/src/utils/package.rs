@@ -21,14 +21,15 @@ pub struct UnsafePkg<'a> {
 
 impl Serialize for Package {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-      where
-          S: serde::Serializer {
-      let pkg = UnsafePkg {
-        doc: &self.doc,
-        name: &self.name
-      };
+  where
+    S: serde::Serializer,
+  {
+    let pkg = UnsafePkg {
+      doc: &self.doc,
+      name: &self.name,
+    };
 
-      pkg.serialize(serializer)
+    pkg.serialize(serializer)
   }
 }
 

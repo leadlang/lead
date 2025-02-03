@@ -31,6 +31,7 @@ fn main() {
     .collect::<Vec<_>>();
 
   dir.push(PathBuf::from_str("./lead").unwrap());
+  dir.push(PathBuf::from_str("./leadc").unwrap());
 
   if c_target.contains("windows")
     || c_target.contains("apple")

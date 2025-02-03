@@ -28,7 +28,7 @@ struct Usage {
 
 impl Usage {
   fn r#str(self) -> String {
-    format!("## Usage {}\n\n```\n{}\n```", self.desc, self.code)
+    format!("### {}\n\n```\n{}\n```", self.desc, self.code)
   }
 }
 
@@ -212,7 +212,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     }.into()
   }
 
-  doc = doc.replace("%sig%", &sig_d);
+  doc = doc.replacen("%sig%", &sig_d, 1);
 
   if !params.to_string().contains("BufValue") {
     return quote! {
@@ -264,6 +264,7 @@ pub fn gendoc(args: TokenStream, input: TokenStream) -> TokenStream {
   };
 
   let doc = doc.to_fn();
+  let doc = doc.replacen("%sig%", "", 1);
 
   let input = parse_macro_input!(input as ItemFn);
 

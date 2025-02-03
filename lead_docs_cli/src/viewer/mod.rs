@@ -17,7 +17,8 @@ pub struct ApplicationState {
   root: Option<ApplicationRoot>,
   pkg: Option<Package>,
   to_open: Option<RawPtr<str>>,
-  to_show_doc: Option<RawPtr<str>>
+  to_show_doc: Option<RawPtr<str>>,
+  theme: Theme,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -29,18 +30,35 @@ pub enum ApplicationRoot {
 pub fn run_cursive() {
   let mut siv = Cursive::new();
 
-  siv.set_user_data(ApplicationState { step: 0, root: None, pkg: None, to_open: None, to_show_doc: None });
+  siv.set_user_data(ApplicationState {
+    step: 0,
+    root: None,
+    pkg: None,
+    to_open: None,
+    to_show_doc: None,
+    theme: Theme::retro(),
+  });
 
   siv.set_autohide_menu(false);
 
   siv
     .menubar()
     .add_subtree(
-      "☰ File",
+      "📦 Lead Docs",
       Tree::new()
-        .leaf("⌂ Home", |c| {
-          while let Some(_) = c.pop_layer() {}
-          home(c);
+        .leaf(format!("🖥 {}", env!("CARGO_PKG_VERSION")), |_| {})
+        .leaf("🛈 About", |c| {
+          c.add_layer(
+          Dialog::new()
+            .content(
+            TextView::new(
+                format!("Lead Docs TUI\n{}\n\nMade with ♥ by the Lead Language team\n\n© The Lead Programming Language 2025\nhttps://leadlang.github.io", env!("CARGO_PKG_VERSION"))
+              )
+              .center()
+              .scrollable()
+            )
+            .dismiss_button("Ok"),
+          );
         })
         .delimiter()
         .leaf("x Quit", |c| {
@@ -52,19 +70,13 @@ pub fn run_cursive() {
               .dismiss_button("No")
               .button("Yes", |c| c.quit()),
           );
-        }),
-    )
-    .add_subtree(
-      "☁ Theme",
-      Tree::new()
-        .leaf("☈ Default", |c| {
-          c.set_theme(Theme::retro());
         })
-        .leaf("☀ Bicolor Terminal", |c| {
-          c.set_theme(Theme::terminal_default());
-        }),
     )
     .add_delimiter()
+    .add_leaf("⌂ Home", |c| {
+      while let Some(_) = c.pop_layer() {}
+      home(c);
+    })
     .add_leaf("↰ Back", |c| {
       while let Some(_) = c.pop_layer() {}
 
@@ -73,12 +85,10 @@ pub fn run_cursive() {
       match data.step {
         0 => {
           c.add_layer(
-            Dialog::around(
-              TextView::new("Cannot go back! You're on the first page.")
-            )
-            .dismiss_button("Ok")
+            Dialog::around(TextView::new("Cannot go back! You're on the first page."))
+              .dismiss_button("Ok"),
           );
-        },
+        }
         1 => home(c),
         2 => select_pkg(c),
         3 => open_pkg(c),
@@ -87,8 +97,28 @@ pub fn run_cursive() {
         _ => {}
       }
     })
-    .add_delimiter()
-    .add_leaf("📦 Lead Docs", |_| {})
+    .add_leaf("x Quit", |c| {
+      c.add_layer(
+        Dialog::new()
+          .content(TextView::new_with_content(TextContent::new(
+            "Are you sure you want to close?",
+          )))
+          .dismiss_button("No")
+          .button("Yes", |c| c.quit()),
+      );
+    })
+    // .add_subtree(
+    //   "☁ Theme",
+    //   Tree::new()
+    //     .leaf("☈ Default", |c| {
+    //       c.set_theme(Theme::retro());
+    //       c.user_data::<ApplicationState>().unwrap().theme = Theme::retro();
+    //     })
+    //     .leaf("☀ Bicolor Terminal", |c| {
+    //       c.set_theme(Theme::terminal_default());
+    //       c.user_data::<ApplicationState>().unwrap().theme = Theme::terminal_default();
+    //     }),
+    // )
     .add_delimiter()
     .add_leaf("<select>", |_| {});
 
@@ -103,10 +133,7 @@ pub fn home(siv: &mut Cursive) {
 
   let len = siv.menubar().len();
   siv.menubar().remove(len - 1);
-  siv.menubar().add_leaf(
-    "<select>",
-    |_| {},
-  );
+  siv.menubar().add_leaf("<select>", |_| {});
 
   siv.user_data::<ApplicationState>().unwrap().step = 0;
 

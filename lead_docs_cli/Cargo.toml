@@ -12,9 +12,11 @@ cursive = { git = "https://github.com/gyscos/cursive.git", default-features = fa
   "crossterm-backend",
   "markdown",
 ] }
+cursive-syntect = { git = "https://github.com/gyscos/cursive.git" }
 lead_lang_interpreter = { version = "0.0.0-dev-lead-lang", path = "../interpreter" }
 libloading = "0.8.6"
 serde = { version = "1.0.217", features = ["derive"] }
+syntect = { version = "5.2.0", features = ["parsing"] }
 
 [target.'cfg(windows)'.build-dependencies]
 tauri-winres = "0.3"
@@ -22,4 +24,3 @@ tauri-winres = "0.3"
 [package.metadata.tauri-winres]
 OriginalFilename = "lead_docs.exe"
 LegalCopyright = "Copyright © 2024 - The AHQ Softwares' Lead lang Team"
-

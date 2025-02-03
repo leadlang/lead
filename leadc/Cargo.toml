@@ -1,0 +1,13 @@
+[package]
+name = "leadc"
+version = "0.0.0-dev-lead-lang"
+edition = "2024"
+
+[lib]
+name = "leadc_lib"
+
+[[bin]]
+name = "leadc"
+path = "./src/main.rs"
+
+[dependencies]

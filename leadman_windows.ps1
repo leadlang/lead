@@ -71,7 +71,7 @@ $nt = [Environment]::OSVersion.Version.Major
 
 $DOWNLOAD = "https://github.com/leadlang/lead/releases/$tag/leadman_$arch-pc-windows-msvc.exe"
 
-if ($nt -eq 10) {
+if ($nt -lt 10) {
   "$INFO Using win7 compat binary as NT Version $nt is less than NT 10.0"
   $DOWNLOAD = "https://github.com/leadlang/lead/releases/$tag/leadman_$arch-win7-windows-msvc.exe"
 }
