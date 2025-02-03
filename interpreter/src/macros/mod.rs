@@ -83,6 +83,8 @@ macro_rules! hashmap {
 
 #[macro_export]
 macro_rules! parse {
+  ($file:ident + $heap:ident + $args:ident:) => {};
+
   ($file:ident + $heap:ident + $args:ident: $($x:tt $y:ident),*) => {
     #[allow(unused_variables)]
     let [_, $($y),*] = &$args[..] else {
@@ -115,6 +117,8 @@ macro_rules! modify {
     let Some($y) = $heap.get_mut($y) else {
       interpreter::error("Invalid Format or Varible not found!", $file);
     };
+    let $y = $y as *mut _;
+    let $y = unsafe { &mut *$y };
   };
 
   ($file:ident + $heap:ident: > $y:ident) => {

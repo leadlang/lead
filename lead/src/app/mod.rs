@@ -97,6 +97,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
             chalk.blue().print(&format!("{pkg_name} "));
 
             println!(" tried to get full heap access\n       ❌ Access Denied, Exiting");
+            std::process::exit(1);
           }
         }
       }

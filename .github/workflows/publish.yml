@@ -419,10 +419,12 @@ jobs:
         with:
           asset_path: ./leadman/build
           asset_name: build
+          overwrite: true
           upload_url: ${{ needs.tag.outputs.upload }}
 
       - name: Undraft release
         uses: actions/github-script@v7
+        continue-on-error: true
         with:
           script: |
             github.rest.repos.updateRelease({

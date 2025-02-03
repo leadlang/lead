@@ -2,6 +2,8 @@
 
 *run test/index
 
-$a: malloc bool true
+$a: malloc string "12"
+
+str::to_int $a ->$a
 
 hello init ->$a

@@ -28,7 +28,7 @@ struct Usage {
 
 impl Usage {
   fn r#str(self) -> String {
-    format!("### {}\n```{}```", self.desc, self.code)
+    format!("## Usage {}\n\n```\n{}\n```", self.desc, self.code)
   }
 }
 
@@ -37,7 +37,7 @@ impl Documentation {
     let fmtheader = if self.usage.is_empty() {
       ""
     } else {
-      "## Format:"
+      "## Format:\n\n"
     };
 
     let format = self.usage.into_iter().map(|x| x.r#str()).collect::<Vec<_>>().join("\n\n");
@@ -47,6 +47,7 @@ impl Documentation {
     };
 
     format!("{}
+%sig%
 
 {fmtheader}
 {format}
@@ -68,7 +69,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     return TokenStream::new();
   };
 
-  let doc = doc.to_fn();
+  let mut doc: String = doc.to_fn();
 
   let input = parse_macro_input!(input as ItemFn);
 
@@ -88,6 +89,8 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
   let inputs = sig.inputs;
 
+  let mut sig_d = String::from("# Function Params\n\n```\n");
+
   inputs.iter().enumerate().for_each(|(i, s)| {
     match s {
       FnArg::Typed(s) => {
@@ -102,10 +105,30 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
         }
 
         match typ.as_str() {
-          "BufValue" => parse_mut.push_str(" -> "),
-          "& BufValue" => parse_mut.push_str(" & "),
-          "& mut BufValue" => parse_mut.push_str(" mut "),
-          "& str" => parse_mut.push_str(" str "),
+          "BufValue" => {
+            parse_mut.push_str(" -> ");
+            sig_d.push_str("->$");
+            sig_d.push_str(&ident);
+            sig_d.push_str(" ");
+          },
+          "& BufValue" => {
+            parse_mut.push_str(" & ");
+            sig_d.push_str("$");
+            sig_d.push_str(&ident);
+            sig_d.push_str(" ");
+          },
+          "& mut BufValue" => {
+            parse_mut.push_str(" mut ");
+            sig_d.push_str("->&$");
+            sig_d.push_str(&ident);
+            sig_d.push_str(" ");
+          },
+          "& str" => {
+            parse_mut.push_str(" str ");
+            sig_d.push_str("<");
+            sig_d.push_str(&ident);
+            sig_d.push_str("> ");
+          },
           s => s
             .span()
             .unwrap()
@@ -124,7 +147,13 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     }
   });
 
+  sig_d.push_str("\n```");
+
   parse_mut.push_str(");");
+
+  if &parse_mut == "interpreter::parse!(file + heap + args:);" {
+    parse_mut = String::from("");
+  }
 
   let parse_mut = TokenStream2::from_str(&parse_mut).unwrap();
 
@@ -166,6 +195,43 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
   let out = sig.output;
 
+  if params.is_empty() {
+    doc = doc.replace("%sig%", "");
+    return quote! {
+      #[allow(non_upper_case_globals)]
+      #vis static #new_doc: &'static str = #doc;
+  
+      #[allow(unused)]
+      #vis fn #ident(args: &Vec<*const str>, mut heap: interpreter::types::HeapWrapper, file: &String, _opt: &mut interpreter::types::Options) {
+        let __option_code_result = #new(args, heap, file, _opt);
+        #other_tokens
+      }
+
+      #[allow(unused)]
+      #vis fn #new(args: &Vec<*const str>, mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) #out #block
+    }.into()
+  }
+
+  doc = doc.replace("%sig%", &sig_d);
+
+  if !params.to_string().contains("BufValue") {
+    return quote! {
+      #[allow(non_upper_case_globals)]
+      #vis static #new_doc: &'static str = #doc;
+  
+      #[allow(unused)]
+      #vis fn #ident(args: &Vec<*const str>, mut heap: interpreter::types::HeapWrapper, file: &String, _opt: &mut interpreter::types::Options) {
+        #parse_mut
+
+        let __option_code_result = #new(#to_pass, file, heap);
+        #other_tokens
+      }
+  
+      #[allow(unused)]
+      #vis fn #new(#params, file: &String, mut heap: interpreter::types::HeapWrapper) #out #block
+    }.into()
+  }
+
   quote! {
     #[allow(non_upper_case_globals)]
     #vis static #new_doc: &'static str = #doc;
@@ -178,6 +244,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       #other_tokens
     }
 
+    #[allow(unused)]
     #vis fn #new(#params, file: &String) #out #block
   }.into()
 }
