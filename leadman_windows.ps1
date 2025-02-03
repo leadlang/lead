@@ -41,9 +41,9 @@ function AskDownloadVC {
   Write-Host -NoNewline "$INFO Would you like to download the Visual C++ Redistributable? [Y/n]"
   $ask = (Read-Host).ToLower()
   
-  if ($ask.StartsWith("y")) {
+  if (-not $ask.StartsWith("n")) {
     Invoke-WebRequest -Uri $Url -OutFile "$env:TEMP\vc_redist.exe"
-    Start-Process -FilePath "$env:TEMP\vc_redist.exe" -ArgumentList "/install /passive /norestart"
+    Start-Process -FilePath "$env:TEMP\vc_redist.exe" -Wait -ArgumentList @("/install", "/passive", "/norestart")
   }
 }
 
