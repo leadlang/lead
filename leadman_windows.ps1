@@ -7,6 +7,10 @@ $SUCC = "$($PSStyle.Foreground.Green)$($PSStyle.Bold)[SUCC]$($PSStyle.Reset)"
 $architecture = $env:PROCESSOR_ARCHITECTURE
 $tag = $env:TAG_NAME
 
+$vcArm64 = "https://aka.ms/vs/17/release/vc_redist.arm64.exe"
+$vcX86 = "https://aka.ms/vs/17/release/vc_redist.x86.exe"
+$vcX64 = "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+
 "$INFO Checking OS"
 
 if ([System.Environment]::OSVersion.Platform -ne "Win32NT") {
@@ -29,16 +33,33 @@ $isWin11 = (Get-WmiObject Win32_OperatingSystem).Caption -Match "Windows 11"
 
 "$INFO Found Leadman Version $tag"
 
+function AskDownloadVC {
+  param (
+    [string]$Url
+  )
+  
+  Write-Host -NoNewline "$INFO Would you like to download the Visual C++ Redistributable? [Y/n]"
+  $ask = (Read-Host).ToLower()
+  
+  if ($ask.StartsWith("y")) {
+    Invoke-WebRequest -Uri $Url -OutFile "$env:TEMP\vc_redist.exe"
+    Start-Process -FilePath "$env:TEMP\vc_redist.exe" -ArgumentList "/install /passive /norestart"
+  }
+}
+
 switch ($architecture) {
   "AMD64" {
+    AskDownloadVC -Url $vcX64
     $arch = "x86_64"
+
     break
   }
   "ARM64" {
+    AskDownloadVC -Url $vcArm64
     $arch = "aarch64"
 
     if ($isWin11) {
-      "$INFO Lead Language will soon introduce ARM64EC support for Windows 11 once Microsoft supports it on GitHub"
+      "$INFO Lead Language might soon introduce ARM64EC support for Windows 11 once Microsoft supports it on GitHub Actions"
       #Write-Host -NoNewline "$INFO Would you like to use the ARM64EC version? [Y/n]"
       #$ask = (Read-Host).ToLower()
       
@@ -46,14 +67,18 @@ switch ($architecture) {
       #  $arch = "arm64ec"
       #}
     }
+
     break
   }
   "x86" {
+    AskDownloadVC -Url $vcX86
     $arch = "i686"
+
     break
   }
   default {
     Write-Err "$ERR Unknown architecture $architecture"
+
     exit 1
   }
 }
