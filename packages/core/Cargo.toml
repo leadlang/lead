@@ -12,10 +12,10 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-indoc = "2.0.5"
-lead_lang_interpreter = "0.0.0-dev-lead-lang"
+indoc = "2"
+lead_lang_interpreter = { path = "../../interpreter" }
 lead_lang_macros = { path = "../../macros" }
-serde_json = "1.0.137"
+serde_json = "1"
 
 [patch.crates-io]
 lead_lang_interpreter = { path = "../../interpreter" }

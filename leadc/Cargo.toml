@@ -11,3 +11,11 @@ name = "leadc"
 path = "./src/main.rs"
 
 [dependencies]
+
+
+[target.'cfg(windows)'.build-dependencies]
+tauri-winres = "0.3"
+
+[package.metadata.tauri-winres]
+OriginalFilename = "leadman.exe"
+LegalCopyright = "Copyright © 2024 - The AHQ Softwares' Lead lang Team"
