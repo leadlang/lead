@@ -42,7 +42,8 @@ function AskDownloadVC {
   $ask = (Read-Host).ToLower()
   
   if (-not $ask.StartsWith("n")) {
-    Invoke-WebRequest -Uri $Url -OutFile "$env:TEMP\vc_redist.exe"
+    curl.exe -o "$env:temp\vc_redist.exe" -L $Url
+    
     Start-Process -FilePath "$env:TEMP\vc_redist.exe" -Wait -ArgumentList @("/install", "/passive", "/norestart")
   }
 }
@@ -101,7 +102,9 @@ if ($nt -lt 10) {
   $DOWNLOAD = "https://github.com/leadlang/lead/releases/$tag/leadman_$arch-win7-windows-msvc.exe"
 }
 
-Invoke-WebRequest -Uri $DOWNLOAD -OutFile "$env:TEMP\leadman_init.exe"; "$INFO Starting leadman"; ""
+"$INFO Starting leadman"
+""
+curl.exe -o "$env:temp\leadman_init.exe" -L $DOWNLOAD 
 
 $result = Start-Process -Wait -NoNewWindow -FilePath "$env:TEMP\leadman_init.exe" -ArgumentList "create" -PassThru
 
