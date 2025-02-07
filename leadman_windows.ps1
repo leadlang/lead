@@ -1,5 +1,7 @@
 $ErrorActionPreference = "Stop"
 
+[Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+
 $INFO = "$($PSStyle.Foreground.Blue)[INFO]$($PSStyle.Reset)"
 $ERR = "$($PSStyle.Foreground.Red)$($PSStyle.Bold)[ERRR]$($PSStyle.Reset)"
 $SUCC = "$($PSStyle.Foreground.Green)$($PSStyle.Bold)[SUCC]$($PSStyle.Reset)"
