@@ -41,5 +41,16 @@ pub async fn postinstall(path: &str) {
       };
       env.set_raw_value("PATH", &val).unwrap();
     }
+  } else {
+    let val = OsString::from_str(path).unwrap();
+
+    let val = RegValue {
+      bytes: val
+        .encode_wide()
+        .flat_map(|v| vec![v as u8, (v >> 8) as u8])
+        .collect(),
+      vtype: RegType::REG_EXPAND_SZ,
+    };
+    env.set_raw_value("PATH", &val).unwrap();
   }
 }
