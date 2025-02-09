@@ -102,7 +102,7 @@ pub async fn install(release: &ReleaseData, lead_home: &str, chalk: &mut Chalk) 
 
   match build.as_str() {
     // Build 6 introduces build version monitoring
-    "6" => {
+    "6" | "7" => {
       build_1::install(&tag_name, lead_home).await;
       tokio::fs::write(format!("{lead_home}/versions/{tag_name}/.lbuild"), tag_name).await;
     }
