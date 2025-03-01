@@ -88,6 +88,7 @@ pub enum BufValue {
   Runtime(AnyWrapper),
   AsyncTask(AppliesEq<JoinHandle<Self>>),
   Listener(AppliesEq<UnboundedReceiver<Self>>),
+  RuntimeRaw(&'static str, AppliesEq<RawRTValue>)
 }
 
 #[derive(Debug)]
@@ -150,6 +151,7 @@ impl BufValue {
           "<async pending...>".into()
         }
       }
+      BufValue::RuntimeRaw(_) => "<runtime rt>".into()
     }
   }
 

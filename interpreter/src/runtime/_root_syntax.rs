@@ -25,7 +25,7 @@ impl RTCreatedModule {
     file: &str,
     into_heap: T,
     heap: &mut Heap,
-    o: &mut Options,
+    _o: &mut Options,
   ) {
     let mut temp_heap = Heap::new_with_this(&mut self.heap);
     let app = unsafe { &mut *app };
@@ -75,7 +75,7 @@ impl RTCreatedModule {
     file: &str,
     into_heap: T,
     heap: &mut Heap,
-    o: &mut Options,
+    _o: &mut Options,
   ) {
     let mut temp_heap = Heap::new_with_this(&mut self.heap);
     let app = unsafe { &mut *app };
@@ -121,6 +121,7 @@ impl RTCreatedModule {
   }
 }
 
+#[allow(unused)]
 pub fn insert_into_application(
   app: *mut Application,
   args: &Vec<*const str>,
@@ -141,28 +142,15 @@ pub fn insert_into_application(
 
       match a {
         "*listen" => {
-          let function = &**v;
-          let module = &**v2;
+          let function = &**v2;
+          let module = &**v;
 
-          let (var, meth) = function
-            .split_once("::")
-            .expect("Expected to split only once");
+          let module = heap.remove(module)
+            .expect("Invalid Format")
+            .expect("Unable to capture Runtime");
 
-          let code = String::from_utf8(
-            app
-              .module_resolver
-              .call_mut((format!("./{module}.mod.pb").as_str(),)),
-          )
-          .unwrap_or_else(|_| {
-            panic!("Unable to read {module}.mod.pb");
-          });
-
-          let Some(m) = parse_into_modules(code) else {
-            panic!("Unable to parse module");
-          };
-
-          let BufValue::Listener(x) = heap
-            .remove(var)
+          let BufValue::Listener(_listen) = heap
+            .remove(function)
             .expect("Unable to capture heaplistener")
             .expect("Unable to capture heaplistener")
           else {
