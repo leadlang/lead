@@ -151,7 +151,7 @@ impl BufValue {
           "<async pending...>".into()
         }
       }
-      BufValue::RuntimeRaw(_) => "<runtime rt>".into()
+      BufValue::RuntimeRaw(_, _) => "<runtime rt>".into()
     }
   }
 
