@@ -103,19 +103,19 @@ macro_rules! parse {
 macro_rules! modify {
   ($file:ident + $heap:ident: -> $y:ident) => {
     let Some(Some($y)) = $heap.remove($y) else {
-      interpreter::error("Invalid Format or Varible not found!", $file);
+      interpreter::error("Could not obtain Varible!", $file);
     };
   };
 
   ($file:ident + $heap:ident: & $y:ident) => {
     let Some($y) = $heap.get($y) else {
-      interpreter::error("Invalid Format or Varible not found!", $file);
+      interpreter::error("Varible not found!", $file);
     };
   };
 
   ($file:ident + $heap:ident: mut $y:ident) => {
     let Some($y) = $heap.get_mut($y) else {
-      interpreter::error("Invalid Format or Varible not found!", $file);
+      interpreter::error("Varible not found!", $file);
     };
     let $y = $y as *mut _;
     let $y = unsafe { &mut *$y };
@@ -139,7 +139,7 @@ macro_rules! modify {
 macro_rules! get_as {
   ($file:ident + $heap:ident: $ty:ident $y:ident) => {
     let interpreter::types::BufValue::$ty($y) = $y else {
-      interpreter::error("Invalid Format or Varible not found!", $file);
+      interpreter::error("Variable not using the expected type!", $file);
     };
   };
 }
@@ -148,13 +148,13 @@ macro_rules! get_as {
 macro_rules! get_mut {
   ($file:ident + $heap:ident: mut $y:ident) => {
     let Some($y) = $heap.get_mut($y) else {
-      interpreter::error("Invalid Format or Varible not found!", $file);
+      interpreter::error("get_mut!: Varible not found!", $file);
     };
   };
 
   ($file:ident + $heap:ident: $ty:ident $y:ident) => {
     let Some(interpreter::types::BufValue::$ty($y)) = $heap.get_mut($y) else {
-      interpreter::error("Invalid Format or Varible not found!", $file);
+      interpreter::error("get_mut!: Varible not found for the given type!", $file);
     };
   };
 }

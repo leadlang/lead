@@ -1,13 +1,16 @@
+use std::{borrow::Cow, collections::HashMap, future::Future};
+
 use crate::{
   error,
   runtime::_root_syntax::insert_into_application,
   types::{
-    call_runtime_val, mkbuf, set_runtime_val, BufValue, Heap, HeapWrapper, Options, RawRTValue,
+    call_runtime_val, mkbuf, set_runtime_val, BufValue, Heap, HeapWrapper, Options, Output,
+    RawRTValue,
   },
   Application,
 };
 
-pub fn interpret(file: &str, mut app: &mut Application) {
+pub fn interpret<'a>(file: &str, mut app: &mut Application<'a>) {
   let file_name = if file == ":entry" { app.entry } else { file };
 
   let app_ptr = app as *mut Application;
@@ -28,50 +31,59 @@ pub fn interpret(file: &str, mut app: &mut Application) {
 
   let mut line = 0usize;
 
-  let app2 = app as *mut Application;
+  let app2: *mut Application<'static> = unsafe { std::mem::transmute(app as *mut Application) };
 
-  let app2 = unsafe { &mut *app2 };
+  let app2: &'static mut Application<'static> = unsafe { &mut *app2 };
+
+  let mut markers = HashMap::new();
 
   while line < file.len() {
     let content = &file[line];
 
     if !content.starts_with("#") {
-      unsafe {tok_parse(
-        format!("{}:{}", &file_name, line),
-        content,
-        &mut app,
-        &mut app2.heap,
-        &mut line,
-      );}
+      unsafe {
+        let f = tok_parse(
+          format!("{}:{}", &file_name, line+1),
+          content,
+          &mut app,
+          &mut app2.heap,
+          &mut line,
+          &mut markers,
+          false,
+        );
+
+        drop(f);
+      }
     }
 
     line += 1;
   }
 }
 
-pub(crate) unsafe fn tok_parse(
+pub(crate) unsafe fn tok_parse<'a>(
   file: String,
   piece: &str,
-  app: &mut Application,
-  heap: &mut Heap,
+  app: &mut Application<'a>,
+  heap: *mut Heap,
   line: &mut usize,
-) {
+  markers: &mut HashMap<Cow<'static, str>, usize>,
+  r#async: bool,
+) -> Option<Box<dyn Future<Output = ()> + 'a>> {
+  let heap: &'static mut Heap = unsafe { &mut *heap };
+
   let mut tokens: Vec<*const str> = piece.split(" ").map(|x| x as *const str).collect();
 
   let mut caller = unsafe { &*tokens[0] };
-  let mut val_type = "<-none->";
+  let mut val_type = false;
 
-  let mut to_set = String::new();
+  let mut to_set = "";
 
-  if caller.ends_with(":") && (caller.starts_with("*") || caller.starts_with("$")) {
-    if caller.starts_with("*") {
-      val_type = "*";
-    } else {
-      val_type = "$";
-    }
-
+  if caller.ends_with(":") && caller.starts_with("$") {
+    val_type = true;
     let l = unsafe { &*tokens.remove(0) };
-    to_set = l.split_at(l.len() - 1).0.into();
+    let set = l.split_at(l.len() - 1).0;
+
+    to_set = set;
 
     caller = unsafe { &*tokens[0] };
   }
@@ -94,8 +106,10 @@ pub(crate) unsafe fn tok_parse(
       .join(" ");
 
     if *x {
-      tok_parse(file, &piece, app, heap, line);
+      return tok_parse(file, &piece, app, heap, line, markers, r#async);
     }
+
+    None
   } else if caller.starts_with("*else$") {
     let caller = unsafe { &*tokens.remove(0) };
 
@@ -112,14 +126,27 @@ pub(crate) unsafe fn tok_parse(
       .join(" ");
 
     if !*x {
-      tok_parse(file, &piece, app, heap, line);
+      return tok_parse(file, &piece, app, heap, line, markers, r#async);
     }
+
+    None
   } else if caller.starts_with("*") {
-    insert_into_application(app as *mut _ as _, &tokens, line, to_set);
+    insert_into_application(
+      app as *mut _ as _,
+      &tokens,
+      line,
+      Cow::Borrowed(to_set),
+      heap,
+      markers,
+    );
+
+    None
   } else if caller.starts_with("@") {
-    if val_type == "$" {
-      let _ = heap.set(to_set, mkbuf(&caller, &file));
+    if val_type {
+      let _ = heap.set(Cow::Borrowed(to_set), mkbuf(&caller, &file));
     }
+
+    None
   } else if caller.starts_with("$") {
     let app_ptr = app as *mut _;
     let app_heap_ptr = heap as *mut _;
@@ -133,24 +160,57 @@ pub(crate) unsafe fn tok_parse(
       app: app_ptr,
     };
 
-    match call_runtime_val(heap, caller, &tokens, wrap, &file, &mut opt, &file) {
+    match call_runtime_val(
+      app as _,
+      heap,
+      caller,
+      &mut tokens,
+      wrap,
+      &file,
+      &mut opt,
+      &file,
+      r#async,
+    ) {
       None => {
         if &caller != &"" {
           error(&format!("Unexpected `{}`", &caller), &file);
         }
-      }
-      Some(v) => {
-        opt.pre = v.to_string();
 
+        None
+      }
+      Some(Output::String(v)) => {
         let runt = opt.rem_r_runtime();
 
-        if val_type == "*" {
-          let _ = heap.set_ptr(to_set, opt.r_ptr_target, opt.r_ptr);
-        } else if val_type == "$" && opt.r_val.is_some() {
-          let _ = heap.set(to_set, opt.r_val.unwrap());
-        } else if val_type == "$" && runt.is_some() {
-          let _ = set_runtime_val(heap, to_set, v, RawRTValue::RT(runt.unwrap()));
+        if val_type && opt.r_val.is_some() {
+          let _ = heap.set(Cow::Borrowed(to_set), opt.r_val.unwrap());
+        } else if val_type && runt.is_some() {
+          let _ = set_runtime_val(
+            heap,
+            Cow::Borrowed(to_set),
+            v,
+            RawRTValue::RT(runt.unwrap()),
+          );
         }
+
+        None
+      }
+      Some(Output::Future(v)) => {
+        return Some(Box::new(async move {
+          let v = v.await;
+
+          let runt = opt.rem_r_runtime();
+
+          if val_type && opt.r_val.is_some() {
+            let _ = heap.set(Cow::Borrowed(to_set), opt.r_val.unwrap());
+          } else if val_type && runt.is_some() {
+            let _ = set_runtime_val(
+              heap,
+              Cow::Borrowed(to_set),
+              v,
+              RawRTValue::RT(runt.unwrap()),
+            );
+          }
+        }));
       }
     }
   } else {
@@ -172,63 +232,27 @@ pub(crate) unsafe fn tok_parse(
 
         v(&tokens, wrap, &file, &mut opt);
 
-        opt.pre = pkg.to_string();
-
         let runt = opt.rem_r_runtime();
 
-        if val_type == "*" {
-          let _ = heap.set_ptr(to_set, opt.r_ptr_target, opt.r_ptr);
-        } else if val_type == "$" && opt.r_val.is_some() {
-          let _ = heap.set(to_set, opt.r_val.unwrap());
-        } else if val_type == "$" && runt.is_some() {
-          let _ = set_runtime_val(heap, to_set, pkg, RawRTValue::RT(runt.unwrap()));
+        if val_type && opt.r_val.is_some() {
+          let _ = heap.set(Cow::Borrowed(to_set), opt.r_val.unwrap());
+        } else if val_type && runt.is_some() {
+          let _ = set_runtime_val(
+            heap,
+            Cow::Borrowed(to_set),
+            pkg,
+            RawRTValue::RT(runt.unwrap()),
+          );
         }
+
+        None
       }
       _ => {
-        let app2 = app as *mut Application;
-
-        match app.modules.get_mut(caller) {
-          Some(v) => {
-            let tkns = tokens.drain(2..).collect::<Vec<_>>();
-            let token0 = &*tokens.remove(1);
-
-            v.run_method(app2, &token0, &file, move |fn_heap, app_heap, args| {
-              if tkns.len() != args.len() {
-                error(
-                  "Not all arguments provided",
-                  ":interpreter:loadmodule:heap:check",
-                );
-              }
-
-              tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
-                let token = unsafe { &*token };
-                let from = app_heap
-                  .remove(token)
-                  .unwrap_or_else(|| {
-                    error(
-                      format!("Unable to get {token} from Heap"),
-                      ":interpreter:loadmodule",
-                    )
-                  })
-                  .unwrap_or_else(|| {
-                    error(
-                      format!("Unable to get {token} from Heap"),
-                      ":interpreter:loadmodule",
-                    )
-                  });
-
-                fn_heap
-                  .set((*arg as &str).replacen("->$", "$", 1), from)
-                  .unwrap();
-              });
-            });
-          }
-          _ => {
-            if &caller != &"" {
-              error(&format!("Unexpected `{}`", &caller), &file);
-            }
-          }
+        if &caller != &"" {
+          error(&format!("Unexpected `{}`", &caller), &file);
         }
+
+        None
       }
     }
   }

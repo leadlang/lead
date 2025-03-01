@@ -1,51 +1,57 @@
 use std::{
+  borrow::Cow,
   collections::HashMap,
-  ops::{Deref, DerefMut},
+  future::Future,
+  pin::Pin,
 };
 
-use crate::{error, runtime::RuntimeValue};
+use crate::{
+  error,
+  runtime::{RuntimeValue, _root_syntax::RTCreatedModule},
+  Application,
+};
 
 use super::{BufValue, HeapWrapper, Options, PackageCallback};
 
-#[derive(Debug)]
-pub enum BufKeyVal {
-  None,
-  Array(usize),
-  Map(String),
-}
-
-#[derive(Debug)]
-pub struct PtrType {
-  pub key: String,
-  pub val: BufKeyVal,
-}
-
-pub type HeapInnerMap = HashMap<String, BufValue>;
-pub type Pointer = HashMap<String, PtrType>;
+pub type HeapInnerMap = HashMap<Cow<'static, str>, BufValue>;
 
 #[derive(Debug)]
 pub enum RawRTValue {
   RT(RuntimeValue),
   PKG(HashMap<String, PackageCallback>),
+  RTCM(RTCreatedModule),
 }
 
-fn get_ptr(heap: &mut Heap) -> &mut HashMap<String, (&'static str, RawRTValue)> {
+fn get_ptr(heap: &mut Heap) -> &mut HashMap<Cow<'static, str>, (&'static str, RawRTValue)> {
   &mut heap.runtimes
 }
 
-pub fn set_runtime_val(heap: &mut Heap, key: String, module: &'static str, val: RawRTValue) {
+pub fn set_runtime_val(
+  heap: &mut Heap,
+  key: Cow<'static, str>,
+  module: &'static str,
+  val: RawRTValue,
+) {
   let _ = get_ptr(heap).insert(key, (module, val));
 }
 
-pub fn call_runtime_val(
-  heap: &mut Heap,
-  key: &str,
-  v: &Vec<*const str>,
+pub enum Output {
+  String(&'static str),
+  Future(Pin<Box<dyn Future<Output = &'static str>>>),
+}
+
+pub fn call_runtime_val<'a>(
+  app: *mut Application,
+  heap: &'a mut Heap,
+  key: &'a str,
+  v: &'a mut Vec<*const str>,
   a: HeapWrapper,
   c: &String,
-  o: &mut Options,
-  file: &str,
-) -> Option<&'static str> {
+  o: &'a mut Options,
+  file: &'a str,
+  r#async: bool,
+) -> Option<Output> {
+  let hp = heap as *mut Heap;
   let ptr = get_ptr(heap);
 
   let (key, caller) = key.split_once("::")?;
@@ -57,24 +63,128 @@ pub fn call_runtime_val(
       Some(x) => x.call_mut((v, a, c, o)),
       None => error(&format!("Unexpected `{}`", &caller), &file),
     },
+    RawRTValue::RTCM(pkg) => {
+      let tkns = v.drain(1..).collect::<Vec<_>>();
+
+      if !r#async {
+        pkg.run_method(
+          app as *mut Application<'static>,
+          caller,
+          file,
+          |fn_heap, app_heap, args| {
+            if tkns.len() != args.len() {
+              error(
+                "Not all arguments provided",
+                ":interpreter:loadmodule:heap:check",
+              );
+            }
+
+            tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
+              let token = unsafe { &*token };
+              let from = app_heap
+                .remove(token)
+                .unwrap_or_else(|| {
+                  error(
+                    format!("Unable to get {token} from Heap"),
+                    ":interpreter:loadmodule",
+                  )
+                })
+                .unwrap_or_else(|| {
+                  error(
+                    format!("Unable to get {token} from Heap"),
+                    ":interpreter:loadmodule",
+                  )
+                });
+
+              fn_heap
+                .set(Cow::Borrowed(unsafe { &*(&arg[2..] as *const str) }), from)
+                .unwrap();
+            });
+          },
+          unsafe { &mut *hp },
+          o,
+        );
+      } else {
+        let f = pkg.run_method_async(
+          app as *mut Application<'static>,
+          caller,
+          file,
+          |fn_heap, app_heap, args| {
+            if tkns.len() != args.len() {
+              error(
+                "Not all arguments provided",
+                ":interpreter:loadmodule:heap:check",
+              );
+            }
+
+            tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
+              let token = unsafe { &*token };
+              let from = app_heap
+                .remove(token)
+                .unwrap_or_else(|| {
+                  error(
+                    format!("Unable to get {token} from Heap"),
+                    ":interpreter:loadmodule",
+                  )
+                })
+                .unwrap_or_else(|| {
+                  error(
+                    format!("Unable to get {token} from Heap"),
+                    ":interpreter:loadmodule",
+                  )
+                });
+
+              fn_heap
+                .set(Cow::Borrowed(unsafe { &*(&arg[2..] as *const str) }), from)
+                .unwrap();
+            });
+          },
+          unsafe { &mut *hp },
+          o,
+        );
+
+        let pin = Box::pin(async move {
+          f.await;
+
+          "done"
+        }) as Pin<Box<dyn Future<Output = &'static str>>>;
+
+        let future: Pin<Box<dyn Future<Output = &'static str>>> = unsafe {
+          std::mem::transmute(pin)
+        };
+
+        return Some(Output::Future(future));
+      }
+    }
   }
 
-  Some(data.0)
+  Some(Output::String(data.0))
 }
 
 #[derive(Debug)]
 pub struct Heap {
   data: HeapInnerMap,
-  pointer: Pointer,
-  runtimes: HashMap<String, (&'static str, RawRTValue)>,
+  runtimes: HashMap<Cow<'static, str>, (&'static str, RawRTValue)>,
+  this: Option<*mut Self>,
 }
+
+unsafe impl Send for Heap {}
+unsafe impl Sync for Heap {}
 
 impl Heap {
   pub fn new() -> Self {
     Self {
       data: HashMap::new(),
-      pointer: HashMap::new(),
       runtimes: HashMap::new(),
+      this: None,
+    }
+  }
+
+  pub fn new_with_this(this: *mut Self) -> Self {
+    Self {
+      data: HashMap::new(),
+      runtimes: HashMap::new(),
+      this: Some(this),
     }
   }
 
@@ -82,108 +192,87 @@ impl Heap {
     *self = Self::new();
   }
 
-  #[deprecated]
-  pub fn inner(&mut self) -> &mut HeapInnerMap {
-    &mut self.data
-  }
-
   pub fn inner_heap(&mut self) -> &mut HeapInnerMap {
     &mut self.data
   }
 
-  pub fn set(&mut self, key: String, val: BufValue) -> Option<()> {
+  pub fn set(&mut self, key: Cow<'static, str>, val: BufValue) -> Option<()> {
+    if key.starts_with("self.") {
+      let key: &'static str = unsafe { &*(&key[5..] as *const str) };
+      return unsafe { &mut *self.this? }.set(Cow::Borrowed(key), val);
+    }
+
     if !key.starts_with("$") {
       return None;
     }
+
     self.data.insert(key, val);
     Some(())
   }
 
-  pub fn set_ptr(&mut self, key: String, ptr_target: String, val: BufKeyVal) -> Option<()> {
-    if !key.starts_with("*") {
-      return None;
-    }
-    if let BufKeyVal::None = val {
-      return None;
-    }
-
-    self.pointer.insert(
-      key,
-      PtrType {
-        key: ptr_target,
-        val,
-      },
-    );
-    Some(())
-  }
-
-  fn get_ptr<'a>(&'a self, key: &'a str) -> Option<(&'a str, &'a BufKeyVal)> {
-    if key.starts_with("*") {
-      let ptr = self.pointer.get(key)?;
-      Some((&ptr.key, &ptr.val))
-    } else {
-      Some((key, &BufKeyVal::None))
-    }
-  }
-
   pub fn get(&self, key: &str) -> Option<&BufValue> {
-    let key = key.replacen("->", "", 1).replacen("&", "", 1);
+    if key.starts_with("self.$") {
+      return unsafe { &mut *self.this? }.get(&key[5..]);
+    }
 
-    let (ky, typ) = self.get_ptr(&key)?;
-    let val = self.data.get(ky)?;
+    let val = self.data.get(key)?;
 
-    if let BufKeyVal::None = typ {
-      Some(val)
-    } else {
-      match (val, typ) {
-        (BufValue::Array(val), BufKeyVal::Array(index)) => val.get(*index),
-        (BufValue::Object(val), BufKeyVal::Map(key)) => Some(Box::deref(val.get(key)?)),
-        _ => None,
+    match val {
+      BufValue::Pointer(ptr) => {
+        if ptr.is_null() {
+          return None;
+        }
+
+        Some(unsafe { &**ptr })
       }
+      BufValue::PointerMut(ptr) => {
+        if ptr.is_null() {
+          return None;
+        }
+
+        Some(unsafe { &**ptr })
+      }
+      e => Some(e),
     }
   }
 
   pub fn get_mut(&mut self, key: &str) -> Option<&mut BufValue> {
-    if !key.starts_with("->&$") {
+    if key.starts_with("self.->&$") {
+      return unsafe { &mut *self.this? }.get_mut(&key[5..]);
+    }
+
+    if !key.starts_with("->&") {
       return None;
-    };
+    }
 
-    let key = key.replacen("->", "", 1).replacen("&", "", 1);
+    let key = key.get(3..)?;
 
-    let (ky, typ) = if key.starts_with("*") {
-      let ptr = self.pointer.get(&key)?;
-      (&ptr.key, &ptr.val)
-    } else {
-      (&key, &BufKeyVal::None)
-    };
-    let val = self.data.get_mut(ky)?;
+    let val = self.data.get_mut(key)?;
 
-    if let BufKeyVal::None = typ {
-      Some(val)
-    } else {
-      match (val, typ) {
-        (BufValue::Array(val), BufKeyVal::Array(index)) => val.get_mut(*index),
-        (BufValue::Object(val), BufKeyVal::Map(key)) => val
-          .get_mut(key)
-          .map_or_else(|| None, |x| Some(Box::deref_mut(x))),
-        _ => None,
+    match val {
+      BufValue::Pointer(_) => None,
+      BufValue::PointerMut(ptr) => {
+        if ptr.is_null() {
+          return None;
+        }
+
+        Some(unsafe { &mut **ptr })
       }
+      e => Some(e),
     }
   }
 
   pub fn remove(&mut self, key: &str) -> Option<Option<BufValue>> {
-    if !key.starts_with("->$") {
+    if key.starts_with("self.->$") {
+      return unsafe { &mut *self.this? }.remove(&key[5..]);
+    }
+
+    if !key.starts_with("->") {
       return None;
     }
 
-    let key = key.replacen("->", "", 1);
+    let key = key.get(2..)?;
 
-    if key.starts_with("*") {
-      self.pointer.remove(&key);
-      return Some(None);
-    } else if key.starts_with("$") {
-      return Some(self.data.remove(&key));
-    }
-    None
+    return Some(self.data.remove(key));
   }
 }

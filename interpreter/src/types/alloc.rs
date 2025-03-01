@@ -14,8 +14,8 @@ pub fn mkbuf(data: &str, file: &str) -> BufValue {
         BufValue::Float(value.parse().unwrap())
       }
       // Check if unsigned
-      else if !value.contains("0") {
-        BufValue::U_Int(value.parse().unwrap())
+      else if let Ok(v) = value.parse() {
+        BufValue::U_Int(v)
       }
       // Otherwise
       else {
@@ -29,10 +29,10 @@ pub fn mkbuf(data: &str, file: &str) -> BufValue {
       if !val.ends_with("\"") {
         error("Unknown String closing, expected `\"`", file);
       }
-      if !val.starts_with("s\"") {
+      if !val.starts_with("\"") {
         error("Unknown String starting, expected `\"`", file);
       }
-      BufValue::Str(val[2..val.len() - 1].into())
+      BufValue::Str(val[2..].into())
     }
     "1" => BufValue::Bool(true),
     "0" => BufValue::Bool(false),

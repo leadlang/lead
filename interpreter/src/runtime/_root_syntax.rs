@@ -1,45 +1,52 @@
+use tokio::task::yield_now;
+
 use crate::{
   error,
   ipreter::{interpret, tok_parse},
-  types::{set_runtime_val, Heap, RawRTValue},
+  types::{set_runtime_val, BufValue, Heap, Options, RawRTValue},
   Application, RespPackage,
 };
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap, mem::{take, transmute}};
 
 #[derive(Debug)]
-pub struct RTCreatedModule<'a> {
-  pub(crate) name: &'a str,
+pub struct RTCreatedModule {
+  pub(crate) code: String,
+  pub(crate) lines: Vec<&'static str>,
+  pub(crate) name: &'static str,
   pub(crate) heap: Heap,
-  pub(crate) methods: HashMap<&'a str, (Vec<&'a str>, String)>,
-  pub(crate) drop_fn: String,
+  pub(crate) methods: HashMap<&'static str, (Vec<&'static str>, &'static [&'static str])>,
 }
 
-impl<'a> RTCreatedModule<'a> {
+impl RTCreatedModule {
   pub(crate) fn run_method<T: FnOnce(&mut Heap, &mut Heap, &Vec<&str>) -> ()>(
     &mut self,
     app: *mut Application,
     method: &str,
     file: &str,
     into_heap: T,
+    heap: &mut Heap,
+    o: &mut Options,
   ) {
+    let mut temp_heap = Heap::new_with_this(&mut self.heap);
     let app = unsafe { &mut *app };
 
     let (args, method_code) = self
       .methods
       .get(&method)
       .unwrap_or_else(|| error("Unable to find :method", file));
-    into_heap(&mut self.heap, &mut app.heap, args);
+    into_heap(&mut temp_heap, heap, args);
 
     // run
     let file_name = ":fn";
 
-    let file = method_code.replace("\r", "");
-    let file = file.split("\n").collect::<Vec<_>>();
+    let file = method_code;
 
     let mut line = 0usize;
 
+    let mut markers = HashMap::new();
+
     while line < file.len() {
-      let content = &file[line];
+      let content = file[line];
 
       if !content.starts_with("#") {
         unsafe {
@@ -47,8 +54,10 @@ impl<'a> RTCreatedModule<'a> {
             format!("{}:{}", &file_name, line),
             content,
             app,
-            &mut self.heap,
+            &mut temp_heap,
             &mut line,
+            &mut markers,
+            false,
           );
         }
       }
@@ -56,7 +65,59 @@ impl<'a> RTCreatedModule<'a> {
       line += 1;
     }
 
-    self.heap.clear();
+    drop(temp_heap);
+  }
+
+  pub(crate) async fn run_method_async<'a, T: FnOnce(&mut Heap, &mut Heap, &Vec<&str>) -> ()>(
+    &mut self,
+    app: *mut Application<'a>,
+    method: &str,
+    file: &str,
+    into_heap: T,
+    heap: &mut Heap,
+    o: &mut Options,
+  ) {
+    let mut temp_heap = Heap::new_with_this(&mut self.heap);
+    let app = unsafe { &mut *app };
+
+    let (args, method_code) = self
+      .methods
+      .get(&method)
+      .unwrap_or_else(|| error("Unable to find :method", file));
+    into_heap(&mut temp_heap, heap, args);
+
+    // run
+    let file_name = ":fn";
+
+    let file = method_code;
+
+    let mut line = 0usize;
+
+    let mut markers = HashMap::new();
+
+    while line < file.len() {
+      let content = file[line];
+
+      if !content.starts_with("#") {
+        unsafe {
+          tok_parse(
+            format!("{}:{}", &file_name, line),
+            content,
+            app,
+            &mut temp_heap,
+            &mut line,
+            &mut markers,
+            true,
+          );
+        }
+
+        yield_now().await;
+      }
+
+      line += 1;
+    }
+
+    drop(temp_heap);
   }
 }
 
@@ -64,9 +125,56 @@ pub fn insert_into_application(
   app: *mut Application,
   args: &Vec<*const str>,
   line: &mut usize,
-  to_set: String,
+  to_set: Cow<'static, str>,
+  heap: &mut Heap,
+  markers: &mut HashMap<Cow<'static, str>, usize>,
 ) {
   let app = unsafe { &mut *app };
+
+  if args.len() == 3 {
+    let [a, v, v2] = &args[..] else {
+      panic!("Invalid syntax");
+    };
+
+    unsafe {
+      let a = &**a;
+
+      match a {
+        "*listen" => {
+          let function = &**v;
+          let module = &**v2;
+
+          let (var, meth) = function
+            .split_once("::")
+            .expect("Expected to split only once");
+
+          let code = String::from_utf8(
+            app
+              .module_resolver
+              .call_mut((format!("./{module}.mod.pb").as_str(),)),
+          )
+          .unwrap_or_else(|_| {
+            panic!("Unable to read {module}.mod.pb");
+          });
+
+          let Some(m) = parse_into_modules(code) else {
+            panic!("Unable to parse module");
+          };
+
+          let BufValue::Listener(x) = heap
+            .remove(var)
+            .expect("Unable to capture heaplistener")
+            .expect("Unable to capture heaplistener")
+          else {
+            panic!("Invalid! Not HeapListener")
+          };
+
+          app.runtime.spawn(async move {});
+        }
+        _ => panic!("Invalid syntax"),
+      }
+    }
+  }
 
   let [a, v] = &args[..] else {
     panic!("Invalid syntax");
@@ -79,10 +187,10 @@ pub fn insert_into_application(
         interpret(&v, app);
       }
       "*mark" => {
-        app.markers.insert((*v as &str).into(), *line);
+        markers.insert(Cow::Borrowed(*v as &str), *line);
       }
       "*goto" => {
-        *line = *app.markers.get(*v as &str).expect("No marker was found!");
+        *line = *markers.get(*v as &str).expect("No marker was found!");
       }
       "*import" => {
         let RespPackage {
@@ -103,7 +211,7 @@ pub fn insert_into_application(
         let val = RawRTValue::PKG(pkg);
 
         set_runtime_val(
-          &mut app.heap,
+          heap,
           to_set,
           {
             let name = String::from_utf8_lossy(name);
@@ -124,53 +232,60 @@ pub fn insert_into_application(
           panic!("Unable to read {v}.mod.pb");
         });
 
-        for m in parse_into_modules(code) {
-          let None = app.modules.insert(m.name.into(), m) else {
-            panic!("Duplicate Module");
-          };
-        }
+        let Some(m) = parse_into_modules(code) else {
+          panic!("No RTC Module found in the module file");
+        };
+
+        set_runtime_val(heap, to_set, m.name, RawRTValue::RTCM(m));
       }
       a => panic!("Unknown {}", a),
     };
   }
 }
 
-pub fn parse_into_modules<'a>(code: String) -> Vec<RTCreatedModule<'a>> {
-  let mut data = vec![];
+pub fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
+  let mut data = RTCreatedModule {
+    code,
+    lines: vec![],
+    heap: Heap::new(),
+    methods: HashMap::new(),
+    name: "%none"
+  };
 
-  let code = code.leak();
-  let split = code.split("\n");
+  let split = data.code.split("\n");
   let split = split
-    .map(|x| x.trim())
+    .map(|x| unsafe { transmute::<&str, &'static str>(x.trim()) })
     .filter(|x| x != &"" && !x.starts_with("#"))
     .collect::<Vec<_>>();
 
-  let mut mod_id = 0;
+  data.lines = split;
+
+  let mut mod_id: u8 = 0;
 
   let mut ctx = "";
 
   let mut tok_arg: Vec<&str> = vec![];
-  let mut tok_ens: String = String::new();
+  
+  let mut start: i64 = -1;
 
   let mut in_ctx = false;
 
-  for tokens in split {
+  for (id, tokens) in data.lines.iter().enumerate() {
     let mut tok = tokens.split(" ").collect::<Vec<_>>();
 
     if !in_ctx {
       let caller = tok.remove(0);
 
       match caller {
-        "__declare_global" => {
-          mod_id = data.len();
-          data.push(RTCreatedModule {
-            drop_fn: "".into(),
-            heap: Heap::new(),
-            methods: HashMap::new(),
-            name: tok.remove(0),
-          });
+        "declare" => {
+          if mod_id != 0 {
+            panic!("More than 1 module found in a single lead module file");
+          }
+
+          mod_id += 1;
+          data.name = tok.remove(0);
         }
-        "_fn" => {
+        "fn" => {
           ctx = tok.remove(0);
           in_ctx = true;
 
@@ -182,40 +297,37 @@ pub fn parse_into_modules<'a>(code: String) -> Vec<RTCreatedModule<'a>> {
               );
             }
           }
-          tok_arg = tok.clone();
+          tok_arg = take(&mut tok);
         }
-        "_drop" => {
-          ctx = "drop";
-          in_ctx = true;
-        }
-        "__end" => {}
         a => panic!("Unknown NON-CONTEXT {a}"),
       };
     } else {
-      if tok[0] == "_end" {
+      if tok[0] == "*end" {
         in_ctx = false;
 
-        let module: &mut RTCreatedModule<'a> = data.get_mut(mod_id).unwrap();
+        let lines: &'static [&'static str] = unsafe { transmute(&data.lines[..] as &[&'static str]) };
 
-        if ctx == "drop" {
-          module.drop_fn = tok_ens.clone();
-        } else {
-          let None = module
-            .methods
-            .insert(ctx.into(), (tok_arg.clone(), tok_ens.clone()))
-          else {
-            panic!("Method overlap");
-          };
-        }
+        let begin = start as usize;
 
-        tok_arg = vec![];
-        tok_ens = String::new();
+        let None = data.methods.insert(
+          ctx,
+          (std::mem::take(&mut tok_arg), &lines[begin..id]),
+        ) else {
+          panic!("Method overlap");
+        };
+
+        start = -1;
       } else {
-        tok_ens.push_str(tokens);
-        tok_ens.push_str("\n");
+        if start == -1 {
+          start = id as i64;
+        }
       }
     }
   }
 
-  data
+  if mod_id == 0 {
+    None
+  } else {
+    Some(data)
+  }
 }

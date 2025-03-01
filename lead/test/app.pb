@@ -1,9 +1,19 @@
-*mod test/hello
-
-*run test/index
+$hello: *mod test/hello
 
 $a: malloc string "12"
 
-str::to_int $a ->$a
+print $a
 
-hello init ->$a
+$a: str::to_int ->$a
+
+$a: unwrap ->$a
+
+print $a
+
+$hello::init ->$a
+
+print $a
+
+$os: os::name
+
+print $os

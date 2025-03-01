@@ -56,6 +56,19 @@ impl Documentation {
   }
 }
 
+macro_rules! gen {
+  ($ident:ident, $parse_mut:ident, $sig_d:ident, $sig_std:ident, $x:expr, $y:expr, $z:expr) => {
+    {
+      $parse_mut.push_str($x);
+      $sig_d.push_str($y);
+      $sig_d.push_str(&$ident);
+      $sig_d.push_str(" ");
+
+      $sig_std.push($z);
+    }
+  };
+}
+
 #[proc_macro_attribute]
 pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
   let args = args.to_string();
@@ -89,6 +102,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
   let inputs = sig.inputs;
 
+  let mut sig_std = vec![];
   let mut sig_d = String::from("# Function Params\n\n```\n");
 
   inputs.iter().enumerate().for_each(|(i, s)| {
@@ -105,29 +119,31 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
         }
 
         match typ.as_str() {
-          "BufValue" => {
-            parse_mut.push_str(" -> ");
-            sig_d.push_str("->$");
-            sig_d.push_str(&ident);
-            sig_d.push_str(" ");
-          },
+          "BufValue" => gen!(ident, parse_mut, sig_d, sig_std, " -> ", "->$", "->$ *"),
+          "Vec<BufValue>" => gen!(ident, parse_mut, sig_d, sig_std, " -> ", "->$", "->$ 0"),
           "& BufValue" => {
             parse_mut.push_str(" & ");
             sig_d.push_str("$");
             sig_d.push_str(&ident);
             sig_d.push_str(" ");
+
+            sig_std.push("$ *");
           },
           "& mut BufValue" => {
             parse_mut.push_str(" mut ");
             sig_d.push_str("->&$");
             sig_d.push_str(&ident);
             sig_d.push_str(" ");
+
+            sig_std.push("->&$ *");
           },
           "& str" => {
             parse_mut.push_str(" str ");
             sig_d.push_str("<");
             sig_d.push_str(&ident);
             sig_d.push_str("> ");
+
+            sig_std.push("*");
           },
           s => s
             .span()

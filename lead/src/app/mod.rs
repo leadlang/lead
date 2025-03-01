@@ -20,6 +20,7 @@ struct Options {
   monochrome: bool,
   full_access: FullAccessLevel,
   log: bool,
+  time: bool
 }
 
 mod logo;
@@ -116,7 +117,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
     }
   }
 
-  application.run();
+  application.run(options.time);
 }
 
 fn load_lib() {
@@ -167,6 +168,7 @@ fn parse(args: &[String]) -> Options {
     log: false,
     full_access: FullAccessLevel::Warn,
     monochrome: false,
+    time: true
   };
 
   args.iter().for_each(|v| match v.as_str() {
@@ -181,6 +183,7 @@ fn parse(args: &[String]) -> Options {
     "--warn-full-access" => opt.full_access = FullAccessLevel::Warn,
     "--allow-full-access" => opt.full_access = FullAccessLevel::SilentlyAllow,
     "--deny-full-access" => opt.full_access = FullAccessLevel::Deny,
+    "--no-time" => opt.time = false,
     _ => {
       println!("Unknown argument {}", v);
     }

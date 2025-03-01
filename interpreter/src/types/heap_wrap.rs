@@ -1,3 +1,5 @@
+use std::ptr;
+
 use crate::Application;
 
 use super::{Args, BufValue, Heap};
@@ -19,7 +21,7 @@ impl<'a> HeapWrapper<'a> {
   }
 
   pub fn get(&self, key: &str) -> Option<&BufValue> {
-    if self.args.contains(&(key as *const str)) {
+    if self.args.iter().any(|&x| unsafe { &*x } == key) {
       return self.heap.get(key);
     }
 
@@ -27,7 +29,7 @@ impl<'a> HeapWrapper<'a> {
   }
 
   pub fn get_mut(&mut self, key: &str) -> Option<&mut BufValue> {
-    if self.args.contains(&(key as *const str)) {
+    if self.args.iter().any(|&x| ptr::eq(x, key)) {
       return self.heap.get_mut(key);
     }
 
@@ -35,7 +37,7 @@ impl<'a> HeapWrapper<'a> {
   }
 
   pub fn remove(&mut self, key: &str) -> Option<Option<BufValue>> {
-    if self.args.contains(&(key as *const str)) {
+    if self.args.iter().any(|&x| ptr::eq(x, key)) {
       return self.heap.remove(key);
     }
 

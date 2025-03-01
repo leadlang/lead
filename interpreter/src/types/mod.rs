@@ -2,43 +2,37 @@ mod alloc;
 mod fns;
 mod heap;
 mod heap_wrap;
-use std::{any::Any, collections::HashMap, fmt::Debug, ops::Deref};
+use std::{
+  any::Any,
+  collections::HashMap,
+  fmt::Debug,
+  ops::{Deref, DerefMut},
+};
 
 pub use alloc::*;
 pub use fns::*;
 pub use heap::*;
 pub use heap_wrap::*;
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
 use crate::runtime::RuntimeValue;
 
 pub struct Options {
-  pub pre: String,
+  pub pre: *const str,
   pub r_val: Option<BufValue>,
-  pub r_ptr_target: String,
-  pub r_ptr: BufKeyVal,
   r_runtime: Option<RuntimeValue>,
 }
 
 impl Debug for Options {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.write_fmt(format_args!(
-      "Options {{ r_val: {:?}, r_ptr: {} }}",
-      &self.r_val,
-      match &self.r_ptr {
-        BufKeyVal::None => "None",
-        BufKeyVal::Array(_) => "Pending<Array>",
-        BufKeyVal::Map(_) => "Pending<Object>",
-      }
-    ))
+    f.write_fmt(format_args!("Options {{ r_val: {:?} }}", &self.r_val))
   }
 }
 
 impl Options {
   pub fn new() -> Self {
     Self {
-      pre: "".to_string(),
-      r_ptr: BufKeyVal::None,
-      r_ptr_target: "".to_string(),
+      pre: "" as _,
       r_val: None,
       r_runtime: None,
     }
@@ -48,15 +42,10 @@ impl Options {
     self.r_val = Some(val);
   }
 
-  pub fn set_return_ptr(&mut self, target: String, ptr: BufKeyVal) {
-    self.r_ptr_target = target;
-    self.r_ptr = ptr;
-  }
-
   pub fn rem_r_runtime(&mut self) -> Option<RuntimeValue> {
     let mut rt = self.r_runtime.take()?;
 
-    rt.r#type = format!("{}/{}", self.pre, rt.r#type);
+    rt.r#type = format!("{}/{}", unsafe { &*self.pre }, rt.r#type);
 
     Some(rt)
   }
@@ -91,10 +80,37 @@ pub enum BufValue {
   Float(f64),
   Str(String),
   Bool(bool),
-  Array(Vec<BufValue>),
-  Object(HashMap<String, Box<BufValue>>),
-  Faillable(Result<Box<BufValue>, String>),
+  Array(Vec<Self>),
+  Object(HashMap<String, Box<Self>>),
+  Faillable(Result<Box<Self>, String>),
+  Pointer(*const Self),
+  PointerMut(*mut Self),
   Runtime(AnyWrapper),
+  AsyncTask(AppliesEq<JoinHandle<Self>>),
+  Listener(AppliesEq<UnboundedReceiver<Self>>),
+}
+
+#[derive(Debug)]
+pub struct AppliesEq<T>(T);
+
+impl<T> PartialEq for AppliesEq<T> {
+  fn eq(&self, _: &Self) -> bool {
+    false
+  }
+}
+
+impl<T> Deref for AppliesEq<T> {
+  type Target = T;
+
+  fn deref(&self) -> &Self::Target {
+    &self.0
+  }
+}
+
+impl<T> DerefMut for AppliesEq<T> {
+  fn deref_mut(&mut self) -> &mut Self::Target {
+    &mut self.0
+  }
 }
 
 impl BufValue {
@@ -112,6 +128,28 @@ impl BufValue {
         Err(t) => format!("<err {}>", &t),
       },
       BufValue::Runtime(d) => format!("<runtime {:?}>", d.type_id()),
+      BufValue::Pointer(ptr) => {
+        if ptr.is_null() {
+          return "<ptr *ref NULL>".into();
+        }
+
+        unsafe { &**ptr }.type_of()
+      }
+      BufValue::PointerMut(ptr) => {
+        if ptr.is_null() {
+          return "<ptr *mut NULL>".into();
+        }
+
+        unsafe { &**ptr }.type_of()
+      }
+      BufValue::Listener(_) => "<listener ?event>".into(),
+      BufValue::AsyncTask(t) => {
+        if t.is_finished() {
+          "<async recv...\\0>".into()
+        } else {
+          "<async pending...>".into()
+        }
+      }
     }
   }
 

@@ -40,5 +40,6 @@ generate_help!(
   "  --log" => "Log Full Heap Access events for packages mentioned in metadata",
   "  --allow-full-access" => "Silently allow Full Heap Access requests (NOT RECOMMENDED)",
   "  --warn-full-access" => "Warn on Full Heap Access requests for packages not mentioned in metadata",
-  "  --deny-full-access" => "Deny Full Heap Access request for packages not mentioned in metadata"
+  "  --deny-full-access" => "Deny Full Heap Access request for packages not mentioned in metadata",
+  "  --no-time" => "Do not show time elasped"
 );

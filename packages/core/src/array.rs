@@ -1,4 +1,6 @@
-use interpreter::{error, get_as, module, pkg_name, types::{BufKeyVal, BufValue}};
+use std::ptr;
+
+use interpreter::{error, get_as, module, pkg_name, types::BufValue};
 use lead_lang_macros::{methods, define};
 
 module! {
@@ -148,42 +150,42 @@ fn clear(array: &mut BufValue) {
   usage: [
     (
       desc: "Directly mentioning index",
-      code: "*val: array::get ->&$array 1"
+      code: "$val: array::get ->&$array 1"
     ),
     (
       desc: "Using an index variable",
-      code: "*val: array::get ->&$array $index"
+      code: "$val: array::get ->&$array $index"
     )
   ],
   notes: None
 ))]
-fn get(arr: &str, index: &str) -> (String, BufKeyVal) {
+fn get(arr: &str, index: &str) -> BufValue {
   let arr_parsed = heap.get(&arr).unwrap_or_else(|| {
     error("Unable to get array", file);
   });
-  get_as!(file + heap: Array arr_parsed);
+  get_as!(file + heap: Array arr_parsed);  
 
   let index = match heap.get(&index) {
     Some(x) => match &x {
       &BufValue::U_Int(x) => *x as usize,
       &BufValue::Int(x) => *x as usize,
       _ => {
-        return ("".into(), BufKeyVal::None);
+        return BufValue::Pointer(ptr::null());
       }
     }
     _ => {
       match index.parse::<usize>() {
         Ok(x) => x,
         Err(_) => {
-          return ("".into(), BufKeyVal::None);
+          return BufValue::Pointer(ptr::null());
         }
       }
     }
   };
 
   if arr_parsed.len() >= index {
-    return ("".into(), BufKeyVal::None);
+    return BufValue::Pointer(ptr::null());
   } else {
-    return (arr.into(), BufKeyVal::Array(index));
+    return BufValue::Pointer(&arr_parsed[index]);
   }
 }

@@ -12,6 +12,7 @@ module!(
         .map(|x| {
           let x = unsafe { &**x };
           let mut chalk = Chalk::new();
+
           match heap.get(x) {
             Some(x) => match &x {
               &BufValue::Bool(x) => chalk.red().string(&format!("{x}")),

@@ -1,8 +1,9 @@
 #![feature(fn_traits)]
 #![feature(trait_alias)]
 #![feature(concat_idents)]
+#![feature(macro_metavar_expr)]
 
-use std::{collections::HashMap, process};
+use std::{collections::HashMap, process, time::{Duration, Instant}};
 
 #[macro_use]
 pub mod macros;
@@ -16,7 +17,7 @@ pub mod types;
 pub mod val;
 
 pub use package::*;
-use runtime::_root_syntax::RTCreatedModule;
+use tokio::runtime::{Builder, Runtime};
 use types::{DynMethodRes, Heap, LanguagePackages, MethodRes};
 pub use val::*;
 
@@ -49,11 +50,8 @@ pub struct RespPackage {
 pub struct Application<'a> {
   code: HashMap<String, String>,
   pkg: LanguagePackages<'a>,
-  pub modules: HashMap<String, RTCreatedModule<'a>>,
-  pub rt_mod_map: HashMap<String, (&'a String, &'a str)>,
   entry: &'a str,
   heap: Heap,
-  markers: HashMap<String, usize>,
 
   // Resolve files
   module_resolver: Box<dyn FnMut(&str) -> Vec<u8>>,
@@ -61,6 +59,8 @@ pub struct Application<'a> {
   pkg_resolver: Box<dyn FnMut(&str) -> RespPackage>,
   // Log in case of full access request
   log_info: Box<dyn FnMut(&str) -> ()>,
+  pub(crate) runtime: Runtime,
+  inst: Instant
 }
 
 impl<'a> Application<'a> {
@@ -83,12 +83,14 @@ impl<'a> Application<'a> {
       pkg: LanguagePackages::new(),
       heap: Heap::new(),
       entry: &file,
-      modules: HashMap::new(),
-      rt_mod_map: HashMap::new(),
       module_resolver: Box::new(fs_resolver),
-      markers: HashMap::new(),
       pkg_resolver: Box::new(dll_resolver),
       log_info: Box::new(requested_perm),
+      runtime: Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Unable to build async runtime"),
+      inst: Instant::now()
     }
   }
 
@@ -136,12 +138,20 @@ impl<'a> Application<'a> {
   }
 
   /// ⚠️ This function still is panicking
-  pub fn run_non(mut self) -> () {
+  pub fn run_non(mut self) -> Duration {
     ipreter::interpret(":entry", &mut self);
+    self.runtime.shutdown_background();
+
+    self.inst.elapsed()
   }
 
-  pub fn run(self) -> ! {
-    self.run_non();
+  pub fn run(self, time: bool) -> ! {
+    let dur = self.run_non();
+
+    if time {
+      println!("\nTime Elasped: {:?}", dur);
+    }
+
     process::exit(0)
   }
 }
