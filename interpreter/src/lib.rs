@@ -61,7 +61,7 @@ pub struct Application<'a> {
   // Resolve files
   module_resolver: Box<dyn FnMut(&str) -> Vec<u8>>,
   // Resolve path from mod name
-  pkg_resolver: Box<dyn FnMut(&str) -> RespPackage>,
+  pkg_resolver: Box<dyn FnMut(&str) -> Vec<RespPackage>>,
   // Log in case of full access request
   log_info: Box<dyn FnMut(&str) -> ()>,
   pub(crate) runtime: Runtime,
