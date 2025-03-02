@@ -77,7 +77,10 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
 
       let mut out = vec![];
 
-      if let Some(x) = libs.get(name) {
+      let pkg = pkgmap.get(name)
+        .expect("Unable to get package name");
+
+      if let Some(x) = libs.get(pkg) {
         for module in (x.modules)() {
           out.push(RespPackage { 
             name: b"imported", 
@@ -86,10 +89,15 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
           });
         }
       } else {
-        let pkg = pkgmap.get(name)
-          .expect("Unable to get package name");
-
         let pkg = Package::new(pkg);
+
+        for module in (pkg.modules)() {
+          out.push(RespPackage { 
+            name: b"imported", 
+            methods: module.methods(), 
+            dyn_methods: module.dyn_methods()
+          });
+        }
 
         libs.insert(name.to_string(), pkg);
       }

@@ -40,6 +40,8 @@ pub fn interpret<'a>(file: &str, mut app: &mut Application<'a>) {
   while line < file.len() {
     let content = &file[line];
 
+    println!("{line} {content}");
+
     if !content.starts_with("#") {
       unsafe {
         let f = tok_parse(
@@ -140,7 +142,7 @@ pub(crate) unsafe fn tok_parse<'a>(
     }
 
     None
-  } else if caller.starts_with("*return") {
+  } else if caller == "*return" {
     let Some(opt) = orig_opt else {
       error("*return can only be called from a lead module", file);
     };
