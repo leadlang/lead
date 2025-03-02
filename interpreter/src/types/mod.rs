@@ -44,8 +44,8 @@ impl Options {
     }
   }
 
-  pub fn rt(&self) -> &Handle {
-    unsafe { &*self.runtime }
+  pub fn spawn<F: Future + Send + 'static>(&self, future: F) -> JoinHandle<BufValue> {
+    unsafe { &*self.runtime }.spawn(future)
   }
 
   pub fn set_return_val(&mut self, val: BufValue) {

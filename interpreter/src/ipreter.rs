@@ -73,6 +73,10 @@ pub(crate) unsafe fn tok_parse<'a>(
 ) -> Option<Pin<Box<dyn Future<Output = ()> + 'a>>> {
   let heap: &'static mut Heap = unsafe { &mut *heap };
 
+  app.runtime.handle().spawn(async move {
+    println!("Hello Runtime");
+  });
+
   let tokens: Vec<*const str> = piece.split(" ").map(|x| x as *const str).collect();
 
   let mut caller = unsafe { &*tokens[0] };
