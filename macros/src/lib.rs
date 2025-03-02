@@ -261,7 +261,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 
     #[allow(unused)]
-    #vis fn #new(#params, file: &String, opt: &interpreter::types::Options) #out #block
+    #vis fn #new(#params, file: &String, opt: &mut interpreter::types::Options) #out #block
   }.into()
 }
 
