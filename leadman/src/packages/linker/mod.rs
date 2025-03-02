@@ -65,7 +65,6 @@ pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
     fs::write(format!("./.lead_libs/{hash}/lead.lookup.lkp"), resp.package).await;
 
     if is0 {
-      
       let doc = format!("./.lead_libs/{hash}/docs");
 
       match fs::metadata(&doc).await {

@@ -1,9 +1,10 @@
 use lealang_chalk_rs::Chalk;
 use interpreter::types::{DynMethodRes, MethodRes};
-use interpreter::{Application, Package as Pkg};
+use interpreter::{Application, Package as Pkg, RespPackage};
 use std::env;
 use std::env::consts::{DLL_EXTENSION, DLL_PREFIX};
 use std::ptr::addr_of_mut;
+use std::sync::{Arc, LazyLock, Mutex};
 use std::{collections::HashMap, fs};
 
 use super::metadata;
@@ -26,6 +27,7 @@ struct Options {
 mod logo;
 
 static mut LIBS: Option<HashMap<usize, Package>> = None;
+static PT_LIBS: LazyLock<Arc<Mutex<HashMap<String, Package>>>> = LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 struct Package {
   modules: fn() -> Vec<Box<dyn Pkg>>,
@@ -70,12 +72,26 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
     &data.entry,
     |path| fs::read(path).expect("Unable to read file"),
     move |name| {
-      let pkg = pkgmap.get(name)
-        .expect("Unable to get package name");
+      let mut libs = PT_LIBS.lock()
+        .map_or_else(|e| e.into_inner(), |e| e);
 
-      let pkg = Package::new(pkg);
+      let mut out = RespPackage { name: b"imported", methods: &[], dyn_methods: vec![] };
 
-      todo!()
+      if let Some(x) = libs.get(name) {
+        for module in (x.modules)() {
+          out.methods = module.methods();
+          out.dyn_methods = module.dyn_methods();
+        }
+      } else {
+        let pkg = pkgmap.get(name)
+          .expect("Unable to get package name");
+
+        let pkg = Package::new(pkg);
+
+        libs.insert(name.to_string(), pkg);
+      }
+
+      out
     },
     move |pkg_name| {
       let chalk = unsafe { &mut *chalk_1_mut };
