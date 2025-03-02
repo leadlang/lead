@@ -40,8 +40,6 @@ pub fn interpret<'a>(file: &str, mut app: &mut Application<'a>) {
   while line < file.len() {
     let content = &file[line];
 
-    println!("{line} {content}");
-
     if !content.starts_with("#") {
       unsafe {
         let f = tok_parse(

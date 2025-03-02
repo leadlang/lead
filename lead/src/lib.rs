@@ -34,7 +34,7 @@ pub fn run() {
 async fn main() {
   let mut chalk: Chalk = Chalk::new();
 
-  panic::set_hook(Box::new(|info| {
+  /*panic::set_hook(Box::new(|info| {
     let mut chalk = Chalk::new();
 
     let info_pay = info.payload();
@@ -73,7 +73,7 @@ async fn main() {
     let _ = err.flush();
 
     process::exit(1);
-  }));
+  }));*/
 
   let mut args: Vec<String> = args().collect();
 

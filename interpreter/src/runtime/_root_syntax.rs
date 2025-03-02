@@ -238,11 +238,9 @@ pub fn insert_into_application(
           } = package;
 
           for (sig, call) in methods {
-            println!("{sig}");
             pkg.insert(sig.to_string(), *call);
           }
           for (sig, call) in dyn_methods {
-            println!("{sig}");
             pkg.insert(sig.to_string(), call);
           }
         }

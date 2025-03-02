@@ -91,7 +91,7 @@ impl<'a> Application<'a> {
       module_resolver: Box::new(fs_resolver),
       pkg_resolver: Box::new(dll_resolver),
       log_info: Box::new(requested_perm),
-      runtime: Builder::new_current_thread()
+      runtime: Builder::new_multi_thread()
         .enable_all()
         .build()
         .expect("Unable to build async runtime"),
