@@ -17,7 +17,7 @@ pub use alloc::*;
 pub use fns::*;
 pub use heap::*;
 pub use heap_wrap::*;
-use tokio::{runtime::{Handle, Runtime}, sync::mpsc::UnboundedReceiver, task::JoinHandle};
+use tokio::{runtime::Handle, sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
 use crate::runtime::RuntimeValue;
 
