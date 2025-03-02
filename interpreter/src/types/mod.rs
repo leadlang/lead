@@ -101,7 +101,7 @@ pub enum BufValue {
   RuntimeRaw(&'static str, AppliesEq<RawRTValue>),
 }
 
-pub(crate) struct UnsafeSend<F> {
+pub struct UnsafeSend<F> {
   pub future: F,
   pub _marker: PhantomData<*const ()>, // Ensures this type is `!Send` unless we implement `Send`
 }
@@ -117,7 +117,7 @@ impl<F: Future> Future for UnsafeSend<F> {
   }
 }
 
-pub(crate) fn make_unsafe_send_future<F>(fut: F) -> UnsafeSend<F>
+pub fn make_unsafe_send_future<F>(fut: F) -> UnsafeSend<F>
 where
   F: Future,
 {
