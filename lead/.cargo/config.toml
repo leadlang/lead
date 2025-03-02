@@ -1,5 +1,3 @@
-rustflags = []
-
 [unstable]
 build-std = ["core", "std", "proc_macro", "alloc"]
 
