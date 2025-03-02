@@ -101,6 +101,9 @@ pub enum BufValue {
   RuntimeRaw(&'static str, AppliesEq<RawRTValue>),
 }
 
+unsafe impl Send for BufValue {}
+unsafe impl Sync for BufValue {}
+
 pub struct UnsafeSend<F> {
   pub future: F,
   pub _marker: PhantomData<*const ()>, // Ensures this type is `!Send` unless we implement `Send`
