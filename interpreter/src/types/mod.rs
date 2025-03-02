@@ -44,7 +44,7 @@ impl Options {
     }
   }
 
-  pub fn spawn<F: Future + Send + 'static>(&self, future: F) -> JoinHandle<BufValue> {
+  pub fn spawn<F: Future<Output = BufValue> + Send + 'static>(&self, future: F) -> JoinHandle<BufValue> {
     unsafe { &*self.runtime }.spawn(future)
   }
 
