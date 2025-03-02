@@ -250,12 +250,7 @@ pub fn insert_into_application(
         set_runtime_val(
           heap,
           to_set,
-          {
-            let name = String::from_utf8_lossy(name);
-            let name: &'static mut str = name.to_string().leak::<'static>();
-
-            name
-          },
+          "loaded",
           val,
         );
       }
