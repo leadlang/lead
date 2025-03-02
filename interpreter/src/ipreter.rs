@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap, future::Future};
+use std::{borrow::Cow, collections::HashMap, future::Future, pin::Pin};
 
 use crate::{
   error,
@@ -43,13 +43,14 @@ pub fn interpret<'a>(file: &str, mut app: &mut Application<'a>) {
     if !content.starts_with("#") {
       unsafe {
         let f = tok_parse(
-          format!("{}:{}", &file_name, line+1),
+          format!("{}:{}", &file_name, line + 1),
           content,
           &mut app,
           &mut app2.heap,
           &mut line,
           &mut markers,
           false,
+          None,
         );
 
         drop(f);
@@ -68,30 +69,33 @@ pub(crate) unsafe fn tok_parse<'a>(
   line: &mut usize,
   markers: &mut HashMap<Cow<'static, str>, usize>,
   r#async: bool,
-) -> Option<Box<dyn Future<Output = ()> + 'a>> {
+  orig_opt: Option<&mut Options>,
+) -> Option<Pin<Box<dyn Future<Output = ()> + 'a>>> {
   let heap: &'static mut Heap = unsafe { &mut *heap };
 
-  let mut tokens: Vec<*const str> = piece.split(" ").map(|x| x as *const str).collect();
+  let tokens: Vec<*const str> = piece.split(" ").map(|x| x as *const str).collect();
 
   let mut caller = unsafe { &*tokens[0] };
   let mut val_type = false;
 
   let mut to_set = "";
+  let mut start = 0;
 
   if caller.ends_with(":") && caller.starts_with("$") {
     val_type = true;
-    let l = unsafe { &*tokens.remove(0) };
+    let l = unsafe { &*tokens[0] };
     let set = l.split_at(l.len() - 1).0;
 
     to_set = set;
 
-    caller = unsafe { &*tokens[0] };
+    start = 1;
+    caller = unsafe { &*tokens[1] };
   }
 
   let mut opt = Options::new();
 
   if caller.starts_with("*if$") {
-    let caller = unsafe { &*tokens.remove(0) };
+    let caller = unsafe { &*tokens[start] };
 
     let caller = caller.replacen("*if", "", 1);
 
@@ -99,19 +103,22 @@ pub(crate) unsafe fn tok_parse<'a>(
       panic!("Invalid type, expected boolean in *if");
     };
 
-    let piece = tokens
-      .into_iter()
-      .map(|x| unsafe { &*x })
-      .collect::<Vec<_>>()
-      .join(" ");
-
     if *x {
-      return tok_parse(file, &piece, app, heap, line, markers, r#async);
+      return tok_parse(
+        file,
+        &piece[unsafe { &*tokens[start] }.len() + 1..],
+        app,
+        heap,
+        line,
+        markers,
+        r#async,
+        orig_opt,
+      );
     }
 
     None
   } else if caller.starts_with("*else$") {
-    let caller = unsafe { &*tokens.remove(0) };
+    let caller = unsafe { &*tokens[start] };
 
     let caller = caller.replacen("*else", "", 1);
 
@@ -119,21 +126,39 @@ pub(crate) unsafe fn tok_parse<'a>(
       panic!("Invalid type, expected boolean in *if");
     };
 
-    let piece = tokens
-      .into_iter()
-      .map(|x| unsafe { &*x })
-      .collect::<Vec<_>>()
-      .join(" ");
-
     if !*x {
-      return tok_parse(file, &piece, app, heap, line, markers, r#async);
+      return tok_parse(
+        file,
+        &piece[unsafe { &*tokens[start] }.len() + 1..],
+        app,
+        heap,
+        line,
+        markers,
+        r#async,
+        orig_opt,
+      );
     }
+
+    None
+  } else if caller.starts_with("*return") {
+    let Some(opt) = orig_opt else {
+      error("*return can only be called from a lead module", file);
+    };
+
+    let var = unsafe { &*tokens[start + 1] };
+
+    opt.r_val = Some(
+      heap
+        .remove(var)
+        .expect("Cannot find variable")
+        .expect("Cannot find variable"),
+    );
 
     None
   } else if caller.starts_with("*") {
     insert_into_application(
       app as *mut _ as _,
-      &tokens,
+      &tokens[start..],
       line,
       Cow::Borrowed(to_set),
       heap,
@@ -150,12 +175,12 @@ pub(crate) unsafe fn tok_parse<'a>(
   } else if caller.starts_with("$") {
     let app_ptr = app as *mut _;
     let app_heap_ptr = heap as *mut _;
-    let tokens_ptr = &tokens as *const _;
+    let tokens_ptr = &tokens as &[*const str];
     let caller_ptr = caller as *const _;
 
     let wrap = HeapWrapper {
       heap: unsafe { &mut *app_heap_ptr },
-      args: unsafe { &*tokens_ptr },
+      args: unsafe { &*(tokens_ptr as *const _) },
       pkg_name: unsafe { &*caller_ptr },
       app: app_ptr,
     };
@@ -164,7 +189,7 @@ pub(crate) unsafe fn tok_parse<'a>(
       app as _,
       heap,
       caller,
-      &mut tokens,
+      &tokens[start..],
       wrap,
       &file,
       &mut opt,
@@ -195,7 +220,7 @@ pub(crate) unsafe fn tok_parse<'a>(
         None
       }
       Some(Output::Future(v)) => {
-        return Some(Box::new(async move {
+        return Some(Box::pin(async move {
           let v = v.await;
 
           let runt = opt.rem_r_runtime();
@@ -216,7 +241,7 @@ pub(crate) unsafe fn tok_parse<'a>(
   } else {
     let app_ptr = app as *mut _;
     let app_heap_ptr = heap as *mut _;
-    let tokens_ptr = &tokens as *const _;
+    let tokens_ptr = &tokens as &[_];
 
     match app.pkg.inner.get_mut(caller) {
       Some((p, v)) => {
@@ -225,12 +250,12 @@ pub(crate) unsafe fn tok_parse<'a>(
 
         let wrap = HeapWrapper {
           heap: unsafe { &mut *app_heap_ptr },
-          args: unsafe { &*tokens_ptr },
+          args: unsafe { &*(tokens_ptr as *const _) },
           pkg_name: pkg,
           app: app_ptr,
         };
 
-        v(&tokens, wrap, &file, &mut opt);
+        v(&tokens[start..] as *const _, wrap, &file, &mut opt);
 
         let runt = opt.rem_r_runtime();
 

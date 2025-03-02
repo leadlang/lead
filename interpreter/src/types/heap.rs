@@ -1,9 +1,4 @@
-use std::{
-  borrow::Cow,
-  collections::HashMap,
-  future::Future,
-  pin::Pin,
-};
+use std::{borrow::Cow, collections::HashMap, future::Future, pin::Pin};
 
 use crate::{
   error,
@@ -11,7 +6,7 @@ use crate::{
   Application,
 };
 
-use super::{BufValue, HeapWrapper, Options, PackageCallback};
+use super::{AppliesEq, BufValue, HeapWrapper, Options, PackageCallback};
 
 pub type HeapInnerMap = HashMap<Cow<'static, str>, BufValue>;
 
@@ -22,8 +17,8 @@ pub enum RawRTValue {
   RTCM(RTCreatedModule),
 }
 
-fn get_ptr(heap: &mut Heap) -> &mut HashMap<Cow<'static, str>, (&'static str, RawRTValue)> {
-  &mut heap.runtimes
+fn get_ptr(heap: &mut Heap) -> &mut HashMap<Cow<'static, str>, BufValue> {
+  &mut heap.data
 }
 
 pub fn set_runtime_val(
@@ -32,7 +27,7 @@ pub fn set_runtime_val(
   module: &'static str,
   val: RawRTValue,
 ) {
-  let _ = get_ptr(heap).insert(key, (module, val));
+  let _ = get_ptr(heap).insert(key, BufValue::RuntimeRaw(module, AppliesEq(val)));
 }
 
 pub enum Output {
@@ -44,7 +39,7 @@ pub fn call_runtime_val<'a>(
   app: *mut Application,
   heap: &'a mut Heap,
   key: &'a str,
-  v: &'a mut Vec<*const str>,
+  v: &'a [*const str],
   a: HeapWrapper,
   c: &String,
   o: &'a mut Options,
@@ -55,16 +50,20 @@ pub fn call_runtime_val<'a>(
   let ptr = get_ptr(heap);
 
   let (key, caller) = key.split_once("::")?;
-  let data = ptr.get_mut(key)?;
+  let BufValue::RuntimeRaw(ai, bi) = ptr.get_mut(key)? else {
+    return None;
+  };
 
-  match &mut data.1 {
-    RawRTValue::RT(data) => data.call_ptr(caller, v, a, c, o)?,
+  let data = (ai, bi);
+
+  match &mut data.1 .0 {
+    RawRTValue::RT(data) => data.call_ptr(caller, v as _, a, c, o)?,
     RawRTValue::PKG(pkg) => match pkg.get_mut(caller) {
-      Some(x) => x.call_mut((v, a, c, o)),
+      Some(x) => x.call_mut((v as *const [*const str], a, c, o)),
       None => error(&format!("Unexpected `{}`", &caller), &file),
     },
     RawRTValue::RTCM(pkg) => {
-      let tkns = v.drain(1..).collect::<Vec<_>>();
+      let tkns = &v[1..];
 
       if !r#async {
         pkg.run_method(
@@ -80,7 +79,7 @@ pub fn call_runtime_val<'a>(
             }
 
             tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
-              let token = unsafe { &*token };
+              let token = unsafe { &**token };
               let from = app_heap
                 .remove(token)
                 .unwrap_or_else(|| {
@@ -118,7 +117,7 @@ pub fn call_runtime_val<'a>(
             }
 
             tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
-              let token = unsafe { &*token };
+              let token = unsafe { &**token };
               let from = app_heap
                 .remove(token)
                 .unwrap_or_else(|| {
@@ -149,9 +148,8 @@ pub fn call_runtime_val<'a>(
           "done"
         }) as Pin<Box<dyn Future<Output = &'static str>>>;
 
-        let future: Pin<Box<dyn Future<Output = &'static str>>> = unsafe {
-          std::mem::transmute(pin)
-        };
+        let future: Pin<Box<dyn Future<Output = &'static str>>> =
+          unsafe { std::mem::transmute(pin) };
 
         return Some(Output::Future(future));
       }
@@ -164,7 +162,6 @@ pub fn call_runtime_val<'a>(
 #[derive(Debug)]
 pub struct Heap {
   data: HeapInnerMap,
-  runtimes: HashMap<Cow<'static, str>, (&'static str, RawRTValue)>,
   this: Option<*mut Self>,
 }
 
@@ -175,7 +172,6 @@ impl Heap {
   pub fn new() -> Self {
     Self {
       data: HashMap::new(),
-      runtimes: HashMap::new(),
       this: None,
     }
   }
@@ -183,7 +179,6 @@ impl Heap {
   pub fn new_with_this(this: *mut Self) -> Self {
     Self {
       data: HashMap::new(),
-      runtimes: HashMap::new(),
       this: Some(this),
     }
   }

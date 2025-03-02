@@ -1,5 +1,6 @@
 [package]
 name = "lead_cli"
+description = "Lead Just-In-Time Runner"
 version = "0.0.0-dev-lead-lang"
 edition = "2021"
 

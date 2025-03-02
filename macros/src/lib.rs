@@ -218,13 +218,13 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       #vis static #new_doc: &'static str = #doc;
   
       #[allow(unused)]
-      #vis fn #ident(args: &Vec<*const str>, mut heap: interpreter::types::HeapWrapper, file: &String, _opt: &mut interpreter::types::Options) {
+      #vis fn #ident(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, _opt: &mut interpreter::types::Options) {
         let __option_code_result = #new(args, heap, file, _opt);
         #other_tokens
       }
 
       #[allow(unused)]
-      #vis fn #new(args: &Vec<*const str>, mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) #out #block
+      #vis fn #new(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) #out #block
     }.into()
   }
 
@@ -236,7 +236,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       #vis static #new_doc: &'static str = #doc;
   
       #[allow(unused)]
-      #vis fn #ident(args: &Vec<*const str>, mut heap: interpreter::types::HeapWrapper, file: &String, _opt: &mut interpreter::types::Options) {
+      #vis fn #ident(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, _opt: &mut interpreter::types::Options) {
         #parse_mut
 
         let __option_code_result = #new(#to_pass, file, heap);
@@ -253,7 +253,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     #vis static #new_doc: &'static str = #doc;
 
     #[allow(unused)]
-    #vis fn #ident(args: &Vec<*const str>, mut heap: interpreter::types::HeapWrapper, file: &String, _opt: &mut interpreter::types::Options) {
+    #vis fn #ident(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, _opt: &mut interpreter::types::Options) {
       #parse_mut
 
       let __option_code_result = #new(#to_pass, file);

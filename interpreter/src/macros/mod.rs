@@ -87,7 +87,7 @@ macro_rules! parse {
 
   ($file:ident + $heap:ident + $args:ident: $($x:tt $y:ident),*) => {
     #[allow(unused_variables)]
-    let [_, $($y),*] = &$args[..] else {
+    let [_, $($y),*] = &(unsafe { &*$args })[..] else {
       interpreter::error("Invalid Format!", $file);
     };
 

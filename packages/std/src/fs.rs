@@ -14,7 +14,7 @@ module! {
         let file = File::open(path);
 
         let mut resp = RuntimeValue::new("fs/file", {
-          let mut map: HashMap<&'static _, (&'static _, for<'a, 'c, 'd, 'e> fn(&'a Vec<*const str>, &'c mut Heap, HeapWrapper, &'d String, &'e mut Options))> = HashMap::new();
+          let mut map: HashMap<&'static _, (&'static _, for<'c, 'd, 'e> fn(*const [*const str], &'c mut Heap, HeapWrapper, &'d String, &'e mut Options))> = HashMap::new();
 
           map.insert("print", ("", |_args, _inner, _outer, _, _| {
             println!();
@@ -35,28 +35,3 @@ module! {
     }]
   }
 }
-
-// pub struct FS;
-// impl Package for FS {
-//   fn name(&self) -> &'static [u8] {
-//     "📦 Lead Programming Language / IO".as_bytes()
-//   }
-
-//   fn methods(&self) -> MethodRes {
-//     &[
-//       ("print", |args, heap, _| {
-//       }),
-//       ("ask", |args, heap, _| {
-//         let argv = &args[1..args.len() - 2].join(" ");
-//         let val: &String = &args[args.len() - 1];
-//         let val: String = val.into();
-
-//         let bufval = Text::new(&argv).prompt().map_or_else(
-//           |_| BufValue::Faillable(Err("".into())),
-//           |val| BufValue::Faillable(Ok(Box::new(BufValue::Str(val)))),
-//         );
-//         heap.set(val, bufval);
-//       }),
-//     ]
-//   }
-// }

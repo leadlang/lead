@@ -2,11 +2,11 @@ use std::ptr;
 
 use crate::Application;
 
-use super::{Args, BufValue, Heap};
+use super::{BufValue, Heap};
 
 pub struct HeapWrapper<'a> {
   pub(crate) heap: &'a mut Heap,
-  pub(crate) args: &'a Args,
+  pub(crate) args: &'a [*const str],
   pub(crate) pkg_name: &'a str,
   pub(crate) app: *mut Application<'a>,
 }

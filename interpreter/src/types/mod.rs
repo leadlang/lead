@@ -6,7 +6,11 @@ use std::{
   any::Any,
   collections::HashMap,
   fmt::Debug,
+  future::Future,
+  marker::PhantomData,
   ops::{Deref, DerefMut},
+  pin::Pin,
+  task::{Context, Poll},
 };
 
 pub use alloc::*;
@@ -88,11 +92,40 @@ pub enum BufValue {
   Runtime(AnyWrapper),
   AsyncTask(AppliesEq<JoinHandle<Self>>),
   Listener(AppliesEq<UnboundedReceiver<Self>>),
-  RuntimeRaw(&'static str, AppliesEq<RawRTValue>)
+  RuntimeRaw(&'static str, AppliesEq<RawRTValue>),
+}
+
+pub(crate) struct UnsafeSend<F> {
+  pub future: F,
+  pub _marker: PhantomData<*const ()>, // Ensures this type is `!Send` unless we implement `Send`
+}
+
+unsafe impl<F> Send for UnsafeSend<F> {}
+unsafe impl<F> Sync for UnsafeSend<F> {}
+
+impl<F: Future> Future for UnsafeSend<F> {
+  type Output = F::Output;
+
+  fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    unsafe { self.map_unchecked_mut(|s| &mut s.future).poll(cx) }
+  }
+}
+
+pub(crate) fn make_unsafe_send_future<F>(fut: F) -> UnsafeSend<F>
+where
+  F: Future,
+{
+  UnsafeSend {
+    future: fut,
+    _marker: PhantomData,
+  }
 }
 
 #[derive(Debug)]
-pub struct AppliesEq<T>(T);
+pub struct AppliesEq<T>(pub T);
+
+unsafe impl<T> Send for AppliesEq<T> {}
+unsafe impl<T> Sync for AppliesEq<T> {}
 
 impl<T> PartialEq for AppliesEq<T> {
   fn eq(&self, _: &Self) -> bool {
@@ -151,7 +184,7 @@ impl BufValue {
           "<async pending...>".into()
         }
       }
-      BufValue::RuntimeRaw(_, _) => "<runtime rt>".into()
+      BufValue::RuntimeRaw(_, _) => "<runtime rt>".into(),
     }
   }
 

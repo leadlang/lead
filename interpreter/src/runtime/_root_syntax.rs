@@ -3,10 +3,14 @@ use tokio::task::yield_now;
 use crate::{
   error,
   ipreter::{interpret, tok_parse},
-  types::{set_runtime_val, BufValue, Heap, Options, RawRTValue},
+  types::{set_runtime_val, BufValue, Heap, Options, RawRTValue, make_unsafe_send_future},
   Application, RespPackage,
 };
-use std::{borrow::Cow, collections::HashMap, mem::{take, transmute}};
+use std::{
+  borrow::Cow,
+  collections::HashMap,
+  mem::{take, transmute},
+};
 
 #[derive(Debug)]
 pub struct RTCreatedModule {
@@ -25,7 +29,7 @@ impl RTCreatedModule {
     file: &str,
     into_heap: T,
     heap: &mut Heap,
-    _o: &mut Options,
+    opt: &mut Options,
   ) {
     let mut temp_heap = Heap::new_with_this(&mut self.heap);
     let app = unsafe { &mut *app };
@@ -58,6 +62,7 @@ impl RTCreatedModule {
             &mut line,
             &mut markers,
             false,
+            Some(opt),
           );
         }
       }
@@ -75,7 +80,7 @@ impl RTCreatedModule {
     file: &str,
     into_heap: T,
     heap: &mut Heap,
-    _o: &mut Options,
+    opt: &mut Options,
   ) {
     let mut temp_heap = Heap::new_with_this(&mut self.heap);
     let app = unsafe { &mut *app };
@@ -100,7 +105,7 @@ impl RTCreatedModule {
 
       if !content.starts_with("#") {
         unsafe {
-          tok_parse(
+          if let Some(x) = tok_parse(
             format!("{}:{}", &file_name, line),
             content,
             app,
@@ -108,7 +113,10 @@ impl RTCreatedModule {
             &mut line,
             &mut markers,
             true,
-          );
+            Some(opt),
+          ) {
+            x.await;
+          }
         }
 
         yield_now().await;
@@ -124,7 +132,7 @@ impl RTCreatedModule {
 #[allow(unused)]
 pub fn insert_into_application(
   app: *mut Application,
-  args: &Vec<*const str>,
+  args: &[*const str],
   line: &mut usize,
   to_set: Cow<'static, str>,
   heap: &mut Heap,
@@ -145,11 +153,20 @@ pub fn insert_into_application(
           let function = &**v2;
           let module = &**v;
 
-          let module = heap.remove(module)
+          let module = heap
+            .remove(module)
             .expect("Invalid Format")
             .expect("Unable to capture Runtime");
 
-          let BufValue::Listener(_listen) = heap
+          let BufValue::RuntimeRaw(name, module) = module else {
+            panic!("Expected, Lead Module");
+          };
+
+          let RawRTValue::RTCM(mut module) = module.0 else {
+            panic!("Expected, Lead Module, not {name}");
+          };
+
+          let BufValue::Listener(mut listen) = heap
             .remove(function)
             .expect("Unable to capture heaplistener")
             .expect("Unable to capture heaplistener")
@@ -157,7 +174,35 @@ pub fn insert_into_application(
             panic!("Invalid! Not HeapListener")
           };
 
-          app.runtime.spawn(async move {});
+          let app_ptr: &'static mut Application = unsafe { transmute(&mut *app) };
+
+          let future = async move {
+            let mut dummy_heap = Heap::new();
+            let app = app_ptr as *mut _;
+
+            while let Some(event) = listen.recv().await {
+              module
+                .run_method_async(
+                  app,
+                  "method",
+                  "",
+                  move |fn_heap, _, c| {
+                    if c.len() == 1 {
+                      let arg0: &'static str = unsafe { transmute(&*c[0]) };
+
+                      fn_heap.set(Cow::Borrowed(arg0), event);
+                    } else {
+                      panic!("Expected, exactly 1 argument");
+                    }
+                  },
+                  &mut dummy_heap,
+                  &mut Options::new(),
+                )
+                .await;
+            }
+          };
+
+          app.runtime.spawn(make_unsafe_send_future(future));
         }
         _ => panic!("Invalid syntax"),
       }
@@ -237,7 +282,7 @@ pub fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
     lines: vec![],
     heap: Heap::new(),
     methods: HashMap::new(),
-    name: "%none"
+    name: "%none",
   };
 
   let split = data.code.split("\n");
@@ -253,7 +298,7 @@ pub fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
   let mut ctx = "";
 
   let mut tok_arg: Vec<&str> = vec![];
-  
+
   let mut start: i64 = -1;
 
   let mut in_ctx = false;
@@ -293,14 +338,15 @@ pub fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
       if tok[0] == "*end" {
         in_ctx = false;
 
-        let lines: &'static [&'static str] = unsafe { transmute(&data.lines[..] as &[&'static str]) };
+        let lines: &'static [&'static str] =
+          unsafe { transmute(&data.lines[..] as &[&'static str]) };
 
         let begin = start as usize;
 
-        let None = data.methods.insert(
-          ctx,
-          (std::mem::take(&mut tok_arg), &lines[begin..id]),
-        ) else {
+        let None = data
+          .methods
+          .insert(ctx, (std::mem::take(&mut tok_arg), &lines[begin..id]))
+        else {
           panic!("Method overlap");
         };
 

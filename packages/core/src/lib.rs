@@ -44,8 +44,8 @@ module! {
 - float Floating point number (eg. 1.04, 10.6)
 - string String (eg. \"Hello World\")")
 ))]
-fn malloc(args: &Vec<*const str>, _: HeapWrapper, file: &String, opt: &mut Options) {
-  let [_, typ, ..] = &args[..] else {
+fn malloc(args: *const [*const str], _: HeapWrapper, file: &String, opt: &mut Options) {
+  let [_, typ, ..] = &(unsafe { &*args })[..] else {
     error(
       r#"Invalid arguments in :malloc
 Format ---
@@ -64,7 +64,7 @@ Types ---
 
   let typ = unsafe { &**typ };
 
-  let data = args[2..].iter().map(|x| unsafe { &**x }).collect::<Vec<_>>().join(" ");
+  let data = unsafe { &*args }[2..].iter().map(|x| unsafe { &**x }).collect::<Vec<_>>().join(" ");
 
   opt.set_return_val(
     match typ {

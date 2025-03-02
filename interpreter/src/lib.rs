@@ -3,7 +3,11 @@
 #![feature(concat_idents)]
 #![feature(macro_metavar_expr)]
 
-use std::{collections::HashMap, process, time::{Duration, Instant}};
+use std::{
+  collections::HashMap,
+  process,
+  time::{Duration, Instant},
+};
 
 #[macro_use]
 pub mod macros;
@@ -60,7 +64,7 @@ pub struct Application<'a> {
   // Log in case of full access request
   log_info: Box<dyn FnMut(&str) -> ()>,
   pub(crate) runtime: Runtime,
-  inst: Instant
+  inst: Instant,
 }
 
 impl<'a> Application<'a> {
@@ -90,7 +94,7 @@ impl<'a> Application<'a> {
         .enable_all()
         .build()
         .expect("Unable to build async runtime"),
-      inst: Instant::now()
+      inst: Instant::now(),
     }
   }
 

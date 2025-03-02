@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::types::{Args, Heap, HeapWrapper, Options};
 
-pub type PackageCallback = fn(&Args, &mut Heap, HeapWrapper, &String, &mut Options) -> ();
+pub type PackageCallback = fn(Args, &mut Heap, HeapWrapper, &String, &mut Options) -> ();
 pub type RuntimeMethodRes = HashMap<&'static str, (&'static str, PackageCallback)>;
 
 pub mod _root_syntax;
@@ -26,7 +26,7 @@ impl RuntimeValue {
   pub fn call_ptr(
     &mut self,
     caller: &str,
-    v: &Vec<*const str>,
+    v: *const [*const str],
     a: HeapWrapper,
     c: &String,
     o: &mut Options,
