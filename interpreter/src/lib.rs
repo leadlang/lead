@@ -28,7 +28,7 @@ pub use tokio::*;
 
 pub use lealang_chalk_rs::Chalk;
 
-pub static VERSION_INT: u16 = 4;
+pub static VERSION_INT: u16 = 5;
 
 pub trait Package {
   fn name(&self) -> &'static [u8];

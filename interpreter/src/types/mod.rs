@@ -21,16 +21,27 @@ use tokio::{runtime::Handle, sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
 use crate::runtime::RuntimeValue;
 
+pub enum RetBufValue {
+  Future(Pin<Box<dyn Future<Output = BufValue> + Send>>),
+  Heap(BufValue)
+}
+
+impl From<BufValue> for RetBufValue {
+  fn from(item: BufValue) -> Self {
+    Self::Heap(item)
+  }
+}
+
 pub struct Options {
   pub pre: *const str,
-  pub r_val: Option<BufValue>,
+  pub r_val: Option<RetBufValue>,
   pub runtime: *const Handle,
   r_runtime: Option<RuntimeValue>,
 }
 
 impl Debug for Options {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.write_fmt(format_args!("Options {{ r_val: {:?} }}", &self.r_val))
+    f.write_fmt(format_args!("Options {{ <inner> }}"))
   }
 }
 
@@ -44,15 +55,32 @@ impl Options {
     }
   }
 
-  pub fn spawn<F: Future<Output = BufValue> + Send + 'static>(&self, future: F) -> JoinHandle<BufValue> {
-    unsafe { &*self.runtime }.spawn(future)
+  fn spawn(&self) -> &Handle {
+    unsafe { &*self.runtime }
+  }
+
+  pub fn set_return_future(&mut self, val: Pin<Box<dyn Future<Output = BufValue> + Send>>) {
+    self.r_val = Some(RetBufValue::Future(val));
   }
 
   pub fn set_return_val(&mut self, val: BufValue) {
-    self.r_val = Some(val);
+    self.r_val = Some(RetBufValue::Heap(val));
   }
 
-  pub fn rem_r_runtime(&mut self) -> Option<RuntimeValue> {
+  pub(crate) fn r_val(self) -> BufValue {
+    let rt = self.spawn();
+    let rt = rt.clone();
+    let val = self.r_val;
+
+    match val.expect("Error") {
+      RetBufValue::Future(x) => {
+        rt.block_on(x)
+      },
+      RetBufValue::Heap(x) => x
+    }
+  }
+
+  pub(crate) fn rem_r_runtime(&mut self) -> Option<RuntimeValue> {
     let mut rt = self.r_runtime.take()?;
 
     rt.r#type = format!("{}/{}", unsafe { &*self.pre }, rt.r#type);

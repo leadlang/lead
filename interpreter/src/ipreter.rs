@@ -155,7 +155,8 @@ pub(crate) unsafe fn tok_parse<'a>(
       heap
         .remove(var)
         .expect("Cannot find variable")
-        .expect("Cannot find variable"),
+        .expect("Cannot find variable")
+        .into(),
     );
 
     None
@@ -211,7 +212,7 @@ pub(crate) unsafe fn tok_parse<'a>(
         let runt = opt.rem_r_runtime();
 
         if val_type && opt.r_val.is_some() {
-          let _ = heap.set(Cow::Borrowed(to_set), opt.r_val.unwrap());
+          let _ = heap.set(Cow::Borrowed(to_set), opt.r_val());
         } else if val_type && runt.is_some() {
           let _ = set_runtime_val(
             heap,
@@ -230,7 +231,7 @@ pub(crate) unsafe fn tok_parse<'a>(
           let runt = opt.rem_r_runtime();
 
           if val_type && opt.r_val.is_some() {
-            let _ = heap.set(Cow::Borrowed(to_set), opt.r_val.unwrap());
+            let _ = heap.set(Cow::Borrowed(to_set), opt.r_val());
           } else if val_type && runt.is_some() {
             let _ = set_runtime_val(
               heap,
@@ -264,7 +265,7 @@ pub(crate) unsafe fn tok_parse<'a>(
         let runt = opt.rem_r_runtime();
 
         if val_type && opt.r_val.is_some() {
-          let _ = heap.set(Cow::Borrowed(to_set), opt.r_val.unwrap());
+          let _ = heap.set(Cow::Borrowed(to_set), opt.r_val());
         } else if val_type && runt.is_some() {
           let _ = set_runtime_val(
             heap,
