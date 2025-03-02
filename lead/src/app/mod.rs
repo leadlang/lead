@@ -75,12 +75,15 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
       let mut libs = PT_LIBS.lock()
         .map_or_else(|e| e.into_inner(), |e| e);
 
-      let mut out = RespPackage { name: b"imported", methods: &[], dyn_methods: vec![] };
+      let mut out = vec![];
 
       if let Some(x) = libs.get(name) {
         for module in (x.modules)() {
-          out.methods = module.methods();
-          out.dyn_methods = module.dyn_methods();
+          out.push(RespPackage { 
+            name: b"imported", 
+            methods: module.methods(), 
+            dyn_methods: module.dyn_methods()
+          });
         }
       } else {
         let pkg = pkgmap.get(name)

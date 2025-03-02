@@ -226,19 +226,23 @@ pub fn insert_into_application(
         *line = *markers.get(*v as &str).expect("No marker was found!");
       }
       "*import" => {
-        let RespPackage {
-          name,
-          methods,
-          dyn_methods,
-        } = app.pkg_resolver.call_mut((v,));
+        let packages = app.pkg_resolver.call_mut((v,));
 
         let mut pkg = HashMap::new();
 
-        for (sig, call) in methods {
-          pkg.insert(sig.to_string(), *call);
-        }
-        for (sig, call) in dyn_methods {
-          pkg.insert(sig.to_string(), call);
+        for package in packages {
+          let RespPackage {
+            name,
+            methods,
+            dyn_methods,
+          } = package;
+
+          for (sig, call) in methods {
+            pkg.insert(sig.to_string(), *call);
+          }
+          for (sig, call) in dyn_methods {
+            pkg.insert(sig.to_string(), call);
+          }
         }
 
         let val = RawRTValue::PKG(pkg);

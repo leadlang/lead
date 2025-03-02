@@ -71,7 +71,7 @@ pub struct Application<'a> {
 impl<'a> Application<'a> {
   pub fn new<
     T: FnMut(&str) -> Vec<u8> + 'static,
-    F: FnMut(&str) -> RespPackage + 'static,
+    F: FnMut(&str) -> Vec<RespPackage> + 'static,
     R: FnMut(&str) -> () + 'static,
   >(
     file: &'a str,
