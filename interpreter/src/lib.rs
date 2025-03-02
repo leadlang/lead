@@ -24,6 +24,7 @@ pub use package::*;
 use tokio::runtime::{Builder, Runtime};
 use types::{DynMethodRes, Heap, LanguagePackages, MethodRes};
 pub use val::*;
+pub use tokio::*;
 
 pub use lealang_chalk_rs::Chalk;
 

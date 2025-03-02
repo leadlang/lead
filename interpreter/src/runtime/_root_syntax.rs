@@ -196,7 +196,7 @@ pub fn insert_into_application(
                     }
                   },
                   &mut dummy_heap,
-                  &mut Options::new(),
+                  &mut Options::new(&unsafe { &*app }.runtime as *const _),
                 )
                 .await;
             }

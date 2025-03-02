@@ -92,7 +92,7 @@ pub(crate) unsafe fn tok_parse<'a>(
     caller = unsafe { &*tokens[1] };
   }
 
-  let mut opt = Options::new();
+  let mut opt = Options::new(&app.runtime as _);
 
   if caller.starts_with("*if$") {
     let caller = unsafe { &*tokens[start] };

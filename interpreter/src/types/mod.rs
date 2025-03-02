@@ -17,13 +17,14 @@ pub use alloc::*;
 pub use fns::*;
 pub use heap::*;
 pub use heap_wrap::*;
-use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
+use tokio::{runtime::Runtime, sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
 use crate::runtime::RuntimeValue;
 
 pub struct Options {
   pub pre: *const str,
   pub r_val: Option<BufValue>,
+  pub runtime: *const Runtime,
   r_runtime: Option<RuntimeValue>,
 }
 
@@ -34,12 +35,17 @@ impl Debug for Options {
 }
 
 impl Options {
-  pub fn new() -> Self {
+  pub fn new(rt: *const Runtime) -> Self {
     Self {
       pre: "" as _,
       r_val: None,
       r_runtime: None,
+      runtime: rt,
     }
+  }
+
+  pub fn rt(&self) -> &Runtime {
+    unsafe { &*self.runtime }
   }
 
   pub fn set_return_val(&mut self, val: BufValue) {

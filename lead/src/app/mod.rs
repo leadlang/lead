@@ -69,8 +69,13 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
   let mut application = Application::new(
     &data.entry,
     |path| fs::read(path).expect("Unable to read file"),
-    |name| {
-      todo!();
+    move |name| {
+      let pkg = pkgmap.get(name)
+        .expect("Unable to get package name");
+
+      let pkg = Package::new(pkg);
+
+      todo!()
     },
     move |pkg_name| {
       let chalk = unsafe { &mut *chalk_1_mut };
