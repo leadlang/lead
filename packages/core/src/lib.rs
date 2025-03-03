@@ -1,11 +1,12 @@
 #![feature(vec_push_within_capacity)]
 #![feature(concat_idents)]
+use core::str;
 
 use interpreter::{
-  error, generate, pkg_name, module,
+  error, generate, module, pkg_name,
   types::{BufValue, HeapWrapper, Options},
 };
-use lead_lang_macros::{define, methods, gendoc};
+use lead_lang_macros::{define, gendoc, methods};
 
 mod array;
 mod type_conv;
@@ -17,12 +18,102 @@ module! {
   Core,
   pkg_name! { "📦 Core / Memory" }
   methods! {
-    malloc=malloc, 
+    fmt=fmt_optimized,
+    malloc=malloc,
     unwrap=unwrap,
     drop=memclear,
     comp=comp,
     typeof=kindof
   }
+}
+
+#[define((
+  desc: "Format String",
+  usage: [
+    (
+      desc: "Example",
+      code: "$val: fmt \"This is a format string $var\""
+    ),
+    (
+      desc: "Retaining \\",
+      code: "$val: fmt \"This will retain \\\\\""
+    ),
+    (
+      desc: "Retaining $",
+      code: "$val: fmt \"This will retain \\$\""
+    )
+  ],
+  notes: None
+))]
+fn fmt_optimized() -> BufValue {
+  let mut chars = unsafe { &(&*args)[1..] }.iter()
+    .map(|s| unsafe { &**s }.chars())
+    .enumerate()
+    .map(|(i, c)| {
+      if i > 0 {
+        " ".chars().chain(c)
+      } else {
+        "".chars().chain(c)
+      }
+    })
+    .flatten();
+
+  let mut output = String::with_capacity(chars.size_hint().1.unwrap_or(32));
+
+  let heap = heap.upgrade();
+
+  if Some('"') != chars.next() {
+    error("The formatter must start with `\"`", file)
+  }
+
+  while let Some(c) = chars.next() {
+    match c {
+      '\\' => {
+        if let Some(next) = chars.next() {
+          match next {
+            '\\' | '$' | '\"' => output.push(next),
+            'n' => output.push('\n'),
+            'r' => output.push('\r'),
+            't' => output.push('\t'),
+            '0' => output.push('\0'),
+            e => error(format!("Expected n or \\ or $ after \\, found {e}"), file)
+          }
+        } else {
+          error(format!("Expected n or \\ or $ after \\, found EOF"), file)
+        }
+      }
+      '$' => {
+        let mut data = String::with_capacity(16);
+        data.push('$');
+
+        let mut begun = false;
+
+        while let Some(next) = chars.next() {
+          match next {
+            '{' => begun = true,
+            '}' => break,
+            e => if begun {
+              data.push(e);
+            } else {
+              error("The variable name must be contained in \"{\"", file);
+            }
+          }
+        }
+
+        let Some(value) = heap.get(&data) else {
+          panic!("Variable {data} not found");
+        };
+
+        output.push_str(&value.display());
+      }
+      '"' => if let Some(x) = chars.next() {
+        error(format!("Expected EOL, found {x}"), file);
+      },
+      c => output.push(c),
+    }
+  }
+
+  BufValue::Str(output)
 }
 
 #[gendoc((
@@ -64,30 +155,34 @@ Types ---
 
   let typ = unsafe { &**typ };
 
-  let data = unsafe { &*args }[2..].iter().map(|x| unsafe { &**x }).collect::<Vec<_>>().join(" ");
+  let data = unsafe { &*args }[2..]
+    .iter()
+    .map(|x| unsafe { &**x })
+    .collect::<Vec<_>>()
+    .join(" ");
 
-  opt.set_return_val(
-    match typ {
-      "bool" => BufValue::Bool(&data == "true"),
-      "int" => BufValue::Int(
-        data
-          .parse()
-          .map_or_else(|_| error("Unable to convert to INTEGER", file), |x| x),
-      ),
-      "u_int" => BufValue::U_Int(
-        data
-          .parse()
-          .map_or_else(|_| error("Unable to convert to UNSIGNED INTEGER", file), |x| x),
-      ),
-      "float" => BufValue::Float(
-        data
-          .parse()
-          .map_or_else(|_| error("Unable to convert to FLOAT", file), |x| x),
-      ),
-      "string" => BufValue::Str(serde_json::from_str(&data).map_or_else(|_| error("Unable to convert to STRING", file), |x| x)),
-      e => error(&format!("Invalid type, {e}"), file),
-    },
-  );
+  opt.set_return_val(match typ {
+    "bool" => BufValue::Bool(&data == "true"),
+    "int" => BufValue::Int(
+      data
+        .parse()
+        .map_or_else(|_| error("Unable to convert to INTEGER", file), |x| x),
+    ),
+    "u_int" => BufValue::U_Int(data.parse().map_or_else(
+      |_| error("Unable to convert to UNSIGNED INTEGER", file),
+      |x| x,
+    )),
+    "float" => BufValue::Float(
+      data
+        .parse()
+        .map_or_else(|_| error("Unable to convert to FLOAT", file), |x| x),
+    ),
+    "string" => BufValue::Str(
+      serde_json::from_str(&data)
+        .map_or_else(|_| error("Unable to convert to STRING", file), |x| x),
+    ),
+    e => error(&format!("Invalid type, {e}"), file),
+  });
 }
 
 #[define((
@@ -103,14 +198,12 @@ Types ---
 fn unwrap(val: BufValue) -> BufValue {
   match val {
     BufValue::Faillable(val) => match val {
-      Ok(val) => {
-        *val
-      }
+      Ok(val) => *val,
       Err(err) => {
         error(&format!("{}", err), file);
       }
-    }
-    _ => error("Expected Faillable(Result<T, E>) in `-> val`", file)
+    },
+    _ => error("Expected Faillable(Result<T, E>) in `-> val`", file),
   }
 }
 

@@ -183,7 +183,7 @@ async fn main(mut args: Vec<String>) {
     "pkgs" => {
       packages::list(&mut chalk).await;
     }
-    "reinstall" | "rei" | "i" | "install" => {
+    "reinstall" | "rei" | "i" | "init" => {
       packages::install(&mut chalk).await;
     }
     // Undocumented

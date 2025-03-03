@@ -7,7 +7,6 @@ use std::{
   collections::HashMap,
   fmt::Debug,
   future::Future,
-  marker::PhantomData,
   ops::{Deref, DerefMut},
   pin::Pin,
   task::{Context, Poll},
@@ -17,7 +16,7 @@ pub use alloc::*;
 pub use fns::*;
 pub use heap::*;
 pub use heap_wrap::*;
-use tokio::{runtime::Handle, sync::mpsc::UnboundedReceiver, task::JoinHandle};
+use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
 
 use crate::runtime::RuntimeValue;
 
@@ -35,6 +34,9 @@ pub struct Options {
   r_runtime: Option<RuntimeValue>,
 }
 
+unsafe impl Send for Options {}
+unsafe impl Sync for Options {}
+
 impl Debug for Options {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.write_fmt(format_args!("Options {{ <inner> }}"))
@@ -42,7 +44,7 @@ impl Debug for Options {
 }
 
 impl Options {
-  pub fn new(_: *const Handle) -> Self {
+  pub fn new() -> Self {
     Self {
       pre: "" as _,
       r_val: None,
@@ -112,10 +114,7 @@ pub enum BufValue {
 unsafe impl Send for BufValue {}
 unsafe impl Sync for BufValue {}
 
-pub struct UnsafeSend<F> {
-  pub future: F,
-  pub _marker: PhantomData<*const ()>, // Ensures this type is `!Send` unless we implement `Send`
-}
+pub struct UnsafeSend<F>(pub F);
 
 unsafe impl<F> Send for UnsafeSend<F> {}
 unsafe impl<F> Sync for UnsafeSend<F> {}
@@ -124,7 +123,7 @@ impl<F: Future> Future for UnsafeSend<F> {
   type Output = F::Output;
 
   fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-    unsafe { self.map_unchecked_mut(|s| &mut s.future).poll(cx) }
+    unsafe { self.map_unchecked_mut(|s| &mut s.0).poll(cx) }
   }
 }
 
@@ -132,10 +131,7 @@ pub fn make_unsafe_send_future<F>(fut: F) -> UnsafeSend<F>
 where
   F: Future,
 {
-  UnsafeSend {
-    future: fut,
-    _marker: PhantomData,
-  }
+  UnsafeSend(fut)
 }
 
 #[derive(Debug)]
@@ -202,6 +198,19 @@ impl BufValue {
         }
       }
       BufValue::RuntimeRaw(_, _) => "<runtime rt>".into(),
+    }
+  }
+
+  pub fn display(&self) -> String {
+    match &self {
+      BufValue::Array(c) => c.iter().map(|x| x.display()).collect::<Vec<_>>().join(", "),
+      BufValue::Bool(a) => a.to_string(),
+      BufValue::Float(f) => f.to_string(),
+      BufValue::Int(i) => i.to_string(),
+      BufValue::U_Int(u) => u.to_string(),
+      BufValue::Object(c) => format!("{c:#?}"),
+      BufValue::Str(c) => c.to_string(),
+      e => e.type_of()
     }
   }
 

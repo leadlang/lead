@@ -14,9 +14,9 @@ cursive = { git = "https://github.com/gyscos/cursive.git", default-features = fa
 ] }
 cursive-syntect = { git = "https://github.com/gyscos/cursive.git" }
 lead_lang_interpreter = { version = "0.0.0-dev-lead-lang", path = "../interpreter" }
-libloading = "0.8.6"
-serde = { version = "1.0.217", features = ["derive"] }
-syntect = { version = "5.2.0", features = ["parsing"] }
+libloading = "0.8"
+serde = { version = "1", features = ["derive"] }
+syntect = { version = "5", features = ["parsing"] }
 
 [target.'cfg(windows)'.build-dependencies]
 tauri-winres = "0.3"

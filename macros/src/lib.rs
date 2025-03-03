@@ -120,7 +120,6 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
         match typ.as_str() {
           "BufValue" => gen!(ident, parse_mut, sig_d, sig_std, " -> ", "->$", "->$ *"),
-          "Vec<BufValue>" => gen!(ident, parse_mut, sig_d, sig_std, " -> ", "->$", "->$ 0"),
           "& BufValue" => {
             parse_mut.push_str(" & ");
             sig_d.push_str("$");
@@ -191,9 +190,6 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       "" | "-> ()" => {}
       "-> BufValue" => {
         ret = "opt.set_return_val(_option_code_result)";
-      }
-      "-> (String, BufKeyVal)" | "-> (String,BufKeyVal)" => {
-        ret = "let (_a, _b) = _option_code_result;\nopt.set_return_ptr(_a, _b)";
       }
       "-> RuntimeValue" => {
         ret = "opt.set_r_runtime(_option_code_result)";

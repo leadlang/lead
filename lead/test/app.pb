@@ -1,3 +1,9 @@
+$a: malloc string "This is a string"
+
+$c: fmt "Data: ${a}"
+
+print $c
+
 $hello: *mod test/hello
 
 $a: malloc string "12"

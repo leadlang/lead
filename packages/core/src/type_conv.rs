@@ -20,13 +20,12 @@ module! {
   notes: Some("The result is a Faillable as the parsing might fail as well")
 ))]
 fn to_int(val: BufValue) -> BufValue {
-  BufValue::Faillable(
-    {
-      if let BufValue::Str(s) = val {
-        s.parse::<i64>().map_or_else(|e| Err(e.to_string()), |x| Ok(Box::new(BufValue::Int(x))))
-      } else {
-        Err(format!("Expected string, found {}", val.type_of()))
-      }
+  BufValue::Faillable({
+    if let BufValue::Str(s) = val {
+      s.parse::<i64>()
+        .map_or_else(|e| Err(e.to_string()), |x| Ok(Box::new(BufValue::Int(x))))
+    } else {
+      Err(format!("Expected string, found {}", val.type_of()))
     }
-  )
+  })
 }

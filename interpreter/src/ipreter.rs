@@ -73,10 +73,6 @@ pub(crate) unsafe fn tok_parse<'a>(
 ) -> Option<Pin<Box<dyn Future<Output = ()> + 'a>>> {
   let heap: &'static mut Heap = unsafe { &mut *heap };
 
-  app.runtime.handle().spawn(async move {
-    println!("Hello Runtime");
-  });
-
   let tokens: Vec<*const str> = piece.split(" ").map(|x| x as *const str).collect();
 
   let mut caller = unsafe { &*tokens[0] };
@@ -96,7 +92,7 @@ pub(crate) unsafe fn tok_parse<'a>(
     caller = unsafe { &*tokens[1] };
   }
 
-  let mut opt = Options::new(app.runtime.handle() as _);
+  let mut opt = Options::new();
 
   if caller.starts_with("*if$") {
     let caller = unsafe { &*tokens[start] };
@@ -188,6 +184,7 @@ pub(crate) unsafe fn tok_parse<'a>(
       args: unsafe { &*(tokens_ptr as *const _) },
       pkg_name: unsafe { &*caller_ptr },
       app: app_ptr,
+      allow_full: false
     };
 
     match call_runtime_val(
@@ -258,6 +255,7 @@ pub(crate) unsafe fn tok_parse<'a>(
           args: unsafe { &*(tokens_ptr as *const _) },
           pkg_name: pkg,
           app: app_ptr,
+          allow_full: true
         };
 
         v(&tokens[start..] as *const _, wrap, &file, &mut opt);

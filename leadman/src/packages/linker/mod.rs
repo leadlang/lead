@@ -61,12 +61,13 @@ pub async fn link(meta: Arc<MetaPtr>, print: MultiProgress) {
       }
     }
 
-    copy_dir(&platform_cwd, format!("./.lead_libs/{hash}")).await;
-    fs::write(format!("./.lead_libs/{hash}/lead.lookup.lkp"), resp.package).await;
+    copy_dir(&platform_cwd, format!("./.lead_libs/{hash}_{}", &resp.package)).await;
+
+    let doc = format!("./.lead_libs/{hash}_{}/docs", &resp.package);
+
+    fs::write(format!("./.lead_libs/{hash}_{}/lead.lookup.lkp", &resp.package), resp.package).await;
 
     if is0 {
-      let doc = format!("./.lead_libs/{hash}/docs");
-
       match fs::metadata(&doc).await {
         Ok(m) => if m.is_file() {
           print.suspend(|| {

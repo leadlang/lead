@@ -1,7 +1,7 @@
 use std::ptr;
 
 use interpreter::{error, get_as, module, pkg_name, types::BufValue};
-use lead_lang_macros::{methods, define};
+use lead_lang_macros::{define, methods};
 
 module! {
   Array,
@@ -87,7 +87,11 @@ fn pop(array: &mut BufValue) -> BufValue {
     error("Expected array", file);
   };
 
-  BufValue::Faillable(array.pop().map_or_else(|| Err("Empty".into()), |x| Ok(Box::new(x))))
+  BufValue::Faillable(
+    array
+      .pop()
+      .map_or_else(|| Err("Empty".into()), |x| Ok(Box::new(x))),
+  )
 }
 
 #[define((
@@ -141,7 +145,6 @@ fn clear(array: &mut BufValue) {
     error("Expected array", file);
   };
 
-
   array.clear();
 }
 
@@ -163,7 +166,7 @@ fn get(arr: &str, index: &str) -> BufValue {
   let arr_parsed = heap.get(&arr).unwrap_or_else(|| {
     error("Unable to get array", file);
   });
-  get_as!(file + heap: Array arr_parsed);  
+  get_as!(file + heap: Array arr_parsed);
 
   let index = match heap.get(&index) {
     Some(x) => match &x {
@@ -172,15 +175,13 @@ fn get(arr: &str, index: &str) -> BufValue {
       _ => {
         return BufValue::Pointer(ptr::null());
       }
-    }
-    _ => {
-      match index.parse::<usize>() {
-        Ok(x) => x,
-        Err(_) => {
-          return BufValue::Pointer(ptr::null());
-        }
+    },
+    _ => match index.parse::<usize>() {
+      Ok(x) => x,
+      Err(_) => {
+        return BufValue::Pointer(ptr::null());
       }
-    }
+    },
   };
 
   if arr_parsed.len() >= index {

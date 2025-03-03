@@ -103,56 +103,57 @@ pub fn call_runtime_val<'a>(
           unsafe { &mut *hp },
           o,
         );
-      } else {
-        let f = pkg.run_method_async(
-          app as *mut Application<'static>,
-          caller,
-          file,
-          |fn_heap, app_heap, args| {
-            if tkns.len() != args.len() {
-              error(
-                "Not all arguments provided",
-                ":interpreter:loadmodule:heap:check",
-              );
-            }
-
-            tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
-              let token = unsafe { &**token };
-              let from = app_heap
-                .remove(token)
-                .unwrap_or_else(|| {
-                  error(
-                    format!("Unable to get {token} from Heap"),
-                    ":interpreter:loadmodule",
-                  )
-                })
-                .unwrap_or_else(|| {
-                  error(
-                    format!("Unable to get {token} from Heap"),
-                    ":interpreter:loadmodule",
-                  )
-                });
-
-              fn_heap
-                .set(Cow::Borrowed(unsafe { &*(&arg[2..] as *const str) }), from)
-                .unwrap();
-            });
-          },
-          unsafe { &mut *hp },
-          o,
-        );
-
-        let pin = Box::pin(async move {
-          f.await;
-
-          "done"
-        }) as Pin<Box<dyn Future<Output = &'static str>>>;
-
-        let future: Pin<Box<dyn Future<Output = &'static str>>> =
-          unsafe { std::mem::transmute(pin) };
-
-        return Some(Output::Future(future));
       }
+      // } else {
+      //   let f = pkg.run_method_async(
+      //     app as *mut Application<'static>,
+      //     caller,
+      //     file,
+      //     |fn_heap, app_heap, args| {
+      //       if tkns.len() != args.len() {
+      //         error(
+      //           "Not all arguments provided",
+      //           ":interpreter:loadmodule:heap:check",
+      //         );
+      //       }
+
+      //       tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
+      //         let token = unsafe { &**token };
+      //         let from = app_heap
+      //           .remove(token)
+      //           .unwrap_or_else(|| {
+      //             error(
+      //               format!("Unable to get {token} from Heap"),
+      //               ":interpreter:loadmodule",
+      //             )
+      //           })
+      //           .unwrap_or_else(|| {
+      //             error(
+      //               format!("Unable to get {token} from Heap"),
+      //               ":interpreter:loadmodule",
+      //             )
+      //           });
+
+      //         fn_heap
+      //           .set(Cow::Borrowed(unsafe { &*(&arg[2..] as *const str) }), from)
+      //           .unwrap();
+      //       });
+      //     },
+      //     unsafe { &mut *hp },
+      //     o,
+      //   );
+
+      //   let pin = Box::pin(async move {
+      //     f.await;
+
+      //     "done"
+      //   }) as Pin<Box<dyn Future<Output = &'static str>>>;
+
+      //   let future: Pin<Box<dyn Future<Output = &'static str>>> =
+      //     unsafe { std::mem::transmute(pin) };
+
+      //   return Some(Output::Future(future));
+      // }
     }
   }
 

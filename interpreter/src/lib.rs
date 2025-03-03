@@ -7,6 +7,7 @@ use std::{
   collections::HashMap,
   process,
   time::{Duration, Instant},
+  sync::LazyLock
 };
 
 #[macro_use]
@@ -30,6 +31,15 @@ pub use tokio;
 pub use lealang_chalk_rs::Chalk;
 
 pub static VERSION_INT: u16 = 5;
+
+static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| 
+  Builder::new_multi_thread()
+    .worker_threads(2)
+    .enable_all()
+    
+    .build()
+    .expect("Unable to build async runtime")
+);
 
 pub trait Package {
   fn name(&self) -> &'static [u8];
@@ -65,9 +75,12 @@ pub struct Application<'a> {
   pkg_resolver: Box<dyn FnMut(&str) -> Vec<RespPackage>>,
   // Log in case of full access request
   log_info: Box<dyn FnMut(&str) -> ()>,
-  pub(crate) runtime: Runtime,
+  pub(crate) runtime: &'static Runtime,
   inst: Instant,
 }
+
+unsafe impl Send for Application<'_> {}
+unsafe impl Sync for Application<'_> {}
 
 impl<'a> Application<'a> {
   pub fn new<
@@ -92,11 +105,7 @@ impl<'a> Application<'a> {
       module_resolver: Box::new(fs_resolver),
       pkg_resolver: Box::new(dll_resolver),
       log_info: Box::new(requested_perm),
-      runtime: Builder::new_multi_thread()
-        .worker_threads(2)
-        .enable_all()
-        .build()
-        .expect("Unable to build async runtime"),
+      runtime: &*RUNTIME,
       inst: Instant::now(),
     }
   }
@@ -147,7 +156,6 @@ impl<'a> Application<'a> {
   /// ⚠️ This function still is panicking
   pub fn run_non(mut self) -> Duration {
     ipreter::interpret(":entry", &mut self);
-    self.runtime.shutdown_background();
 
     self.inst.elapsed()
   }

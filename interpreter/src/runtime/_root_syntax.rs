@@ -1,9 +1,9 @@
-use tokio::task::yield_now;
+use tokio::task::spawn_blocking;
 
 use crate::{
   error,
   ipreter::{interpret, tok_parse},
-  types::{set_runtime_val, BufValue, Heap, Options, RawRTValue, make_unsafe_send_future},
+  types::{make_unsafe_send_future, set_runtime_val, BufValue, Heap, Options, RawRTValue},
   Application, RespPackage,
 };
 use std::{
@@ -73,60 +73,60 @@ impl RTCreatedModule {
     drop(temp_heap);
   }
 
-  pub(crate) async fn run_method_async<'a, T: FnOnce(&mut Heap, &mut Heap, &Vec<&str>) -> ()>(
-    &mut self,
-    app: *mut Application<'a>,
-    method: &str,
-    file: &str,
-    into_heap: T,
-    heap: &mut Heap,
-    opt: &mut Options,
-  ) {
-    let mut temp_heap = Heap::new_with_this(&mut self.heap);
-    let app = unsafe { &mut *app };
+  // pub(crate) async fn run_method_async<'a, T: FnOnce(&mut Heap, &mut Heap, &Vec<&str>) -> ()>(
+  //   &mut self,
+  //   app: *mut Application<'a>,
+  //   method: &str,
+  //   file: &str,
+  //   into_heap: T,
+  //   heap: &mut Heap,
+  //   opt: &mut Options,
+  // ) {
+  //   let mut temp_heap = Heap::new_with_this(&mut self.heap);
+  //   let app = unsafe { &mut *app };
 
-    let (args, method_code) = self
-      .methods
-      .get(&method)
-      .unwrap_or_else(|| error("Unable to find :method", file));
-    into_heap(&mut temp_heap, heap, args);
+  //   let (args, method_code) = self
+  //     .methods
+  //     .get(&method)
+  //     .unwrap_or_else(|| error("Unable to find :method", file));
+  //   into_heap(&mut temp_heap, heap, args);
 
-    // run
-    let file_name = ":fn";
+  //   // run
+  //   let file_name = ":fn";
 
-    let file = method_code;
+  //   let file = method_code;
 
-    let mut line = 0usize;
+  //   let mut line = 0usize;
 
-    let mut markers = HashMap::new();
+  //   let mut markers = HashMap::new();
 
-    while line < file.len() {
-      let content = file[line];
+  //   while line < file.len() {
+  //     let content = file[line];
 
-      if !content.starts_with("#") {
-        unsafe {
-          if let Some(x) = tok_parse(
-            format!("{}:{}", &file_name, line),
-            content,
-            app,
-            &mut temp_heap,
-            &mut line,
-            &mut markers,
-            true,
-            Some(opt),
-          ) {
-            x.await;
-          }
-        }
+  //     if !content.starts_with("#") {
+  //       unsafe {
+  //         if let Some(x) = spawn_blocking(tok_parse(
+  //           format!("{}:{}", &file_name, line),
+  //           content,
+  //           app,
+  //           &mut temp_heap,
+  //           &mut line,
+  //           &mut markers,
+  //           true,
+  //           Some(opt),
+  //         )).await {
+  //           x.await;
+  //         }
+  //       }
 
-        yield_now().await;
-      }
+  //       yield_now().await;
+  //     }
 
-      line += 1;
-    }
+  //     line += 1;
+  //   }
 
-    drop(temp_heap);
-  }
+  //   drop(temp_heap);
+  // }
 }
 
 #[allow(unused)]
@@ -180,33 +180,44 @@ pub fn insert_into_application(
             let mut dummy_heap = Heap::new();
             let app = app_ptr as *mut _;
 
-            while let Some(event) = listen.recv().await {
-              module
-                .run_method_async(
-                  app,
-                  "method",
-                  "",
-                  move |fn_heap, _, c| {
-                    if c.len() == 1 {
-                      let arg0: &'static str = unsafe { transmute(&*c[0]) };
+            let mut opt = Options::new();
 
-                      fn_heap.set(Cow::Borrowed(arg0), event);
-                    } else {
-                      panic!("Expected, exactly 1 argument");
-                    }
-                  },
-                  &mut dummy_heap,
-                  &mut Options::new(unsafe { &*app }.runtime.handle() as *const _),
-                )
-                .await;
+            while let Some(event) = listen.recv().await {
+              let app = unsafe { transmute::<&mut Application, &'static mut Application<'static>>(&mut *app) };
+              let opt: &'static mut Options = unsafe { transmute(&mut opt) };
+              let dummy_heap: &'static mut Heap = unsafe { transmute(&mut dummy_heap) };
+              let module: &'static mut RTCreatedModule = unsafe { transmute(&mut module) };
+
+              spawn_blocking(move || {
+                module
+                  .run_method(
+                    app as _,
+                    "on",
+                    "",
+                    move |fn_heap, _, c| {
+                      if c.len() == 1 {
+                        let arg0: &'static str = unsafe { transmute(&*c[0]) };
+
+                        fn_heap.set(Cow::Borrowed(&arg0[2..]), event);
+                      } else {
+                        panic!("Expected, exactly 1 argument");
+                      }
+                    },
+                    dummy_heap,
+                    opt,
+                  );
+              }).await;
             }
           };
-
-          app.runtime.spawn(make_unsafe_send_future(future));
+          
+          let future = make_unsafe_send_future(future);
+          app.runtime.spawn(future);
         }
         _ => panic!("Invalid syntax"),
       }
     }
+
+    return;
   }
 
   let [a, v] = &args[..] else {
@@ -298,7 +309,7 @@ pub fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
 
   let mut tok_arg: Vec<&str> = vec![];
 
-  let mut start: i64 = -1;
+  let mut start: usize = 0;
 
   let mut in_ctx = false;
 
@@ -320,6 +331,7 @@ pub fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
         "fn" => {
           ctx = tok.remove(0);
           in_ctx = true;
+          start = id + 1;
 
           for t in &tok {
             if (!t.starts_with("->")) || (t.starts_with("->&")) {
@@ -337,6 +349,10 @@ pub fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
       if tok[0] == "*end" {
         in_ctx = false;
 
+        if start == usize::MAX {
+          panic!("Something is wrong!");
+        }
+
         let lines: &'static [&'static str] =
           unsafe { transmute(&data.lines[..] as &[&'static str]) };
 
@@ -349,11 +365,7 @@ pub fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
           panic!("Method overlap");
         };
 
-        start = -1;
-      } else {
-        if start == -1 {
-          start = id as i64;
-        }
+        start = usize::MAX;
       }
     }
   }
