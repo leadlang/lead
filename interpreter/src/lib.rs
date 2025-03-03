@@ -24,7 +24,8 @@ pub use package::*;
 use tokio::runtime::{Builder, Runtime};
 use types::{DynMethodRes, Heap, LanguagePackages, MethodRes};
 pub use val::*;
-pub use tokio::*;
+
+pub use tokio;
 
 pub use lealang_chalk_rs::Chalk;
 
@@ -92,6 +93,7 @@ impl<'a> Application<'a> {
       pkg_resolver: Box::new(dll_resolver),
       log_info: Box::new(requested_perm),
       runtime: Builder::new_multi_thread()
+        .worker_threads(2)
         .enable_all()
         .build()
         .expect("Unable to build async runtime"),
