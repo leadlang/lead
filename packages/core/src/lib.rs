@@ -1,6 +1,7 @@
 #![feature(vec_push_within_capacity)]
 #![feature(concat_idents)]
 use core::str;
+use std::env;
 
 use interpreter::{
   error, generate, module, pkg_name,
@@ -23,8 +24,25 @@ module! {
     unwrap=unwrap,
     drop=memclear,
     comp=comp,
-    typeof=kindof
+    typeof=kindof,
+    env=env
   }
+}
+
+#[define((
+  desc: "Get environment variable",
+  usage: [
+    (
+      desc: "Example",
+      code: "$secret: env NAME"
+    )
+  ],
+  notes: None
+))]
+fn env(val: &str) -> BufValue {
+  BufValue::Faillable(
+    env::var(val).map_or_else(|x| Err(format!("{x}")), |x| Ok(Box::new(BufValue::Str(x))))
+  )
 }
 
 #[define((
