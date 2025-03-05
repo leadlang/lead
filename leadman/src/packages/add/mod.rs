@@ -1,7 +1,11 @@
 use std::{future::IntoFuture, sync::Arc, time::Duration};
 
 use indicatif::ProgressBar;
-use tokio::{spawn, sync::oneshot::{self, error::TryRecvError, Sender}, time::sleep};
+use tokio::{
+  spawn,
+  sync::oneshot::{self, error::TryRecvError, Sender},
+  time::sleep,
+};
 
 use super::utils::spinner_style;
 
@@ -37,8 +41,8 @@ pub async fn install(pkg: Arc<String>, bar: ProgressBar) -> (String, String) {
           Err(e) => match e {
             TryRecvError::Closed => break,
             _ => {}
-          }
-          _ => break
+          },
+          _ => break,
         };
 
         sleep(Duration::from_millis(20)).await;

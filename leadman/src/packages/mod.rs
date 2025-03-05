@@ -1,7 +1,11 @@
-use std::{ptr::addr_of, sync::Arc, time::{Duration, SystemTime, UNIX_EPOCH}};
+use std::{
+  ptr::addr_of,
+  sync::Arc,
+  time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
-use lealang_chalk_rs::Chalk;
 use indicatif::{HumanDuration, MultiProgress, ProgressBar};
+use lealang_chalk_rs::Chalk;
 use linker::ScriptClass;
 use metadata::{get_meta, write_meta, Metadata};
 use tokio::{fs, time::sleep};
@@ -29,13 +33,21 @@ pub async fn list(chalk: &mut Chalk) {
   let metadata = get_meta().await;
 
   if metadata.dependencies.is_empty() {
-    println!("No package installed! Use {} to add packages", chalk.green().string(&"leadman add"));
+    println!(
+      "No package installed! Use {} to add packages",
+      chalk.green().string(&"leadman add")
+    );
     return;
   }
 
   chalk.underline();
 
-  println!("{name}{:<20}{}", "", chalk.string(&"Version"), name = chalk.string(&"Package"));
+  println!(
+    "{name}{:<20}{}",
+    "",
+    chalk.string(&"Version"),
+    name = chalk.string(&"Package")
+  );
   for (k, v) in metadata.dependencies {
     println!("{k}{:<12}{v}", "");
   }
@@ -62,14 +74,18 @@ pub async fn link(chalk: &mut Chalk) {
 
   let metadata_arc = Arc::new(MetaPtr(addr_of!(metadata)));
 
-  let task = tokio::task::spawn(linker::run_script(metadata_arc.clone(), ScriptClass::Pre, bars.clone()));
+  let task = tokio::task::spawn(linker::run_script(
+    metadata_arc.clone(),
+    ScriptClass::Pre,
+    bars.clone(),
+  ));
 
   loop {
     bar.tick();
 
     if task.is_finished() {
       task.await;
-      break
+      break;
     }
 
     sleep(Duration::from_millis(20)).await;
@@ -86,10 +102,10 @@ pub async fn link(chalk: &mut Chalk) {
 
   loop {
     bar.tick();
-    
+
     if task.is_finished() {
       task.await;
-      break
+      break;
     }
 
     sleep(Duration::from_millis(20)).await;
@@ -102,24 +118,30 @@ pub async fn link(chalk: &mut Chalk) {
     );
   });
 
-  let task = tokio::task::spawn(linker::run_script(metadata_arc.clone(), ScriptClass::Post, bars.clone()));
+  let task = tokio::task::spawn(linker::run_script(
+    metadata_arc.clone(),
+    ScriptClass::Post,
+    bars.clone(),
+  ));
 
   loop {
     bar.tick();
 
     if task.is_finished() {
       task.await;
-      break
+      break;
     }
 
     sleep(Duration::from_millis(20)).await;
   }
 
   bar.finish_and_clear();
-  
-  let dur = SystemTime::now().duration_since(start).expect("Time is running backwards");
+
+  let dur = SystemTime::now()
+    .duration_since(start)
+    .expect("Time is running backwards");
   let dur = HumanDuration(dur);
-  
+
   println!("      ✅ Linking done in {dur}");
 }
 
@@ -160,9 +182,7 @@ pub async fn handle(chalk: &mut Chalk, action: PackageAction, args: Vec<String>)
 
         let bar = ProgressBar::no_length();
         let bar = bars.add(bar);
-        handles.push(tokio::spawn(async move {
-          add::install(pkg, bar).await
-        }));
+        handles.push(tokio::spawn(async move { add::install(pkg, bar).await }));
       }
 
       for hwnd in handles {
@@ -182,7 +202,7 @@ pub async fn handle(chalk: &mut Chalk, action: PackageAction, args: Vec<String>)
         "{} 🗃️  Updating metadata...",
         chalk.bold().dim().string(&"[2/5]")
       );
-      
+
       write_meta(&metadata).await;
 
       sleep(Duration::from_secs(1)).await;
@@ -204,9 +224,9 @@ pub async fn handle(chalk: &mut Chalk, action: PackageAction, args: Vec<String>)
         let bar = bars.add(bar);
 
         let meta = Arc::new(MetaPtr(addr_of!(metadata)));
-        handles.push(tokio::spawn(async move {
-          remove::remove(meta, pkg, bar).await
-        }));
+        handles.push(tokio::spawn(
+          async move { remove::remove(meta, pkg, bar).await },
+        ));
       }
 
       let mut store = vec![];
@@ -232,11 +252,11 @@ pub async fn handle(chalk: &mut Chalk, action: PackageAction, args: Vec<String>)
         "{} 🗃️  Updating metadata...",
         chalk.bold().dim().string(&"[2/5]")
       );
-      
+
       write_meta(&metadata).await;
 
       sleep(Duration::from_secs(1)).await;
-    },
+    }
   }
 
   let bar = ProgressBar::new_spinner().with_style(spinner_style());
@@ -253,14 +273,18 @@ pub async fn handle(chalk: &mut Chalk, action: PackageAction, args: Vec<String>)
 
   let metadata_arc = Arc::new(MetaPtr(addr_of!(metadata)));
 
-  let task = tokio::task::spawn(linker::run_script(metadata_arc.clone(), ScriptClass::Pre, bars.clone()));
+  let task = tokio::task::spawn(linker::run_script(
+    metadata_arc.clone(),
+    ScriptClass::Pre,
+    bars.clone(),
+  ));
 
   loop {
     bar.tick();
 
     if task.is_finished() {
       task.await;
-      break
+      break;
     }
 
     sleep(Duration::from_millis(20)).await;
@@ -277,10 +301,10 @@ pub async fn handle(chalk: &mut Chalk, action: PackageAction, args: Vec<String>)
 
   loop {
     bar.tick();
-    
+
     if task.is_finished() {
       task.await;
-      break
+      break;
     }
 
     sleep(Duration::from_millis(20)).await;
@@ -293,23 +317,29 @@ pub async fn handle(chalk: &mut Chalk, action: PackageAction, args: Vec<String>)
     );
   });
 
-  let task = tokio::task::spawn(linker::run_script(metadata_arc.clone(), ScriptClass::Post, bars.clone()));
+  let task = tokio::task::spawn(linker::run_script(
+    metadata_arc.clone(),
+    ScriptClass::Post,
+    bars.clone(),
+  ));
 
   loop {
     bar.tick();
 
     if task.is_finished() {
       task.await;
-      break
+      break;
     }
 
     sleep(Duration::from_millis(20)).await;
   }
 
   bar.finish_and_clear();
-  
-  let dur = SystemTime::now().duration_since(start).expect("Time is running backwards");
+
+  let dur = SystemTime::now()
+    .duration_since(start)
+    .expect("Time is running backwards");
   let dur = HumanDuration(dur);
-  
+
   println!("      ✅ Installation done in {dur}");
 }

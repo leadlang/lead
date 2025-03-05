@@ -1,6 +1,6 @@
 use indicatif::ProgressBar;
-use tokio::{fs, time::sleep};
 use std::{sync::Arc, time::Duration};
+use tokio::{fs, time::sleep};
 
 use sha256::digest;
 
@@ -15,7 +15,7 @@ pub async fn remove(meta: Arc<MetaPtr>, pkg: Arc<String>, bar: ProgressBar) -> A
   let ret_pkg = pkg.clone();
 
   let pkg: &String = &pkg;
-  
+
   let version = meta.dependencies.get(pkg).expect("Unknown package");
 
   let version: &str = &version;

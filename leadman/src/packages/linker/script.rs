@@ -1,4 +1,8 @@
-use std::{io::{stderr, Write}, path::Path, process::Stdio};
+use std::{
+  io::{stderr, Write},
+  path::Path,
+  process::Stdio,
+};
 
 use crate::packages::metadata::Script;
 
@@ -27,7 +31,11 @@ pub async fn run_script<P: AsRef<Path>>(script: &Script, cwd: P, prog: &MultiPro
 
   let mut err = child.stderr.take().unwrap();
 
-  let success = child.wait().await.expect("Error while waiting for process").success();
+  let success = child
+    .wait()
+    .await
+    .expect("Error while waiting for process")
+    .success();
 
   if !success {
     prog.suspend(move || {

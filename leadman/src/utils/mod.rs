@@ -179,7 +179,7 @@ pub fn list_versions() -> Vec<String> {
 }
 
 pub async fn copy_dir<T: AsRef<str>, U: AsRef<str>>(src: T, dest: U) {
-  use tokio::fs; 
+  use tokio::fs;
 
   let src = src.as_ref();
   let dest = dest.as_ref();
@@ -190,7 +190,9 @@ pub async fn copy_dir<T: AsRef<str>, U: AsRef<str>>(src: T, dest: U) {
 
   while let Some(entry) = dir.next_entry().await.expect("Error") {
     let name = entry.file_name();
-    let name = name.into_string().expect("Unable to convert name into valid utf8 string");
+    let name = name
+      .into_string()
+      .expect("Unable to convert name into valid utf8 string");
 
     let meta = entry.metadata().await.expect("Unable to read metadata");
 

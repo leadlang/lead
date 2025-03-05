@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/leadlang/lead/refs/heads/main/metadata.schema.json",
+  "entry": "./index.pb",
+  "name": "package",
+  "version": "1.0.0",
+  "description": "",
+  "authors": [
+    "You"
+  ],
+  "keywords": [],
+  "dependencies": {},
+  "pkver": 1,
+  "allowFullAccessToPackagesNamed": []
+}

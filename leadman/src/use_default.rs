@@ -1,8 +1,8 @@
 use core::panic;
 use std::{env, fs};
 
-use lealang_chalk_rs::Chalk;
 use inquire::Select;
+use lealang_chalk_rs::Chalk;
 
 use crate::{utils::list_versions, LEAD_ROOT_DIR};
 

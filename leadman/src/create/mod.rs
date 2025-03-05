@@ -4,8 +4,8 @@ use std::{
   path::PathBuf,
 };
 
-use lealang_chalk_rs::Chalk;
 use inquire::Select;
+use lealang_chalk_rs::Chalk;
 
 use crate::{
   install::{install, set_current, set_nightly, set_stable},

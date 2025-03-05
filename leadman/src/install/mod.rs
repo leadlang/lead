@@ -1,7 +1,7 @@
 use std::{env, fs, process};
 
-use lealang_chalk_rs::Chalk;
 use inquire::Select;
+use lealang_chalk_rs::Chalk;
 
 use crate::{
   utils::{get_release, get_releases, list_versions, ReleaseData, CLIENT},
