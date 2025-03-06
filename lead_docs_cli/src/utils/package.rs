@@ -50,7 +50,7 @@ impl Package {
         let docs = pkg.doc();
 
         let docs = docs.into_iter()
-          .map(|(k, v)| (k, &v[3] as &'static str))
+          .map(|(k, v)| (k, &v[2] as &'static str))
           .collect();
 
         doc.insert(name, docs);
