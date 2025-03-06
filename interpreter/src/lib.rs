@@ -44,7 +44,7 @@ static RUNTIME: LazyLock<Runtime> = LazyLock::new(||
 pub trait Package {
   fn name(&self) -> &'static [u8];
 
-  fn doc(&self) -> HashMap<&'static str, &'static str> {
+  fn doc(&self) -> HashMap<&'static str, &'static [&'static str; 3]> {
     HashMap::new()
   }
 

@@ -102,37 +102,40 @@ macro_rules! parse {
 #[macro_export]
 macro_rules! modify {
   ($file:ident + $heap:ident: -> $y:ident) => {
-    let Some(Some($y)) = $heap.remove($y) else {
-      interpreter::error("Could not obtain Varible!", $file);
+    let $y = {
+      let $heap: &mut interpreter::types::HeapWrapper = unsafe { &mut *(&mut $heap as *mut _) };
+      let Some(Some($y)) = $heap.remove($y) else {
+        interpreter::error("Could not obtain Varible!", $file);
+      };
+
+      $y as interpreter::types::BufValue
     };
   };
 
   ($file:ident + $heap:ident: & $y:ident) => {
-    let Some($y) = $heap.get($y) else {
-      interpreter::error("Varible not found!", $file);
+    let $y = {
+      let $heap: &mut interpreter::types::HeapWrapper = unsafe { &mut *(&mut $heap as *mut _) };
+      let Some($y) = $heap.get($y) else {
+        interpreter::error("Varible not found!", $file);
+      };
+
+      $y as &interpreter::types::BufValue
     };
   };
 
   ($file:ident + $heap:ident: mut $y:ident) => {
-    let Some($y) = $heap.get_mut($y) else {
-      interpreter::error("Varible not found!", $file);
-    };
-    let $y = $y as *mut _;
-    let $y = unsafe { &mut *$y };
-  };
+    let $y = {
+      let $heap: &mut interpreter::types::HeapWrapper = unsafe { &mut *(&mut $heap as *mut _) };
+      let Some($y) = $heap.get_mut($y) else {
+        interpreter::error("Varible not found!", $file);
+      };
+      let $y = $y as *mut interpreter::types::BufValue;
+      let $y = unsafe { &mut *$y };
 
-  ($file:ident + $heap:ident: > $y:ident) => {
-    interpreter::warn("WARN: Deprecated library feature `>`, migrate to the $: syntax instead!");
-    if !$y.starts_with("$") && !$y.starts_with("*") {
-      interpreter::error("Invalid Variable provided!\nNote: Mutable / Moved values may not be provided to what expects piped (`>`) values", $file);
-    }
+      $y
+    };
   };
   ($file:ident + $heap:ident: str $y:ident) => {};
-
-  ($file:ident + $heap:ident: drop $y:ident) => {
-    let $y: Vec<Option<String>> = vec![];
-    drop($y);
-  };
 }
 
 #[macro_export]

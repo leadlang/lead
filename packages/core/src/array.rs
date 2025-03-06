@@ -153,14 +153,18 @@ fn clear(array: &mut BufValue) {
   usage: [
     (
       desc: "Directly mentioning index",
-      code: "$val: array::get ->&$array 1"
+      code: "$val: array::get $array 1"
     ),
     (
       desc: "Using an index variable",
-      code: "$val: array::get ->&$array $index"
+      code: "$val: array::get $array $index"
     )
   ],
-  notes: None
+  notes: None,
+  params: [
+    r"\$[a-zA-Z0-9_]*",
+    r#"(\$[a-zA-Z0-9_]*|"[a-zA-Z0-9]*"|[0-9]*)"#,
+  ]
 ))]
 fn get(arr: &str, index: &str) -> BufValue {
   let arr_parsed = heap.get(&arr).unwrap_or_else(|| {

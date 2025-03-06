@@ -49,6 +49,10 @@ impl Package {
         let name = String::from_utf8_lossy(pkg.name()).to_string();
         let docs = pkg.doc();
 
+        let docs = docs.into_iter()
+          .map(|(k, v)| (k, &v[3] as &'static str))
+          .collect();
+
         doc.insert(name, docs);
       }
 

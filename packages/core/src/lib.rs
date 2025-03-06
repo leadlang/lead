@@ -37,7 +37,10 @@ module! {
       code: "$secret: env NAME"
     )
   ],
-  notes: None
+  notes: None,
+  params: [
+    "\".*\""
+  ]
 ))]
 fn env(val: &str) -> BufValue {
   BufValue::Faillable(
@@ -151,7 +154,12 @@ fn fmt_optimized() -> BufValue {
 - int 64-Bit Signed Integer (eg. -3, 3)
 - u_int 64-Bit Unsigned Integer (eg. 0, 3)
 - float Floating point number (eg. 1.04, 10.6)
-- string String (eg. \"Hello World\")")
+- string String (eg. \"Hello World\")"),
+  params: [
+    "(bool|u_int|int|float|string)",
+    r#"(".*"|true|false|-?[0-9]*.?[0-9]*)"#
+  ],
+  returns: Some("*")
 ))]
 fn malloc(args: *const [*const str], _: HeapWrapper, file: &String, opt: &mut Options) {
   let [_, typ, ..] = &(unsafe { &*args })[..] else {
@@ -260,7 +268,12 @@ fn kindof(val: &BufValue) -> BufValue {
 - comp $1 < $2 (only if $1 $2 = number)
 - comp $1 <= $2 (only if $1 $2 = number)        
 - comp $1 > $2 (only if $1 $2 = number)
-- comp $1 >= $2 (only if $1 $2 = number)")
+- comp $1 >= $2 (only if $1 $2 = number)"),
+  params: [
+    r"\$[a-zA-Z0-9_]*",
+    r"(==|!=|<=|<|>=|>)",
+    r"\$[a-zA-Z0-9_]*",
+  ]
 ))]
 fn comp(a: &BufValue, f: &str, b: &BufValue) -> BufValue {
   BufValue::Bool(match f {

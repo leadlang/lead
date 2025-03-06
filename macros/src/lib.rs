@@ -16,8 +16,14 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 struct Documentation {
   desc: String,
+  #[serde(default)]
   usage: Vec<Usage>,
-  notes: Option<String>
+  #[serde(default)]
+  notes: Option<String>,
+  #[serde(default)]
+  params: Vec<String>,
+  #[serde(default)]
+  returns: Option<String>
 }
 
 #[derive(Deserialize)]
@@ -33,7 +39,7 @@ impl Usage {
 }
 
 impl Documentation {
-  pub fn to_fn(self) -> String {
+  pub fn to_fn(self) -> (String, Vec<String>, Option<String>) {
     let fmtheader = if self.usage.is_empty() {
       ""
     } else {
@@ -46,13 +52,15 @@ impl Documentation {
       _ => format!("")
     };
 
-    format!("{}
+    let a = format!("{}
 %sig%
 
 {fmtheader}
 {format}
 
-{notes}", self.desc)
+{notes}", self.desc);
+
+    (a, self.params, self.returns)
   }
 }
 
@@ -82,7 +90,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     return TokenStream::new();
   };
 
-  let mut doc: String = doc.to_fn();
+  let (mut doc, regex_params,  ret) = doc.to_fn();
 
   let input = parse_macro_input!(input as ItemFn);
 
@@ -207,11 +215,33 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
   let out = sig.output;
 
+  #[allow(unused_assignments)]
+  let mut return_type = r#""*""#;
+
+  let output = out.to_token_stream().to_string();
+  let output = output.trim();
+
+  if output == "" {
+    if ret.is_some() {
+      out.span()
+        .unwrap()
+        .warning("Output is not defined, but return type is mentioned!")
+        .emit();
+    }
+    return_type = r#""""#;
+  } else if let Some(x) = ret {
+    return_type = x.leak();
+  }
+
   if params.is_empty() {
     doc = doc.replace("%sig%", "");
+    assert!(regex_params.is_empty());
+
+    let a = r"^(\$?)[a-z0-9_:]+";
+
     return quote! {
       #[allow(non_upper_case_globals)]
-      #vis static #new_doc: &'static str = #doc;
+      #vis static #new_doc: &'static [&'static str; 3] = &[#a, #return_type, #doc];
   
       #[allow(unused)]
       #vis fn #ident(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
@@ -226,10 +256,53 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
   doc = doc.replacen("%sig%", &sig_d, 1);
 
-  if !params.to_string().contains("BufValue") {
+  let p_str = params.to_string();
+
+  if p_str.contains("str") && regex_params.is_empty() {
+    params.span()
+      .unwrap()
+      .error("You must provide params on define! macro if you use &str or any other primitive type value")
+      .emit();
+
+    return quote! {}.into();
+  }
+
+  let mut params_on_static = String::from(r"^(\$?)[a-z0-9_:]+ ");
+
+  if !regex_params.is_empty() {
+    let l = regex_params.len();
+    regex_params.into_iter().enumerate().for_each(|(i, d)| {
+      params_on_static.push_str(&d);
+
+      if i+1 < l {
+        params_on_static.push(' ');
+      } else {
+        params_on_static.push('$');
+      }
+    });
+  } else if !sig_std.is_empty() {
+    let l = sig_std.len();
+    sig_std.into_iter().enumerate().for_each(|(i, d)| {
+      match d {
+        "->$ *" => params_on_static.push_str(r"->\$[a-z0-9_]+"),
+        "$ *" => params_on_static.push_str(r"\$[a-z0-9_]+"),
+        "->&$ *" => params_on_static.push_str(r"->&\$[a-z0-9_]+"),
+        "*" => params_on_static.push_str(r#"$[a-z0-9_"']+"#),
+        _ => unreachable!()
+      }
+
+      if i+1 < l {
+        params_on_static.push(' ');
+      } else {
+        params_on_static.push('$');
+      }
+    });
+  }
+
+  if !p_str.contains("BufValue") {
     return quote! {
       #[allow(non_upper_case_globals)]
-      #vis static #new_doc: &'static str = #doc;
+      #vis static #new_doc: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
   
       #[allow(unused)]
       #vis fn #ident(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
@@ -246,7 +319,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
   quote! {
     #[allow(non_upper_case_globals)]
-    #vis static #new_doc: &'static str = #doc;
+    #vis static #new_doc: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
 
     #[allow(unused)]
     #vis fn #ident(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
@@ -264,10 +337,10 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
 #[proc_macro_attribute]
 pub fn gendoc(args: TokenStream, input: TokenStream) -> TokenStream {
-  let args = args.to_string();
+  let argv = args.to_string();
 
-  let Ok(doc): SpannedResult<Documentation> = ron::from_str(&args) else {
-    TokenStream2::from_str(&args).unwrap().span()
+  let Ok(doc): SpannedResult<Documentation> = ron::from_str(&argv) else {
+    TokenStream2::from_str(&argv).unwrap().span()
      .unwrap()
      .error("Unable to parse documentation")
      .emit();
@@ -275,10 +348,42 @@ pub fn gendoc(args: TokenStream, input: TokenStream) -> TokenStream {
     return TokenStream::new();
   };
 
-  let doc = doc.to_fn();
-  let doc = doc.replacen("%sig%", "", 1);
+  let (mut doc, a_vec, b) = doc.to_fn();
+  doc = doc.replacen("%sig%", "", 1);
 
   let input = parse_macro_input!(input as ItemFn);
+
+  if a_vec.len() == 0 {
+    input.sig.span()
+    .unwrap()
+    .error("gendoc function assumes that your function takes in >= 1 arguments")
+    .help("Did you add RegExp pattern to the function doc (params field)?")
+    .emit();
+    
+    return quote! {}.into();
+  };
+
+  let mut params = String::from(r"^(\$?)[a-z0-9_:]+ ");
+
+  let l = a_vec.len();
+  a_vec.into_iter().enumerate().for_each(|(i, d)| {
+    params.push_str(&d);
+    
+    if i+1 < l {
+      params.push(' ');
+    } else {
+      params.push('$');
+    }
+  });
+
+  let span = input.sig.span().unwrap();
+  let b = b.unwrap_or_else(move || {
+    span
+      .note("The return type is None")
+      .emit();
+
+    format!("")
+  });
 
   let ItemFn {
     // The function signature
@@ -298,7 +403,7 @@ pub fn gendoc(args: TokenStream, input: TokenStream) -> TokenStream {
 
   quote! {
     #[allow(non_upper_case_globals)]
-    #vis static #new_doc: &'static str = #doc;
+    #vis static #new_doc: &'static [&'static str; 3] = &[#params, #b, #doc];
     
     #vis #s #block
   }.into()
@@ -325,7 +430,7 @@ pub fn methods(item: TokenStream) -> TokenStream {
     .join(",\n");
   
   let data = format!("
-    fn doc(&self) -> std::collections::HashMap<&'static str, &'static str> {{
+    fn doc(&self) -> std::collections::HashMap<&'static str, &'static [&'static str; 3]> {{
       interpreter::hashmap! {{
         {doc}
       }}

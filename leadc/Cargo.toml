@@ -11,6 +11,8 @@ name = "leadc"
 path = "./src/main.rs"
 
 [dependencies]
+lealang_chalk_rs = "1.2.0"
+tokio = { version = "1.43.0", features = ["rt"] }
 
 
 [target.'cfg(windows)'.build-dependencies]
