@@ -7,33 +7,48 @@ pub type RuntimeMethodRes = HashMap<&'static str, (&'static str, PackageCallback
 
 pub mod _root_syntax;
 
-#[derive(Debug)]
-pub struct RuntimeValue {
-  pub r#type: String,
-  pub _inner: Heap,
-  pub fn_ptr: RuntimeMethodRes,
-}
+pub trait RuntimeValue {
+  fn name(&self) -> &'static str;
 
-impl RuntimeValue {
-  pub fn new(r#type: &str, fn_ptr: RuntimeMethodRes) -> Self {
-    Self {
-      r#type: format!("{}", r#type),
-      _inner: Heap::new(),
-      fn_ptr,
-    }
-  }
+  fn doc(&self) -> HashMap<&'static str, &'static [&'static str; 3]>;
 
-  pub fn call_ptr(
+  fn call_ptr(
     &mut self,
     caller: &str,
     v: *const [*const str],
     a: HeapWrapper,
     c: &String,
     o: &mut Options,
-  ) -> Option<()> {
-    let (_, f) = self.fn_ptr.get(caller)?;
-
-    f(v, &mut self._inner, a, c, o);
-    Some(())
-  }
+  ) -> Option<()>;
 }
+
+// #[derive(Debug)]
+// pub struct RuntimeValue {
+//   pub r#type: String,
+//   pub _inner: Heap,
+//   pub fn_ptr: RuntimeMethodRes,
+// }
+
+// impl RuntimeValue {
+//   pub fn new(r#type: &str, fn_ptr: RuntimeMethodRes) -> Self {
+//     Self {
+//       r#type: format!("{}", r#type),
+//       _inner: Heap::new(),
+//       fn_ptr,
+//     }
+//   }
+
+//   pub fn call_ptr(
+//     &mut self,
+//     caller: &str,
+//     v: *const [*const str],
+//     a: HeapWrapper,
+//     c: &String,
+//     o: &mut Options,
+//   ) -> Option<()> {
+//     let (_, f) = self.fn_ptr.get(caller)?;
+
+//     f(v, &mut self._inner, a, c, o);
+//     Some(())
+//   }
+// }

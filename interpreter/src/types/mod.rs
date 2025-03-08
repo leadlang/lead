@@ -10,13 +10,14 @@ use std::{
   ops::{Deref, DerefMut},
   pin::Pin,
   task::{Context, Poll},
+  thread::JoinHandle
 };
 
 pub use alloc::*;
 pub use fns::*;
 pub use heap::*;
 pub use heap_wrap::*;
-use tokio::{sync::mpsc::UnboundedReceiver, task::JoinHandle};
+use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::runtime::RuntimeValue;
 
@@ -31,7 +32,7 @@ impl From<BufValue> for RetBufValue {
 pub struct Options {
   pub pre: *const str,
   pub r_val: Option<RetBufValue>,
-  r_runtime: Option<RuntimeValue>,
+  r_runtime: Option<Box<dyn RuntimeValue>>,
 }
 
 unsafe impl Send for Options {}
@@ -62,15 +63,11 @@ impl Options {
     val.expect("Error").0
   }
 
-  pub(crate) fn rem_r_runtime(&mut self) -> Option<RuntimeValue> {
-    let mut rt = self.r_runtime.take()?;
-
-    rt.r#type = format!("{}/{}", unsafe { &*self.pre }, rt.r#type);
-
-    Some(rt)
+  pub(crate) fn rem_r_runtime(&mut self) -> Option<Box<dyn RuntimeValue>> {
+    self.r_runtime.take()
   }
 
-  pub fn set_r_runtime(&mut self, val: RuntimeValue) {
+  pub fn set_r_runtime(&mut self, val: Box<dyn RuntimeValue>) {
     self.r_runtime = Some(val);
   }
 }

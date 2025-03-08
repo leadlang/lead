@@ -1,5 +1,5 @@
 use lealang_chalk_rs::Chalk;
-use interpreter::types::{DynMethodRes, MethodRes};
+use interpreter::types::MethodRes;
 use interpreter::{Application, Package as Pkg, RespPackage};
 use std::env;
 use std::env::consts::{DLL_EXTENSION, DLL_PREFIX};
@@ -84,8 +84,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
         for module in (x.modules)() {
           out.push(RespPackage { 
             name: b"imported", 
-            methods: module.methods(), 
-            dyn_methods: module.dyn_methods()
+            methods: module.methods()
           });
         }
       } else {
@@ -94,8 +93,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
         for module in (pkg.modules)() {
           out.push(RespPackage { 
             name: b"imported", 
-            methods: module.methods(), 
-            dyn_methods: module.dyn_methods()
+            methods: module.methods()
           });
         }
 

@@ -23,14 +23,14 @@ pub mod val;
 
 pub use package::*;
 use tokio::runtime::{Builder, Runtime};
-use types::{DynMethodRes, Heap, LanguagePackages, MethodRes};
+use types::{Heap, LanguagePackages, MethodRes};
 pub use val::*;
 
 pub use tokio;
 
 pub use lealang_chalk_rs::Chalk;
 
-pub static VERSION_INT: u16 = 5;
+pub static VERSION_INT: u16 = 6;
 
 static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| 
   Builder::new_multi_thread()
@@ -51,16 +51,11 @@ pub trait Package {
   fn methods(&self) -> MethodRes {
     &[]
   }
-
-  fn dyn_methods(&self) -> DynMethodRes {
-    vec![]
-  }
 }
 
 pub struct RespPackage {
   pub name: &'static [u8],
   pub methods: MethodRes,
-  pub dyn_methods: DynMethodRes,
 }
 
 pub struct Application<'a> {
@@ -129,12 +124,10 @@ impl<'a> Application<'a> {
     &mut self,
     name: &'static [u8],
     methods: MethodRes,
-    dyn_methods: DynMethodRes,
   ) -> &mut Self {
     let pkg = ImplPackage {
       name,
       methods,
-      dyn_methods,
     };
 
     self.pkg.import(pkg);

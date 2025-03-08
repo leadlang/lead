@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap, future::Future, pin::Pin};
+use std::{borrow::Cow, fmt::Debug, collections::HashMap, future::Future, pin::Pin};
 
 use crate::{
   error,
@@ -10,11 +10,16 @@ use super::{AppliesEq, BufValue, HeapWrapper, Options, PackageCallback};
 
 pub type HeapInnerMap = HashMap<Cow<'static, str>, BufValue>;
 
-#[derive(Debug)]
 pub enum RawRTValue {
-  RT(RuntimeValue),
+  RT(Box<dyn RuntimeValue>),
   PKG(HashMap<String, PackageCallback>),
   RTCM(RTCreatedModule),
+}
+
+impl Debug for RawRTValue {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      write!(f, "RawRTValue {{ 0x... }}")
+  }
 }
 
 fn get_ptr(heap: &mut Heap) -> &mut HashMap<Cow<'static, str>, BufValue> {

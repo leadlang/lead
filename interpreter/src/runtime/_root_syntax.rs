@@ -245,14 +245,10 @@ pub fn insert_into_application(
           let RespPackage {
             name,
             methods,
-            dyn_methods,
           } = package;
 
           for (sig, call) in methods {
             pkg.insert(sig.to_string(), *call);
-          }
-          for (sig, call) in dyn_methods {
-            pkg.insert(sig.to_string(), call);
           }
         }
 

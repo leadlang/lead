@@ -1,5 +1,5 @@
 use crate::{
-  types::{DynMethodRes, MethodRes, PackageCallback},
+  types::MethodRes,
   Package,
 };
 
@@ -8,8 +8,7 @@ use crate::{
 pub struct ImplPackage {
   pub name: &'static [u8],
 
-  pub(crate) methods: MethodRes,
-  pub(crate) dyn_methods: DynMethodRes,
+  pub(crate) methods: MethodRes
 }
 
 impl Package for ImplPackage {
@@ -20,15 +19,16 @@ impl Package for ImplPackage {
   fn methods(&self) -> MethodRes {
     self.methods
   }
-
-  fn dyn_methods(&self) -> DynMethodRes {
-    self.dyn_methods.clone()
-  }
 }
 
 #[macro_export]
-macro_rules! generate {
-  ($x:ident) => {
+macro_rules! exports {
+  (
+    packages = $($x:ident),*;
+    runtimes = {
+      $($key:literal = $val:ident),*
+    }
+  ) => {
     #[no_mangle]
     pub fn ver() -> u16 {
       interpreter::VERSION_INT
@@ -37,11 +37,26 @@ macro_rules! generate {
     #[no_mangle]
     pub fn modules() -> Vec<Box<dyn interpreter::Package>> {
       use interpreter::Package;
-      vec![generate!(-> $x)]
+      vec![$(interpreter::generate!(-> $x),)*]
+    }
+
+    #[no_mangle]
+    #[allow(unused_mut)]
+    pub fn runtimes() -> std::collections::HashMap<&'static str, Box<dyn interpreter::runtime::RuntimeValue>> {
+      let mut coll = std::collections::HashMap::new();
+
+      $(
+        coll.insert($key, $val);
+      )*
+
+      coll
     }
   };
+}
 
-  ($($x:ident),+) => {
+#[macro_export]
+macro_rules! generate {
+  ($($x:ident),*) => {
     #[no_mangle]
     pub fn ver() -> u16 {
       interpreter::VERSION_INT
@@ -52,19 +67,15 @@ macro_rules! generate {
       use interpreter::Package;
       vec![$(generate!(-> $x)),+]
     }
+
+    #[no_mangle]
+    pub fn runtimes() -> std::collections::HashMap<&'static str, Box<dyn interpreter::runtime::RuntimeValue>> {
+      std::collections::HashMap::new()
+    }
   };
 
   (-> $x:ident) => {
     Box::new($x)
-  };
-}
-
-#[macro_export]
-macro_rules! package {
-  ($name:expr, $doc:expr, $call:expr) => {
-    ImplPackage::new()
-      .set_name("ImplPackage [macro]")
-      .add_method($name, $doc, $call)
   };
 }
 
@@ -78,11 +89,6 @@ impl ImplPackage {
 
   pub fn set_name(mut self, name: &'static str) -> Self {
     self.name = name.as_bytes();
-    self
-  }
-
-  pub fn add_method(mut self, name: &'static str, callback: PackageCallback) -> Self {
-    self.dyn_methods.push((name, callback));
     self
   }
 }

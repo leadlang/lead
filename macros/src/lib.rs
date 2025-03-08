@@ -199,13 +199,13 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       "-> BufValue" => {
         ret = "opt.set_return_val(_option_code_result)";
       }
-      "-> RuntimeValue" => {
+      "-> Box<dyn RuntimeValue>" => {
         ret = "opt.set_r_runtime(_option_code_result)";
       }
       e => {
         sig.output.span()
           .unwrap()
-          .error(format!("invalid return type: Expected `BufValue` or `(String, BufKeyVal)` or `RuntimeValue`, found `{e}`"))
+          .error(format!("invalid return type: Expected `BufValue` or `(String, BufKeyVal)` or `Box<dyn RuntimeValue>`, found `{e}`"))
           .emit();
       }
     }
@@ -216,7 +216,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
   let out = sig.output;
 
   #[allow(unused_assignments)]
-  let mut return_type = r#""*""#;
+  let mut return_type = r#"*"#;
 
   let output = out.to_token_stream().to_string();
   let output = output.trim();
@@ -228,7 +228,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
         .warning("Output is not defined, but return type is mentioned!")
         .emit();
     }
-    return_type = r#""""#;
+    return_type = r#""#;
   } else if let Some(x) = ret {
     return_type = x.leak();
   }

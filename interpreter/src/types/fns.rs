@@ -8,7 +8,6 @@ use super::{HeapWrapper, Options};
 pub type Args = *const [*const str];
 pub type PackageCallback = fn(Args, HeapWrapper, &String, &mut Options) -> ();
 
-pub type DynMethodRes = Vec<(&'static str, PackageCallback)>;
 pub type MethodRes = &'static [(&'static str, PackageCallback)];
 
 pub struct LanguagePackages<'a> {
@@ -27,9 +26,6 @@ impl<'a> LanguagePackages<'a> {
     let name: &'static mut str = name.to_string().leak::<'static>();
     for (key, val) in func.methods() {
       self.inner.insert(key, (name, *val));
-    }
-    for (k, v) in func.dyn_methods() {
-      self.inner.insert(k, (name, v));
     }
     self
   }
