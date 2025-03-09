@@ -23,7 +23,3 @@ print $a
 $hello::init ->$a
 
 print $a
-
-$os: os::name
-
-print $os

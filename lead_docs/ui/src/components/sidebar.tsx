@@ -6,7 +6,7 @@ export function Sidebar() {
   const leadCore = useLeadLang();
 
   return <div className="bg-background/70 h-limits flex justify-center rounded-md shadow-xl overflow-hidden">
-    <ul className="menu flex-col w-80 flex-nowrap bg-inherit/70 text-foreground gap-1 overflow-scroll">
+    <ul className="menu menu-xs flex-col w-80 flex-nowrap bg-inherit/70 text-foreground gap-1 overflow-scroll">
       <li><button className={page.r == "home" ? "active" : ""} onClick={() => window.setPage({
         r: "home",
         p1: 0,
@@ -68,7 +68,7 @@ function PackageArray({ data, prefix, summary }: Props) {
                                           p2: name,
                                           p3: n
                                         })}
-                                      >{n}</button>
+                                      >{n.substring(0, 15)}{n.length > 15 ? "..." : ""}</button>
                                     </li>
                                   ))
                               }
