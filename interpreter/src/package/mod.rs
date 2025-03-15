@@ -4,9 +4,9 @@ use crate::{
 };
 
 #[derive(Default)]
-/// ImplPackage is not meant to create a package out of
-pub struct ImplPackage {
-  pub name: &'static [u8],
+/// ImplPackage is meant to create a package out of Box<dyn Package>
+pub(crate) struct ImplPackage {
+  pub(crate) name: &'static [u8],
 
   pub(crate) methods: MethodRes
 }
@@ -63,9 +63,9 @@ macro_rules! generate {
     }
 
     #[no_mangle]
-    pub fn modules() -> Vec<Box<dyn interpreter::Package>> {
+    pub fn modules() -> &'static [Box<dyn interpreter::Package>] {
       use interpreter::Package;
-      vec![$(generate!(-> $x)),+]
+      Box::leak(Box::new([$(generate!(-> $x)),+])) as &'static mut [Box<dyn interpreter::Package>]
     }
 
     #[no_mangle]
@@ -75,20 +75,6 @@ macro_rules! generate {
   };
 
   (-> $x:ident) => {
-    Box::new($x)
+    Box::new($x) as Box<dyn interpreter::Package>
   };
-}
-
-impl ImplPackage {
-  pub fn new() -> Self {
-    Self {
-      name: b"ImplPackage [struct]",
-      ..Self::default()
-    }
-  }
-
-  pub fn set_name(mut self, name: &'static str) -> Self {
-    self.name = name.as_bytes();
-    self
-  }
 }

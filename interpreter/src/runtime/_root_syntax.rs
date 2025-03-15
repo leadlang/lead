@@ -13,7 +13,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct RTCreatedModule {
+pub(crate) struct RTCreatedModule {
   pub(crate) code: String,
   pub(crate) lines: Vec<&'static str>,
   pub(crate) name: &'static str,
@@ -72,61 +72,6 @@ impl RTCreatedModule {
 
     drop(temp_heap);
   }
-
-  // pub(crate) async fn run_method_async<'a, T: FnOnce(&mut Heap, &mut Heap, &Vec<&str>) -> ()>(
-  //   &mut self,
-  //   app: *mut Application<'a>,
-  //   method: &str,
-  //   file: &str,
-  //   into_heap: T,
-  //   heap: &mut Heap,
-  //   opt: &mut Options,
-  // ) {
-  //   let mut temp_heap = Heap::new_with_this(&mut self.heap);
-  //   let app = unsafe { &mut *app };
-
-  //   let (args, method_code) = self
-  //     .methods
-  //     .get(&method)
-  //     .unwrap_or_else(|| error("Unable to find :method", file));
-  //   into_heap(&mut temp_heap, heap, args);
-
-  //   // run
-  //   let file_name = ":fn";
-
-  //   let file = method_code;
-
-  //   let mut line = 0usize;
-
-  //   let mut markers = HashMap::new();
-
-  //   while line < file.len() {
-  //     let content = file[line];
-
-  //     if !content.starts_with("#") {
-  //       unsafe {
-  //         if let Some(x) = spawn_blocking(tok_parse(
-  //           format!("{}:{}", &file_name, line),
-  //           content,
-  //           app,
-  //           &mut temp_heap,
-  //           &mut line,
-  //           &mut markers,
-  //           true,
-  //           Some(opt),
-  //         )).await {
-  //           x.await;
-  //         }
-  //       }
-
-  //       yield_now().await;
-  //     }
-
-  //     line += 1;
-  //   }
-
-  //   drop(temp_heap);
-  // }
 }
 
 #[allow(unused)]
@@ -243,7 +188,6 @@ pub fn insert_into_application(
 
         for package in packages {
           let RespPackage {
-            name,
             methods,
           } = package;
 
@@ -282,7 +226,7 @@ pub fn insert_into_application(
   }
 }
 
-pub fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
+pub(crate) fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
   let mut data = RTCreatedModule {
     code,
     lines: vec![],

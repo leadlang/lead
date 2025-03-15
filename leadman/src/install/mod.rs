@@ -104,7 +104,7 @@ pub async fn install(release: &ReleaseData, lead_home: &str, chalk: &mut Chalk) 
     // Build 6 introduces build version monitoring
     "6" | "7" | "8" | "9" | "10" | "11" | "12" | "13" | "14" | "15" => {
       build_1::install(&tag_name, lead_home).await;
-      tokio::fs::write(format!("{lead_home}/versions/{tag_name}/.lbuild"), tag_name).await;
+      tokio::fs::write(format!("{lead_home}/versions/{tag_name}/.lbuild"), build.as_str()).await;
     }
     // Build 1 to 5 are the similar
     "1" | "2" | "3" | "4" | "5" => {

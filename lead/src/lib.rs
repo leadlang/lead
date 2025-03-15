@@ -22,7 +22,7 @@ pub(crate) mod metadata;
 pub fn run() {
   use tokio::runtime::Builder;
 
-  Builder::new_multi_thread()
+  Builder::new_current_thread()
     .enable_all()
     .build()
     .unwrap()

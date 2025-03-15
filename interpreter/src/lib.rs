@@ -21,7 +21,7 @@ pub mod package;
 pub mod types;
 pub mod val;
 
-pub use package::*;
+pub(crate) use package::*;
 use tokio::runtime::{Builder, Runtime};
 use types::{Heap, LanguagePackages, MethodRes};
 pub use val::*;
@@ -54,7 +54,6 @@ pub trait Package {
 }
 
 pub struct RespPackage {
-  pub name: &'static [u8],
   pub methods: MethodRes,
 }
 

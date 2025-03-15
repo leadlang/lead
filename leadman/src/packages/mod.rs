@@ -43,13 +43,12 @@ pub async fn list(chalk: &mut Chalk) {
   chalk.underline();
 
   println!(
-    "{name}{:<20}{}",
-    "",
+    "{:<20}{}",
+    chalk.string(&"Package"),
     chalk.string(&"Version"),
-    name = chalk.string(&"Package")
   );
   for (k, v) in metadata.dependencies {
-    println!("{k}{:<12}{v}", "");
+    println!("{:<20}{v}", k);
   }
 }
 
