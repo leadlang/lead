@@ -1,21 +1,23 @@
 #![feature(proc_macro_diagnostic)]
 #![allow(dead_code)]
 
+mod utils;
 extern crate proc_macro;
 
 use std::str::FromStr;
-
-use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
+use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use ron::error::SpannedResult;
-use syn::{parse_macro_input, spanned::Spanned, FnArg, Ident, ItemFn};
+use syn::{parse_macro_input, spanned::Spanned, Ident, ItemFn};
 
 use serde::Deserialize;
+use utils::{parse_output, Either, Parsed};
 
 #[derive(Deserialize)]
 struct Documentation {
   desc: String,
+  #[serde(default)]
+  root: Option<String>,
   #[serde(default)]
   usage: Vec<Usage>,
   #[serde(default)]
@@ -39,7 +41,7 @@ impl Usage {
 }
 
 impl Documentation {
-  pub fn to_fn(self) -> (String, Vec<String>, Option<String>) {
+  pub fn to_fn(self) -> (String, Vec<String>, Option<String>, Option<String>) {
     let fmtheader = if self.usage.is_empty() {
       ""
     } else {
@@ -60,37 +62,25 @@ impl Documentation {
 
 {notes}", self.desc);
 
-    (a, self.params, self.returns)
+    (a, self.params, self.returns, self.root)
   }
-}
-
-macro_rules! gen {
-  ($ident:ident, $parse_mut:ident, $sig_d:ident, $sig_std:ident, $x:expr, $y:expr, $z:expr) => {
-    {
-      $parse_mut.push_str($x);
-      $sig_d.push_str($y);
-      $sig_d.push_str(&$ident);
-      $sig_d.push_str(" ");
-
-      $sig_std.push($z);
-    }
-  };
 }
 
 #[proc_macro_attribute]
 pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
-  let args = args.to_string();
-
-  let Ok(doc): SpannedResult<Documentation> = ron::from_str(&args) else {
-    TokenStream2::from_str(&args).unwrap().span()
-     .unwrap()
-     .error("Unable to parse documentation")
-     .emit();
-
+  let Either::Ok((mut doc, regex_params, ret, root)) = utils::parse_args(args.to_string().as_str()) else {
     return TokenStream::new();
   };
 
-  let (mut doc, regex_params,  ret) = doc.to_fn();
+  let arg0_tokens = match &root {
+    Some(x) => TokenStream2::from_str(&format!("me: &mut {x},")).unwrap(),
+    None => TokenStream2::new()
+  };
+
+  let call0 = match &root {
+    Some(_) => TokenStream2::from_str(&format!("me,")).unwrap(),
+    None => TokenStream2::new()
+  };
 
   let input = parse_macro_input!(input as ItemFn);
 
@@ -105,115 +95,20 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     attrs: _,
   } = input;
 
-  let mut parse_mut = String::from("interpreter::parse!(file + heap + args:");
-  let mut params_to_pass = vec![];
+  let Parsed {
+    call_fn,
+    doc_fn,
+    orig_params,
+    params_to_pass,
+    parse_macro,
+    sig_std,
+    ident,
+    doc_params_decl
+  } = utils::construct_parse(&sig);
 
-  let inputs = sig.inputs;
+  let other_tokens = parse_output(&sig.output);
 
-  let mut sig_std = vec![];
-  let mut sig_d = String::from("# Function Params\n\n```\n");
-
-  inputs.iter().enumerate().for_each(|(i, s)| {
-    match s {
-      FnArg::Typed(s) => {
-        let typ = s.ty.to_token_stream().to_string();
-        let ident = s.pat.to_token_stream().to_string();
-
-        if ["args", "heap", "file", "opt", "ret"].contains(&ident.as_str()) {
-          s.span()
-          .unwrap()
-          .error("reserved keyword: args, heap, file, opt, ret")
-          .emit()
-        }
-
-        match typ.as_str() {
-          "BufValue" => gen!(ident, parse_mut, sig_d, sig_std, " -> ", "->$", "->$ *"),
-          "& BufValue" => {
-            parse_mut.push_str(" & ");
-            sig_d.push_str("$");
-            sig_d.push_str(&ident);
-            sig_d.push_str(" ");
-
-            sig_std.push("$ *");
-          },
-          "& mut BufValue" => {
-            parse_mut.push_str(" mut ");
-            sig_d.push_str("->&$");
-            sig_d.push_str(&ident);
-            sig_d.push_str(" ");
-
-            sig_std.push("->&$ *");
-          },
-          "& str" => {
-            parse_mut.push_str(" str ");
-            sig_d.push_str("<");
-            sig_d.push_str(&ident);
-            sig_d.push_str("> ");
-
-            sig_std.push("*");
-          },
-          s => s
-            .span()
-            .unwrap()
-            .error("invalid type: Expected `BufValue`, `&BufValue` or `&mut BufValue`")
-            .emit(),
-        }
-
-        parse_mut.push_str(&ident);
-        params_to_pass.push(ident);
-      }
-      _ => {}
-    }
-
-    if i != (inputs.len() - 1) {
-      parse_mut.push_str(",");
-    }
-  });
-
-  sig_d.push_str("\n```");
-
-  parse_mut.push_str(");");
-
-  if &parse_mut == "interpreter::parse!(file + heap + args:);" {
-    parse_mut = String::from("");
-  }
-
-  let parse_mut = TokenStream2::from_str(&parse_mut).unwrap();
-
-  let new = Ident::new(&format!("_call_{}", sig.ident), sig.ident.span());
-
-  let params = inputs.to_token_stream();
-
-  let ident = sig.ident;
-
-  let new_doc = Ident::new(&format!("_inner_callable_{}_doc", ident), ident.span());
-
-  let to_pass = TokenStream2::from_str(&params_to_pass.join(",")).unwrap();
-
-  let other_tokens = {
-    let output = sig.output.to_token_stream().to_string();
-    let mut ret = "";
-
-    match output.as_str() {
-      "" | "-> ()" => {}
-      "-> BufValue" => {
-        ret = "opt.set_return_val(_option_code_result)";
-      }
-      "-> Box<dyn RuntimeValue>" => {
-        ret = "opt.set_r_runtime(_option_code_result)";
-      }
-      e => {
-        sig.output.span()
-          .unwrap()
-          .error(format!("invalid return type: Expected `BufValue` or `(String, BufKeyVal)` or `Box<dyn RuntimeValue>`, found `{e}`"))
-          .emit();
-      }
-    }
-
-    TokenStream2::from_str(ret).unwrap()
-  };
-
-  let out = sig.output;
+  let out = &sig.output;
 
   #[allow(unused_assignments)]
   let mut return_type = r#"*"#;
@@ -233,7 +128,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     return_type = x.leak();
   }
 
-  if params.is_empty() {
+  if orig_params.is_empty() {
     doc = doc.replace("%sig%", "");
     assert!(regex_params.is_empty());
 
@@ -241,25 +136,25 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
     return quote! {
       #[allow(non_upper_case_globals)]
-      #vis static #new_doc: &'static [&'static str; 3] = &[#a, #return_type, #doc];
+      #vis static #doc_fn: &'static [&'static str; 3] = &[#a, #return_type, #doc];
   
       #[allow(unused)]
-      #vis fn #ident(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
-        let _option_code_result = #new(args, heap, file, opt);
+      #vis fn #ident(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
+        let _option_code_result = #call_fn(#call0 args, heap, file, opt);
         #other_tokens
       }
 
       #[allow(unused)]
-      #vis fn #new(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) #out #block
+      #vis fn #call_fn(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) #out #block
     }.into()
   }
 
-  doc = doc.replacen("%sig%", &sig_d, 1);
+  doc = doc.replacen("%sig%", &doc_params_decl, 1);
 
-  let p_str = params.to_string();
+  let p_str = orig_params.to_string();
 
   if p_str.contains("str") && regex_params.is_empty() {
-    params.span()
+    orig_params.span()
       .unwrap()
       .error("You must provide params on define! macro if you use &str or any other primitive type value")
       .emit();
@@ -302,53 +197,44 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
   if !p_str.contains("BufValue") {
     return quote! {
       #[allow(non_upper_case_globals)]
-      #vis static #new_doc: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
+      #vis static #doc_fn: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
   
       #[allow(unused)]
-      #vis fn #ident(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
-        #parse_mut
+      #vis fn #ident(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
+        #parse_macro
 
-        let _option_code_result = #new(#to_pass, file, heap, opt);
+        let _option_code_result = #call_fn(#call0 #params_to_pass, file, heap, opt);
         #other_tokens
       }
   
       #[allow(unused)]
-      #vis fn #new(#params, file: &String, mut heap: interpreter::types::HeapWrapper, opt: &mut interpreter::types::Options) #out #block
+      #vis fn #call_fn(#arg0_tokens #orig_params, file: &String, mut heap: interpreter::types::HeapWrapper, opt: &mut interpreter::types::Options) #out #block
     }.into()
   }
 
   quote! {
     #[allow(non_upper_case_globals)]
-    #vis static #new_doc: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
+    #vis static #doc_fn: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
 
     #[allow(unused)]
-    #vis fn #ident(args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
-      #parse_mut
+    #vis fn #ident(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
+      #parse_macro
 
-      let _option_code_result = #new(#to_pass, file, opt);
+      let _option_code_result = #call_fn(#call0 #params_to_pass, file, opt);
       #other_tokens
     }
 
     #[allow(unused)]
-    #vis fn #new(#params, file: &String, opt: &mut interpreter::types::Options) #out #block
+    #vis fn #call_fn(#arg0_tokens #orig_params, file: &String, opt: &mut interpreter::types::Options) #out #block
   }.into()
 }
 
 
 #[proc_macro_attribute]
 pub fn gendoc(args: TokenStream, input: TokenStream) -> TokenStream {
-  let argv = args.to_string();
-
-  let Ok(doc): SpannedResult<Documentation> = ron::from_str(&argv) else {
-    TokenStream2::from_str(&argv).unwrap().span()
-     .unwrap()
-     .error("Unable to parse documentation")
-     .emit();
-
+  let Either::Ok((mut doc, a_vec, b, _root)) = utils::parse_args(args.to_string().as_str()) else {
     return TokenStream::new();
   };
-
-  let (mut doc, a_vec, b) = doc.to_fn();
   doc = doc.replacen("%sig%", "", 1);
 
   let input = parse_macro_input!(input as ItemFn);

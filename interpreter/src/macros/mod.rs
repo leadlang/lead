@@ -36,24 +36,35 @@ macro_rules! pkg_name {
   };
 }
 
-// #[macro_export]
-// macro_rules! methods {
-//   ($($x:ident),*) => {
-//     fn doc(&self) -> std::collections::HashMap<&'static str, &'static str> {
-//       interpreter::hashmap! {
-//         $(stringify!($x) => _call_$x_doc),*
-//       }
-//     }
+#[macro_export]
+macro_rules! rtval_name {
+  ($x:literal) => {
+    fn name(&self) -> &'static str {
+      $x
+    }
+  };
+}
 
-//     fn methods(&self) -> interpreter::types::MethodRes {
-//       &[
-//         $({
-//           (stringify!($x), $x)
-//         }),*
-//       ]
-//     }
-//   };
-// }
+#[macro_export]
+macro_rules! runtime_value {
+  (
+    $struct:ident, 
+    { $(pub $x:ident: $y:ty),* },
+    $($t:tt)*
+  ) => {
+    pub struct $struct {
+      $(
+        pub $x: $y
+      ),*
+    }
+
+    impl interpreter::RuntimeValue for $struct {
+      $(
+        $t
+      )*
+    }
+  };
+}
 
 #[macro_export]
 macro_rules! document {

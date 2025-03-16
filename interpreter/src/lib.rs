@@ -14,6 +14,7 @@ use std::{
 pub mod macros;
 
 pub mod runtime;
+pub use runtime::RuntimeValue;
 
 mod ipreter;
 #[macro_use]
