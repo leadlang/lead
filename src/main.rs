@@ -97,7 +97,7 @@ fn main() {
       let name = name.to_str().unwrap();
       let path = file.path();
 
-      if name.starts_with("lead") && [4, 8, 9, 13].contains(&name.len()) {
+      if (name.starts_with("lead") && [4, 8, 9, 13].contains(&name.len())) || name == "leadc" {
         println!("Copying {} -> ./build/{}", path.display(), name);
         fs::copy(&path, format!("./build/{}", name)).unwrap();
       }

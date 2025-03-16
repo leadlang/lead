@@ -42,7 +42,11 @@ if [ ! -e "$exec_path" ]; then
 fi
 
 if [ $# -gt 0 ] && [ "$(printf %s "$1" | cut -c 1)" = "+" ]; then
-  set -- "${@:2}" 
+  if [ $# -gt 1 ]; then
+    set -- "${@:2}"
+  else
+    set --
+  fi
 fi
 
 if [ $# -eq 0 ]; then
