@@ -22,6 +22,7 @@ console.log(process.env.LEAD_VER || `Created version ${version}`);
 const values = [
   "./Cargo.toml",
   "./lead/Cargo.toml",
+  "./leadc/Cargo.toml",
   "./leadman/Cargo.toml",
   "./lead_docs/Cargo.toml",
   "./lead_docs_cli/Cargo.toml",
