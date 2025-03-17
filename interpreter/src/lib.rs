@@ -16,6 +16,9 @@ pub mod macros;
 pub mod runtime;
 pub use runtime::RuntimeValue;
 
+#[cfg(feature = "phf")]
+pub use phf;
+
 mod ipreter;
 #[macro_use]
 pub mod package;
@@ -42,7 +45,7 @@ static RUNTIME: LazyLock<Runtime> = LazyLock::new(||
     .expect("Unable to build async runtime")
 );
 
-pub trait Package {
+pub trait Package: Sync {
   fn name(&self) -> &'static [u8];
 
   fn doc(&self) -> HashMap<&'static str, &'static [&'static str; 3]> {

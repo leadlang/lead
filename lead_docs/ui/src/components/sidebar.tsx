@@ -6,12 +6,13 @@ export function Sidebar() {
   const leadCore = useLeadLang();
 
   return <div className="bg-background/70 h-limits flex justify-center rounded-md shadow-xl overflow-hidden">
-    <ul className="menu menu-xs flex-col w-80 flex-nowrap bg-inherit/70 text-foreground gap-1 overflow-scroll">
+    <ul className="menu menu-md flex-col w-80 flex-nowrap bg-inherit/70 text-foreground gap-1 overflow-scroll">
       <li><button className={page.r == "home" ? "active" : ""} onClick={() => window.setPage({
         r: "home",
         p1: 0,
         p2: "",
-        p3: ""
+        p3: "",
+        rt: false
       })}>🏠 Home</button></li>
       {/* Core */}
       <PackageArray prefix="lead" data={leadCore} summary="📚 Core Libraries" />
@@ -66,12 +67,39 @@ function PackageArray({ data, prefix, summary }: Props) {
                                           r: prefix,
                                           p1: item_index,
                                           p2: name,
-                                          p3: n
+                                          p3: n,
+                                          rt: false
                                         })}
                                       >{n.substring(0, 15)}{n.length > 15 ? "..." : ""}</button>
                                     </li>
                                   ))
                               }
+                              {Object.keys(item.runtimes).length > 0 && <li>
+                                <details>
+                                  <summary className={addApply(page.r == prefix && page.rt && page.p1 == item_index)}>📚 RuntimeValues</summary>
+
+                                  <ul>
+                                    {
+                                      Object.entries(item.runtimes)
+                                        .sort(([a,], [b,]) => a.localeCompare(b))
+                                        .map(([n,]) => (
+                                          <li key={`rt${item.name}${name}${n}`}>
+                                            <button
+                                              className={addApply(page.r == prefix && page.rt && page.p1 == item_index && page.p2 == name && page.p3 == n)}
+                                              onClick={() => window.setPage({
+                                                r: prefix,
+                                                p1: item_index,
+                                                p2: name,
+                                                p3: n,
+                                                rt: true
+                                              })}
+                                            >{n.substring(0, 15)}{n.length > 15 ? "..." : ""}</button>
+                                          </li>
+                                        ))
+                                    }
+                                  </ul>
+                                </details>
+                              </li>}
                             </ul>
                           </details>
                         </li>

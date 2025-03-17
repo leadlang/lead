@@ -1,4 +1,4 @@
-use std::sync::LazyLock;
+use std::{collections::HashMap, sync::LazyLock};
 
 use cursive::{
   theme::{BaseColor, Color, PaletteColor},
@@ -9,7 +9,7 @@ use cursive::{
 use cursive_syntect::parse;
 use syntect::{easy::HighlightLines, highlighting::ThemeSet, parsing::SyntaxSet};
 
-use super::{home, ApplicationRoot, ApplicationState, RawPtr};
+use super::{home, ApplicationRoot, ApplicationState, RawPtr, TypeOfAction};
 use crate::utils::{
   docs::{self, PackageEntry},
   package::Package,
@@ -41,7 +41,7 @@ pub fn select_pkg(c: &mut Cursive) {
         c.pkg = Some(pkg);
       });
 
-      open_pkg(c);
+      select_rt_or_fn(c);
     })
     .full_screen();
 
@@ -54,27 +54,77 @@ pub fn select_pkg(c: &mut Cursive) {
   );
 }
 
-pub fn open_pkg(c: &mut Cursive) {
+pub fn select_rt_or_fn(c: &mut Cursive) {
   while let Some(_) = c.pop_layer() {}
 
   let page: &mut ApplicationState = c.user_data().unwrap();
   page.step = 2;
 
-  let pkg = &page.pkg.as_ref().unwrap();
+  let handle = |c: &mut Cursive, r#type: TypeOfAction| {
+    while let Some(_) = c.pop_layer() {}
 
-  let doc = &pkg.doc;
-  let name = &pkg.name as *const _;
+    c.with_user_data(move |c: &mut ApplicationState| {
+      c.r#type = Some(r#type);
+    });
+
+    open_pkg(c);
+  };
+
+  c.add_layer(
+    Dialog::around(
+      SelectView::new()
+        .item("📚 Functions", TypeOfAction::Function)
+        .item("📦 Runtime Values", TypeOfAction::RuntimeValue)
+        .on_submit(move |c, v| {
+          handle(c, *v);
+        })
+        .scrollable()
+        .fixed_size((20, 6)),
+    )
+    .title("Select")
+    .button("↰ Back", |siv| select_pkg(siv))
+    .dismiss_button("Close"),
+  );
+}
+
+fn iterate<'a>(app: *const ApplicationState) -> Box<dyn Iterator<Item = ((String, String), &'a HashMap<&'a str, &'a str>)>> {
+  let app = unsafe { &*app };
+
+  let rt = app.pkg.as_ref().unwrap();
+
+  match app.r#type.as_ref().unwrap() {
+    TypeOfAction::Function => Box::new(rt.doc.iter().map(|(k, v)| ((k.to_owned(), k.to_owned()), v))),
+    TypeOfAction::RuntimeValue => {
+      Box::new(
+        rt.runtimes
+          .iter()
+          .map(|(k1, (k2, data))| 
+            ((k1.to_string(), format!("{k2} / {k1}")), data)
+          )
+      )
+    }
+  }
+}
+
+pub fn open_pkg(c: &mut Cursive) {
+  while let Some(_) = c.pop_layer() {}
+
+  let page: &mut ApplicationState = c.user_data().unwrap();
+  page.step = 3;
+
+  let pkg = iterate(page);
+
+  let name = &page.pkg.as_ref().unwrap().name as *const _;
 
   let view = SelectView::new()
     .with(|c| {
-      for (k, _) in doc {
-        c.add_item(k, RawPtr(k as &str as *const str));
+      for ((k1, k2), _) in pkg {
+        c.add_item(k1, k2);
       }
     })
-    .on_submit(|c: &mut Cursive, v: &RawPtr<str>| {
-      let st = v.0;
+    .on_submit(|c: &mut Cursive, v: &String| {
       let state = c.user_data::<ApplicationState>().unwrap();
-      state.to_open = Some(RawPtr(st));
+      state.to_open = Some(v.clone());
 
       sel_method(c);
     })
@@ -83,7 +133,7 @@ pub fn open_pkg(c: &mut Cursive) {
   c.add_layer(
     Dialog::around(view.scrollable())
       .title(unsafe { &*name })
-      .button("↰ Back", |siv| select_pkg(siv))
+      .button("↰ Back", |siv| select_rt_or_fn(siv))
       .dismiss_button("Close")
       .full_screen(),
   );
@@ -92,15 +142,15 @@ pub fn open_pkg(c: &mut Cursive) {
 pub fn sel_method(c: &mut Cursive) {
   while let Some(_) = c.pop_layer() {}
 
-  let page: &mut ApplicationState = c.user_data().unwrap();
-  page.step = 3;
+  let page: &mut ApplicationState = unsafe { &mut *(c as *mut _) as &mut Cursive }.user_data().unwrap();
+  page.step = 5;
 
-  let name = unsafe { &*page.to_open.as_ref().unwrap().0 };
+  let name = &*page.to_open.as_ref().unwrap() as &str;
 
-  let pkg = &page.pkg.as_ref().unwrap();
-
-  let doc = &pkg.doc;
-  let doc = doc.get(name).unwrap();
+  let doc = match page.r#type.as_ref().unwrap() {
+    TypeOfAction::RuntimeValue => page.pkg.as_ref().unwrap().runtimes.get(name).and_then(|x| Some(&x.1)),
+    TypeOfAction::Function => page.pkg.as_ref().unwrap().doc.get(name),
+  }.unwrap();
 
   let view = SelectView::new()
     .with(|c| {
@@ -131,19 +181,17 @@ static THEMES: LazyLock<ThemeSet> = LazyLock::new(|| ThemeSet::load_defaults());
 pub fn show_doc(c: &mut Cursive) {
   while let Some(_) = c.pop_layer() {}
 
-  let page: &mut ApplicationState = c.user_data().unwrap();
-  page.step = 4;
+  let page: &mut ApplicationState = unsafe { &mut *(c as *mut _) as &mut Cursive }.user_data().unwrap();
+  page.step = 6;
 
-  let name = unsafe { &*page.to_open.as_ref().unwrap().0 };
+  let name = &*page.to_open.as_ref().unwrap() as &str;
 
-  let pkg = &page.pkg.as_ref().unwrap();
+  let doc = match page.r#type.as_ref().unwrap() {
+    TypeOfAction::RuntimeValue => page.pkg.as_ref().unwrap().runtimes.get(name).and_then(|x| Some(&x.1)),
+    TypeOfAction::Function => page.pkg.as_ref().unwrap().doc.get(name),
+  }.unwrap();
 
-  let doc = &pkg.doc;
-
-  let doc = doc.get(name).unwrap();
-  let doc = doc
-    .get(unsafe { &*page.to_show_doc.as_ref().unwrap().0 })
-    .unwrap();
+  let doc = doc.get(unsafe { &*page.to_show_doc.as_ref().unwrap().0 as &str }).unwrap();
 
   // Important to make rust not mad
   let doc = doc as *const &str;

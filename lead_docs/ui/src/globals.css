@@ -94,3 +94,7 @@
     @apply font-sans antialiased bg-accent text-foreground;
   }
 }
+
+.menu :where(li ul) {
+  margin-inline-start: 3px !important;
+}

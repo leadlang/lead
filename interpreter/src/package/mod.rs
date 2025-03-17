@@ -29,27 +29,38 @@ macro_rules! exports {
       $($key:literal = $val:ident),*
     }
   ) => {
+    use interpreter::phf;
+
     #[no_mangle]
     pub fn ver() -> u16 {
       interpreter::VERSION_INT
     }
 
+    static MODULES: &[&dyn interpreter::Package] = &[
+      $(interpreter::generate!(-> $x)),+
+    ];
+
+    static RUNTIMES: interpreter::phf::Map<&'static str, &'static dyn interpreter::runtime::RuntimeValue> = interpreter::phf::phf_map! {
+      $($key => $val::new_const()),*
+    };
+
     #[no_mangle]
-    pub fn modules() -> Vec<Box<dyn interpreter::Package>> {
-      use interpreter::Package;
-      vec![$(interpreter::generate!(-> $x),)*]
+    pub fn modules() -> &'static [&'static dyn interpreter::Package] {
+      MODULES
     }
 
     #[no_mangle]
-    #[allow(unused_mut)]
-    pub fn runtimes() -> std::collections::HashMap<&'static str, Box<dyn interpreter::runtime::RuntimeValue>> {
-      let mut coll = std::collections::HashMap::new();
+    pub fn runtimes(id: &str) -> interpreter::phf::map::Entries<'static, &'static str, &'static dyn interpreter::runtime::RuntimeValue> {
+      RUNTIMES.entries()
+    }
 
-      $(
-        coll.insert($key, $val);
-      )*
+    #[no_mangle]
+    pub fn runtime(id: &str) -> Option<&'static dyn interpreter::runtime::RuntimeValue> {
+      let Some(rt) = RUNTIMES.get(id) else {
+        return None;
+      };
 
-      coll
+      Some(*rt)
     }
   };
 }
@@ -57,24 +68,13 @@ macro_rules! exports {
 #[macro_export]
 macro_rules! generate {
   ($($x:ident),*) => {
-    #[no_mangle]
-    pub fn ver() -> u16 {
-      interpreter::VERSION_INT
-    }
-
-    #[no_mangle]
-    pub fn modules() -> &'static [Box<dyn interpreter::Package>] {
-      use interpreter::Package;
-      Box::leak(Box::new([$(generate!(-> $x)),+])) as &'static mut [Box<dyn interpreter::Package>]
-    }
-
-    #[no_mangle]
-    pub fn runtimes() -> std::collections::HashMap<&'static str, Box<dyn interpreter::runtime::RuntimeValue>> {
-      std::collections::HashMap::new()
-    }
+    interpreter::exports!(
+      packages = $($x),*;
+      runtimes = {}
+    );
   };
 
   (-> $x:ident) => {
-    Box::new($x) as Box<dyn interpreter::Package>
+    &$x
   };
 }

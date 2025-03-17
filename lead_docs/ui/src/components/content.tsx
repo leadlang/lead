@@ -18,7 +18,8 @@ function useMarkdown(): string {
     p1,
     p2,
     p3,
-    r
+    r,
+    rt
   } = usePage();
 
   const lead = useLeadLang();
@@ -39,9 +40,19 @@ function useMarkdown(): string {
 <h5 class="text-muted-foreground" style="text-align:center;margin-top:auto;">Rendered using markdown!</h5></div>
       `;
     case "lead":
-      return lead[p1].doc[p2][p3];
+      if (rt) {
+        return lead[p1].runtimes[p2][1][p3];
+      }
+      else {
+        return lead[p1].doc[p2][p3];
+      }
     case "ws":
-      return ws[p1].doc[p2][p3];
+      if (rt) {
+        return ws[p1].runtimes[p2][1][p3];
+      }
+      else {
+        return ws[p1].doc[p2][p3];
+      }
     default:
       return `# Not Found`
   }

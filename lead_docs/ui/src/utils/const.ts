@@ -11,6 +11,7 @@ export interface Page {
   p1: number;
   p2: string;
   p3: string;
+  rt: boolean;
 }
 
 export interface Package {
@@ -19,6 +20,14 @@ export interface Package {
     [key: string]: {
       [key: string]: string
     }
+  },
+  runtimes: {
+    [key: string]: [
+      string,
+      {
+        [key: string]: string
+      }
+    ]
   }
 }
 

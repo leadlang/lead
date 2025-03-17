@@ -1,7 +1,7 @@
 use cursive::{
   event::Key, menu::Tree, theme::Theme, view::{Resizable, Scrollable}, views::{Dialog, SelectView, TextContent, TextView}, Cursive, CursiveExt
 };
-use select::{open_pkg, sel_method, select_pkg, show_doc};
+use select::{open_pkg, sel_method, select_pkg, select_rt_or_fn, show_doc};
 
 use crate::utils::package::Package;
 
@@ -16,9 +16,16 @@ pub struct ApplicationState {
   step: u8,
   root: Option<ApplicationRoot>,
   pkg: Option<Package>,
-  to_open: Option<RawPtr<str>>,
+  r#type: Option<TypeOfAction>,
+  to_open: Option<String>,
   to_show_doc: Option<RawPtr<str>>,
   theme: Theme,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum TypeOfAction {
+  RuntimeValue,
+  Function,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -37,6 +44,7 @@ pub fn run_cursive() {
     to_open: None,
     to_show_doc: None,
     theme: Theme::retro(),
+    r#type: None
   });
 
   siv.set_autohide_menu(false);
@@ -91,9 +99,10 @@ pub fn run_cursive() {
         }
         1 => home(c),
         2 => select_pkg(c),
-        3 => open_pkg(c),
-        4 => sel_method(c),
-        5 => show_doc(c),
+        3 => select_rt_or_fn(c),
+        4 => open_pkg(c),
+        5 => sel_method(c),
+        6 => show_doc(c),
         _ => {}
       }
     })
