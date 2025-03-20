@@ -360,7 +360,7 @@ pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
     .join(",\n");
   
   let data = format!("
-    fn map(&self) -> interpreter::phf::Map<&'static str, &'static [&'static str; 3]> {{
+    fn doc(&self) -> interpreter::phf::Map<&'static str, &'static [&'static str; 3]> {{
       interpreter::phf::phf_map! {{
         {doc}
       }}
@@ -372,7 +372,7 @@ pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
       args: *const [*const str],
       heap: interpreter::types::HeapWrapper,
       file: &String,
-      opt: &mut Options,
+      opt: &mut interpreter::types::Options,
     ) -> Option<()> {{
       match caller {{
         {methods},

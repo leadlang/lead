@@ -59,7 +59,7 @@ macro_rules! runtime_value {
     }
 
     impl $struct {
-      const fn new_const() -> Self {
+      pub const fn new_const() -> Self {
         Self {
           $(
             $x: None
@@ -67,7 +67,7 @@ macro_rules! runtime_value {
         }
       }
 
-      fn new(
+      pub fn new(
         $(
           $x: $y
         ),*
