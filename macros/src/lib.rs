@@ -67,6 +67,50 @@ impl Documentation {
 }
 
 #[proc_macro_attribute]
+/// Defines a callable lead function
+/// 
+/// ```rs
+/// use interpreter::BufValue;
+/// 
+/// #[define((
+///   desc: "Prints a variable",
+///   notes: Some("Optional Note"),
+///   params: [
+///     // "my-custom-regex, see example below",
+///     r"\$[a-z0-9_]*" // This is a regex of a lead variable
+///   ],
+///   returns: Some("%null"), // %null means that it returns nothing
+///   usage: [
+///     (
+///       desc: "Prints $hello",
+///       code: "print $hello"
+///     )
+///   ]
+///   root: Some("MyNewRT"), // This is a method on a RuntimeValue
+/// ))]
+/// fn foo(var: &BufValue) {
+///   println!("{}", var.display());
+/// }
+/// ```
+/// 
+/// ## `returns` field
+/// A few command returns field values are
+/// - `*`: Returns Anything / Runtime Type
+/// - `%null`: Returns Nothing
+/// - `@rt:name`: Returns the RuntimeValue named `name`
+/// - `int`: Int
+/// - `u_int`: UInt
+/// - `F`: Float
+/// - `S`: String
+/// - `B`: boolean
+/// - `Arr`: Array
+/// - `Obj`: Object
+/// - `Fa`: Faillable
+/// - `*ptr`: Raw **Immutable** Pointer
+/// - `*m ptr`: Raw **Mutable** Pointer
+/// - `JoinHandle`: Async Task
+/// - `Listener`: Returns Listener that can be used to listen for events
+/// - `RtRAW`: Returns RAWRuntime Values (You shouldn't return a RawRTValue::PKG and should focus on RuntimeValues ONLY!)
 pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
   let Either::Ok((mut doc, regex_params, ret, root)) = utils::parse_args(args.to_string().as_str()) else {
     return TokenStream::new();
@@ -293,6 +337,55 @@ pub fn gendoc(args: TokenStream, input: TokenStream) -> TokenStream {
     
     #vis #s #block
   }.into()
+}
+
+#[proc_macro]
+pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
+  let item = item.to_string();
+
+  let methods = item.split(",").into_iter()
+    .map(|x| {
+      let (x, y) = x.trim().split_once("=").unwrap();
+      format!("\"{}\" => {}(self, args, heap, file, opt)", x, y)
+    })
+    .collect::<Vec<_>>()
+    .join(",\n");
+
+  let doc = item.split(",").into_iter()
+    .map(|x| {
+      let (y, x) = x.trim().split_once("=").unwrap();
+      format!("\"{}\" => _inner_callable_{}_doc", y, x)
+    })
+    .collect::<Vec<_>>()
+    .join(",\n");
+  
+  let data = format!("
+    fn doc(&self) -> std::collections::HashMap<&'static str, &'static [&'static str; 3]> {{
+      interpreter::hashmap! {{
+        {doc}
+      }}
+    }}
+
+    fn call_ptr(
+      &mut self,
+      caller: &str,
+      args: *const [*const str],
+      heap: interpreter::types::HeapWrapper,
+      file: &String,
+      opt: &mut Options,
+    ) -> Option<()> {{
+      match caller {{
+        {methods},
+        _ => {{
+          return None;
+        }}
+      }}
+
+      Some(())
+    }}
+  ");
+
+  TokenStream::from_str(&data).unwrap()
 }
 
 #[proc_macro]
