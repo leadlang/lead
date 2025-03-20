@@ -54,8 +54,30 @@ macro_rules! runtime_value {
   ) => {
     pub struct $struct {
       $(
-        pub $x: $y
+        pub $x: Option<$y>
       ),*
+    }
+
+    impl $struct {
+      const fn new_const() -> Self {
+        Self {
+          $(
+            $x: None
+          ),*
+        }
+      }
+
+      fn new(
+        $(
+          $x: $y
+        ),*
+      ) -> Self {
+        Self {
+          $(
+            $x: Some($x)
+          ),*
+        }
+      }
     }
 
     impl interpreter::RuntimeValue for $struct {
@@ -77,7 +99,9 @@ macro_rules! document {
 macro_rules! function {
   ($name:literal, $($x:tt)*) => {
     {
-      ($name, $($x)*
+      (
+        $name, 
+        $($x)*
       )
     }
   };

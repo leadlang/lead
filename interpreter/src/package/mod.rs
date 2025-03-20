@@ -29,8 +29,6 @@ macro_rules! exports {
       $($key:literal = $val:ident),*
     }
   ) => {
-    use interpreter::phf;
-
     #[no_mangle]
     pub fn ver() -> u16 {
       interpreter::VERSION_INT
@@ -41,7 +39,7 @@ macro_rules! exports {
     ];
 
     static RUNTIMES: interpreter::phf::Map<&'static str, &'static dyn interpreter::runtime::RuntimeValue> = interpreter::phf::phf_map! {
-      $($key => $val::new_const()),*
+      $($key => &$val::new_const()),*
     };
 
     #[no_mangle]

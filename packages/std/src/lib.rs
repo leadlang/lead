@@ -4,7 +4,7 @@
 mod io;
 use io::*;
 
-use interpreter::exports;
+use interpreter::{phf, exports};
 
 // generate!(Fs, IO, AHQ);
 exports! {

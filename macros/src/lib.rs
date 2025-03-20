@@ -360,8 +360,8 @@ pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
     .join(",\n");
   
   let data = format!("
-    fn doc(&self) -> std::collections::HashMap<&'static str, &'static [&'static str; 3]> {{
-      interpreter::hashmap! {{
+    fn map(&self) -> interpreter::phf::Map<&'static str, &'static [&'static str; 3]> {{
+      interpreter::phf::phf_map! {{
         {doc}
       }}
     }}

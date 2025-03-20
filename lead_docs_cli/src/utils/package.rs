@@ -70,8 +70,8 @@ impl Package {
         let name = val.name();
         let docs = val.doc();
 
-        let docs: HashMap<&'static str, &'static str> = docs.into_iter()
-          .map(|(k, v)| (k, &v[2] as &'static str))
+        let docs: HashMap<&'static str, &'static str> = docs.entries()
+          .map(|(k, v)| (*k, &v[2] as &'static str))
           .collect();
 
         runtimes.insert(*key, (name, docs));

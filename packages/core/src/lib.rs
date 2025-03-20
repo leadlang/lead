@@ -4,6 +4,7 @@ use core::str;
 use std::env;
 
 use interpreter::{
+  phf,
   error, generate, module, pkg_name,
   types::{BufValue, HeapWrapper, Options},
 };
