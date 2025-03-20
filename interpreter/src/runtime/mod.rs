@@ -8,6 +8,8 @@ pub type RuntimeMethodRes = HashMap<&'static str, (&'static str, PackageCallback
 pub mod _root_syntax;
 
 pub trait RuntimeValue: Sync {
+  const fn new_const() -> Self;
+
   fn name(&self) -> &'static str;
 
   fn doc(&self) -> HashMap<&'static str, &'static [&'static str; 3]>;
