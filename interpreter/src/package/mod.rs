@@ -42,13 +42,11 @@ macro_rules! exports {
       $(
         static [<$val _STATIC>]: &'static dyn interpreter::runtime::RuntimeValue = &$val::new_const();
       )*
-    }
-
-    static RUNTIMES: interpreter::phf::Map<&'static str, &'static dyn interpreter::runtime::RuntimeValue> = interpreter::phf::phf_map! {
-      interpreter::paste! {
+      
+      static RUNTIMES: interpreter::phf::Map<&'static str, &'static dyn interpreter::runtime::RuntimeValue> = interpreter::phf::phf_map! {
         $($key => [<$val _STATIC>]),*
-      }
-    };
+      };
+    }
 
     #[no_mangle]
     pub fn modules() -> &'static [&'static dyn interpreter::Package] {
