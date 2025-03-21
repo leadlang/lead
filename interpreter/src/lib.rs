@@ -10,6 +10,8 @@ use std::{
   sync::LazyLock
 };
 
+pub use paste::paste;
+
 #[macro_use]
 pub mod macros;
 

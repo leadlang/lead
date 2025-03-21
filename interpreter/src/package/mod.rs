@@ -38,8 +38,16 @@ macro_rules! exports {
       $(interpreter::generate!(-> $x)),+
     ];
 
+    interpreter::paste! {
+      $(
+        static [<$val _STATIC>]: $val = $val::new_const();
+      )*
+    }
+
     static RUNTIMES: interpreter::phf::Map<&'static str, &'static dyn interpreter::runtime::RuntimeValue> = interpreter::phf::phf_map! {
-      $($key => &$val::new_const()),*
+      interpreter::paste! {
+        $($key => &[<$val _STATIC>]),*
+      }
     };
 
     #[no_mangle]
