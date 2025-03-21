@@ -40,7 +40,7 @@ macro_rules! exports {
 
     interpreter::paste! {
       $(
-        static [<$val _STATIC>]: &'static $val = &$val::new_const();
+        static [<$val _STATIC>]: &'static dyn interpreter::runtime::RuntimeValue = &$val::new_const();
       )*
     }
 
