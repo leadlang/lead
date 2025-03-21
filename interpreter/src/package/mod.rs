@@ -40,13 +40,13 @@ macro_rules! exports {
 
     interpreter::paste! {
       $(
-        static [<$val _STATIC>]: $val = $val::new_const();
+        static [<$val _STATIC>]: &'static $val = &$val::new_const();
       )*
     }
 
     static RUNTIMES: interpreter::phf::Map<&'static str, &'static dyn interpreter::runtime::RuntimeValue> = interpreter::phf::phf_map! {
       interpreter::paste! {
-        $($key => &[<$val _STATIC>]),*
+        $($key => [<$val _STATIC>]),*
       }
     };
 
