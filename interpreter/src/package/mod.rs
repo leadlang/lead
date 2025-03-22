@@ -44,7 +44,7 @@ macro_rules! exports {
       )*
       
       static RUNTIMES: interpreter::phf::Map<&'static str, &'static dyn interpreter::runtime::RuntimeValue> = interpreter::phf::phf_map! {
-        // $($key => [<$val _STATIC>]),*
+        $($key => [<$val _STATIC>]),*
       };
     }
 
