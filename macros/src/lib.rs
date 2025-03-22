@@ -351,7 +351,7 @@ pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
     .collect::<Vec<_>>()
     .join(",\n");
 
-  let _doc = item.split(",").into_iter()
+  let doc = item.split(",").into_iter()
     .map(|x| {
       let (y, x) = x.trim().split_once("=").unwrap();
       format!("\"{}\" => _inner_callable_{}_doc", y, x)
@@ -360,9 +360,9 @@ pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
     .join(",\n");
   
   let data = format!("
-    fn doc(&self) -> interpreter::phf::Map<&'static str, &'static [&'static str; 3]> {{
-      interpreter::phf::phf_map! {{
-        
+    fn doc(&self) -> std::collections::HashMap<&'static str, &'static [&'static str; 3]> {{
+      interpreter::hashmap! {{
+        {doc}
       }}
     }}
 

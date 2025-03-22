@@ -8,7 +8,7 @@ pub type RuntimeMethodRes = HashMap<&'static str, (&'static str, PackageCallback
 pub mod _root_syntax;
 
 pub trait RuntimeValue: Sync {
-  fn doc(&self) -> phf::Map<&'static str, &'static [&'static str; 3]>;
+  fn doc(&self) -> HashMap<&'static str, &'static [&'static str; 3]>;
 
   fn name(&self) -> &'static str;
 
