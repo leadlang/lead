@@ -32,9 +32,7 @@ pub async fn run_script(meta: Arc<MetaPtr>, class: ScriptClass, print: MultiProg
     .expect("Invalid Metadata");
 
     let script = match class {
-      ScriptClass::Pre => {
-        meta.preinstall
-      },
+      ScriptClass::Pre => meta.preinstall,
       ScriptClass::Post => meta.postinstall,
     };
 

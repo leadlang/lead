@@ -17,14 +17,20 @@ pub fn list_versions() {
   for name in ls_ver() {
     is = true;
 
-    let mut build = fs::read_to_string(format!("{}/versions/{name}/.lbuild", &*LEAD_ROOT_DIR)).unwrap_or_else(|_| "< 6".into());
+    let mut build = fs::read_to_string(format!("{}/versions/{name}/.lbuild", &*LEAD_ROOT_DIR))
+      .unwrap_or_else(|_| "< 6".into());
 
     // 7 digit build is not at all possible
     if build.len() > 7 {
       build = "INVALID".into();
     }
 
-    let leadc = if fs::exists(format!("{}/versions/{name}/leadc{}", &*LEAD_ROOT_DIR, EXE_SUFFIX)).unwrap_or(false) {
+    let leadc = if fs::exists(format!(
+      "{}/versions/{name}/leadc{}",
+      &*LEAD_ROOT_DIR, EXE_SUFFIX
+    ))
+    .unwrap_or(false)
+    {
       "Yes"
     } else {
       "No"
@@ -48,7 +54,9 @@ pub fn list_versions() {
   if !is {
     println!("No version has been installed (yet)!");
   } else {
-    println!("\nNote: `[...args]` refers to additional commands or flags that can be passed to lead");
+    println!(
+      "\nNote: `[...args]` refers to additional commands or flags that can be passed to lead"
+    );
     println!("    * `LeadC` support indicates the presence of leadc{EXE_SUFFIX} in the build");
   }
 }

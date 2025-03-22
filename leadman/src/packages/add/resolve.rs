@@ -1,4 +1,7 @@
-use std::{io::{Cursor, Read}, sync::Arc};
+use std::{
+  io::{Cursor, Read},
+  sync::Arc,
+};
 
 use indicatif::ProgressBar;
 use serde_json::from_str;
