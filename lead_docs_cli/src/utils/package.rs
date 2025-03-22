@@ -70,7 +70,7 @@ impl Package {
         let name = val.name();
         let docs = val.doc();
 
-        let docs: HashMap<&'static str, &'static str> = docs.entries()
+        let docs: HashMap<&'static str, &'static str> = docs.iter()
           .map(|(k, v)| (*k, &v[2] as &'static str))
           .collect();
 

@@ -30,6 +30,15 @@ impl<'a> LanguagePackages<'a> {
     self
   }
 
+  pub fn import_static(&mut self, func: &'static dyn Package) -> &mut Self {
+    let name = String::from_utf8_lossy(func.name());
+    let name: &'static mut str = name.to_string().leak::<'static>();
+    for (key, val) in func.methods() {
+      self.inner.insert(key, (name, *val));
+    }
+    self
+  }
+
   pub fn import<T: Package + 'static>(&mut self, func: T) -> &mut Self {
     self.import_dyn(Box::new(func))
   }

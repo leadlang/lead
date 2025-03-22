@@ -31,7 +31,7 @@ static mut LIBS: Option<HashMap<usize, Package>> = None;
 static PT_LIBS: LazyLock<Arc<Mutex<HashMap<String, Package>>>> = LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 struct Package {
-  modules: fn() -> Vec<Box<dyn Pkg>>,
+  modules: &'static [&'static dyn Pkg],
   _lib: Library,
 }
 
@@ -55,11 +55,11 @@ impl Package {
       }
 
       let f = library
-        .get::<fn() -> Vec<Box<dyn Pkg>>>(b"modules")
+        .get::<fn() -> &'static [&'static dyn Pkg]>(b"modules")
         .expect("Unable to get module export");
 
       Self {
-        modules: *f,
+        modules: f(),
         _lib: library,
       }
     }
@@ -97,7 +97,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
         .expect("Unable to get package name");
 
       if let Some(x) = libs.get(pkg) {
-        for module in (x.modules)() {
+        for module in (x.modules) {
           out.push(RespPackage {
             methods: module.methods()
           });
@@ -105,7 +105,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
       } else {
         let pkg = Package::new(pkg, options.prod);
 
-        for module in (pkg.modules)() {
+        for module in (pkg.modules) {
           out.push(RespPackage {
             methods: module.methods()
           });
@@ -154,10 +154,10 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
   let libs = unsafe { (&mut *addr_of_mut!(LIBS)).as_mut().unwrap() };
 
   for (_, a) in libs.iter() {
-    let pkgs = (a.modules)();
+    let pkgs = (a.modules);
 
     for pkg in pkgs {
-      application.add_pkg_box(pkg);
+      application.add_pkg_static(*pkg);
     }
   }
 

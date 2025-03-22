@@ -36,7 +36,7 @@ pub use tokio;
 
 pub use lealang_chalk_rs::Chalk;
 
-pub static VERSION_INT: u16 = 6;
+pub static VERSION_INT: u16 = 7;
 
 static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| 
   Builder::new_multi_thread()
@@ -117,6 +117,11 @@ impl<'a> Application<'a> {
 
   pub fn add_pkg<T: Package + 'static>(&mut self, package: T) -> &mut Self {
     self.pkg.import(package);
+    self
+  }
+
+  pub fn add_pkg_static(&mut self, package: &'static dyn Package) -> &mut Self {
+    self.pkg.import_static(package);
     self
   }
 
