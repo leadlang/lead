@@ -54,7 +54,7 @@ macro_rules! exports {
     }
 
     #[no_mangle]
-    pub fn runtimes(id: &str) -> interpreter::phf::map::Entries<'static, &'static str, &'static dyn interpreter::runtime::RuntimeValue> {
+    pub fn runtimes() -> interpreter::phf::map::Entries<'static, &'static str, &'static dyn interpreter::runtime::RuntimeValue> {
       RUNTIMES.entries()
     }
 
