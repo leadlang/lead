@@ -32,10 +32,7 @@ export function PageProvider({ children }: { children: ReactNode }) {
     getCore().then(setLLRoot);
 
     if (window.workspace) {
-      getWS().then((s) => {
-        console.log(s);
-        setWSRoot(s);
-      });
+      getWS().then(setWSRoot);
     }
   }, []);
 
