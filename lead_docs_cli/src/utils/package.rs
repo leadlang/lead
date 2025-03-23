@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 use super::docs::PackageEntry;
 
+#[derive(Debug)]
 pub struct Package {
   pub name: String,
   pub doc: HashMap<String, HashMap<&'static str, &'static str>>,

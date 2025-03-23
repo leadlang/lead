@@ -54,7 +54,7 @@ pub fn lead_ws() -> Vec<PackageEntry> {
         .expect("Error reading lookup file");
 
       PackageEntry {
-        display: get_display(&dir),
+        display: get_display(&dir[65..]),
         file: format!("./.lead_libs/{dir}/{}{f}{}", DLL_PREFIX, DLL_SUFFIX),
       }
     })

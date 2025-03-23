@@ -9,7 +9,7 @@
   ],
   "keywords": [],
   "dependencies": {
-    "gh:leadlang/pkg": "latest"
+    "gh:leadlang/leadcord": "latest"
   },
   "pkver": 1,
   "allowFullAccessToPackagesNamed": []

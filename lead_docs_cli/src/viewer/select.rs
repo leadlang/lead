@@ -119,7 +119,7 @@ pub fn open_pkg(c: &mut Cursive) {
   let view = SelectView::new()
     .with(|c| {
       for ((k1, k2), _) in pkg {
-        c.add_item(k1, k2);
+        c.add_item(k2, k1);
       }
     })
     .on_submit(|c: &mut Cursive, v: &String| {
@@ -148,7 +148,9 @@ pub fn sel_method(c: &mut Cursive) {
   let name = &*page.to_open.as_ref().unwrap() as &str;
 
   let doc = match page.r#type.as_ref().unwrap() {
-    TypeOfAction::RuntimeValue => page.pkg.as_ref().unwrap().runtimes.get(name).and_then(|x| Some(&x.1)),
+    TypeOfAction::RuntimeValue => {
+      page.pkg.as_ref().unwrap().runtimes.get(name).and_then(|x| Some(&x.1))
+    },
     TypeOfAction::Function => page.pkg.as_ref().unwrap().doc.get(name),
   }.unwrap();
 

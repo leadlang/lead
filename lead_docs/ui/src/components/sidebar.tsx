@@ -1,9 +1,10 @@
 import { Package } from "@/utils/const";
-import { useLeadLang, usePage } from "@/utils/page";
+import { useLeadLang, useWorkspace, usePage } from "@/utils/page";
 
 export function Sidebar() {
   const page = usePage();
   const leadCore = useLeadLang();
+  const workspace = useWorkspace();
 
   return <div className="bg-background/70 h-limits flex justify-center rounded-md shadow-xl overflow-hidden">
     <ul className="menu menu-md flex-col w-80 flex-nowrap bg-inherit/70 text-foreground gap-1 overflow-scroll">

@@ -116,18 +116,6 @@ pub fn run_cursive() {
           .button("Yes", |c| c.quit()),
       );
     })
-    // .add_subtree(
-    //   "☁ Theme",
-    //   Tree::new()
-    //     .leaf("☈ Default", |c| {
-    //       c.set_theme(Theme::retro());
-    //       c.user_data::<ApplicationState>().unwrap().theme = Theme::retro();
-    //     })
-    //     .leaf("☀ Bicolor Terminal", |c| {
-    //       c.set_theme(Theme::terminal_default());
-    //       c.user_data::<ApplicationState>().unwrap().theme = Theme::terminal_default();
-    //     }),
-    // )
     .add_delimiter()
     .add_leaf("<select>", |_| {});
 
