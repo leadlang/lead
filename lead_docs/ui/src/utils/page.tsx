@@ -1,11 +1,12 @@
-import { createContext, ReactNode, use, useEffect, useState } from "react";
-import { getCore, getWS, Package, Page as PageINTL } from "./const";
+import { createContext, ReactNode, use, useEffect, useState } from 'react';
+import { getCore, getWS, Package, Page as PageINTL } from './const';
 
 export const Page = createContext<PageINTL>({
-  r: "home",
+  rt: false,
+  r: 'home',
   p1: 0,
-  p2: "",
-  p3: ""
+  p2: '',
+  p3: '',
 });
 export const usePage = () => use(Page);
 
@@ -17,10 +18,11 @@ export const useWorkspace = () => use(WorkspaceRoot);
 
 export function PageProvider({ children }: { children: ReactNode }) {
   const [page, setPage] = useState({
-    r: "home",
+    rt: false,
+    r: 'home',
     p1: 0,
-    p2: "",
-    p3: ""
+    p2: '',
+    p3: '',
   });
 
   const [rootLL, setLLRoot] = useState<Package[]>([]);
@@ -30,17 +32,22 @@ export function PageProvider({ children }: { children: ReactNode }) {
     getCore().then(setLLRoot);
 
     if (window.workspace) {
-      getWS().then(setWSRoot);
+      getWS().then((s) => {
+        console.log(s);
+        setWSRoot(s);
+      });
     }
   }, []);
 
   window.setPage = setPage;
 
-  return <Page.Provider value={page}>
-    <LeadLangRoot.Provider value={rootLL}>
-      <WorkspaceRoot.Provider value={rootWS}>
-        {children}
-      </WorkspaceRoot.Provider>
-    </LeadLangRoot.Provider>
-  </Page.Provider>
+  return (
+    <Page.Provider value={page}>
+      <LeadLangRoot.Provider value={rootLL}>
+        <WorkspaceRoot.Provider value={rootWS}>
+          {children}
+        </WorkspaceRoot.Provider>
+      </LeadLangRoot.Provider>
+    </Page.Provider>
+  );
 }

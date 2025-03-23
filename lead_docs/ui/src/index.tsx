@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-import "./globals.css"
+import './globals.css';
 import { initTheme } from './utils/theme';
 import { Page } from './utils/const';
 

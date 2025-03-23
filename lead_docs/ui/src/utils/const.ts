@@ -1,8 +1,8 @@
 export default function root() {
-  if (window.os == "windows") {
-    return "http://api.localhost"
+  if (window.os == 'windows') {
+    return 'http://api.localhost';
   } else {
-    return "api://localhost"
+    return 'api://localhost';
   }
 }
 
@@ -15,20 +15,20 @@ export interface Page {
 }
 
 export interface Package {
-  name: string,
+  name: string;
   doc: {
     [key: string]: {
-      [key: string]: string
-    }
-  },
+      [key: string]: string;
+    };
+  };
   runtimes: {
     [key: string]: [
       string,
       {
-        [key: string]: string
-      }
-    ]
-  }
+        [key: string]: string;
+      },
+    ];
+  };
 }
 
 export async function getCore(): Promise<Package[]> {

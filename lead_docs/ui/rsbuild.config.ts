@@ -5,11 +5,11 @@ import path from 'path';
 export default defineConfig({
   plugins: [pluginReact()],
   html: {
-    favicon: "./public/icon.png"
+    favicon: './public/icon.png',
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
-    }
-  }
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
 });

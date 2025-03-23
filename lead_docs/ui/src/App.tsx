@@ -9,7 +9,7 @@ const App = () => {
     <PageProvider>
       <NavBar />
 
-      <div className='w-full flex gap-2 mb-2'>
+      <div className="w-full flex gap-2 mb-2">
         <Sidebar />
         <Content />
       </div>
