@@ -20,7 +20,7 @@ export function Sidebar() {
 
       {
         window.workspace
-          ? <PackageArray prefix="ws" data={leadCore} summary="⚒️ Workspace" />
+          ? <PackageArray prefix="ws" data={workspace} summary="⚒️ Workspace" />
           : <li><button disabled className="cursor-default">⚒️ Workspace (Not Found)</button></li>
       }
     </ul>
