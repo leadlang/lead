@@ -89,6 +89,15 @@ impl PartialEq for AnyWrapper {
   }
 }
 
+#[derive(PartialEq, Debug)]
+pub struct StrPointer(pub *const str);
+
+impl ToString for StrPointer {
+  fn to_string(&self) -> String {
+    unsafe { (*self.0).to_string() }
+  }
+}
+
 #[allow(non_camel_case_types)]
 #[derive(PartialEq, Debug)]
 pub enum BufValue {
@@ -100,6 +109,7 @@ pub enum BufValue {
   Array(Vec<Self>),
   Object(HashMap<String, Box<Self>>),
   Faillable(Result<Box<Self>, String>),
+  StrPointer(StrPointer),
   Pointer(*const Self),
   PointerMut(*mut Self),
   Runtime(AnyWrapper),
@@ -110,6 +120,29 @@ pub enum BufValue {
 
 unsafe impl Send for BufValue {}
 unsafe impl Sync for BufValue {}
+
+macro_rules! implement_buf {
+  ($($i:ident => $x:ty),*) => {
+    $(
+      impl From<$x> for BufValue {
+        fn from(item: $x) -> Self {
+          Self::$i(item)
+        }
+      }
+    )*
+  };
+}
+
+implement_buf! {
+  Str => String,
+  Int => i64,
+  U_Int => u64,
+  Float => f64,
+  Bool => bool,
+  StrPointer => StrPointer,
+  Runtime => AnyWrapper,
+  AsyncTask => AppliesEq<JoinHandle<Self>>
+}
 
 pub struct UnsafeSend<F>(pub F);
 
@@ -166,7 +199,7 @@ impl BufValue {
       BufValue::Int(_) => "int".to_string(),
       BufValue::U_Int(_) => "u_int".to_string(),
       BufValue::Object(_) => "object".to_string(),
-      BufValue::Str(_) => "string".to_string(),
+      BufValue::StrPointer(_) | BufValue::Str(_) => "string".to_string(),
       BufValue::Faillable(res) => match res {
         Ok(t) => format!("<success {}>", t.type_of()),
         Err(t) => format!("<err {}>", &t),
@@ -207,6 +240,7 @@ impl BufValue {
       BufValue::U_Int(u) => u.to_string(),
       BufValue::Object(c) => format!("{c:#?}"),
       BufValue::Str(c) => c.to_string(),
+      BufValue::StrPointer(c) => c.to_string(),
       e => e.type_of()
     }
   }
