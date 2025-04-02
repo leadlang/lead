@@ -1,8 +1,8 @@
 use crate::Package;
 use lealang_chalk_rs::Chalk;
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
-use super::{HeapWrapper, Options};
+use super::{set_into_extends, ExtendsInternal, HeapWrapper, Options};
 
 //pub trait DynPackageCallback = FnMut(&Args, &mut Heap, &mut bool);
 pub type Args = *const [*const str];
@@ -12,12 +12,14 @@ pub type MethodRes = &'static [(&'static str, PackageCallback)];
 
 pub struct LanguagePackages<'a> {
   pub inner: HashMap<&'static str, (&'a str, PackageCallback)>,
+  pub(crate) extends: Arc<ExtendsInternal>
 }
 
 impl<'a> LanguagePackages<'a> {
   pub fn new() -> Self {
     Self {
       inner: HashMap::new(),
+      extends: Arc::new(ExtendsInternal::default()),
     }
   }
 
@@ -27,6 +29,14 @@ impl<'a> LanguagePackages<'a> {
     for (key, val) in func.methods() {
       self.inner.insert(key, (name, *val));
     }
+
+    // SAFETY: These functions cannot be called when the Arc is in use
+    let ext = unsafe {
+      Arc::get_mut_unchecked(&mut self.extends)
+    };
+
+    set_into_extends(func.prototype(), ext);
+
     self
   }
 
@@ -36,6 +46,14 @@ impl<'a> LanguagePackages<'a> {
     for (key, val) in func.methods() {
       self.inner.insert(key, (name, *val));
     }
+
+    // SAFETY: These functions cannot be called when the Arc is in use
+    let ext = unsafe {
+      Arc::get_mut_unchecked(&mut self.extends)
+    };
+
+    set_into_extends(func.prototype(), ext);
+
     self
   }
 

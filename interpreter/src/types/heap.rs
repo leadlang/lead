@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt::Debug, collections::HashMap, future::Future, pin::Pin};
+use std::{borrow::Cow, collections::HashMap, fmt::Debug, future::Future, pin::Pin, sync::Arc};
 
 use crate::{
   error,
@@ -6,7 +6,7 @@ use crate::{
   Application,
 };
 
-use super::{AppliesEq, BufValue, HeapWrapper, Options, PackageCallback};
+use super::{handle_runtime, AppliesEq, BufValue, ExtendsInternal, HeapWrapper, Options, PackageCallback};
 
 pub type HeapInnerMap = HashMap<Cow<'static, str>, BufValue>;
 
@@ -56,8 +56,10 @@ pub fn call_runtime_val<'a>(
   let ptr = get_ptr(heap);
 
   let (key, caller) = key.split_once("::")?;
-  let BufValue::RuntimeRaw(ai, bi) = ptr.get_mut(key)? else {
-    return None;
+
+  let (ai, bi) = match ptr.get_mut(key)? {
+    BufValue::RuntimeRaw(ai, bi) => (ai, bi),
+    val => return handle_runtime(app, val, caller, v, a, c, o),
   };
 
   let data = (ai, bi);
@@ -120,28 +122,34 @@ pub fn call_runtime_val<'a>(
 pub struct Heap {
   data: HeapInnerMap,
   this: Option<*mut Self>,
+  pub(crate) def_extends: Arc<ExtendsInternal>,
+  pub(crate) extends: ExtendsInternal
 }
 
 unsafe impl Send for Heap {}
 unsafe impl Sync for Heap {}
 
 impl Heap {
-  pub fn new() -> Self {
+  pub(crate) fn new(def_extends: Arc<ExtendsInternal>) -> Self {
     Self {
       data: HashMap::new(),
       this: None,
+      def_extends,
+      extends: ExtendsInternal::default()
     }
   }
 
-  pub fn new_with_this(this: *mut Self) -> Self {
+  pub(crate) fn new_with_this(this: *mut Self, def_extends: Arc<ExtendsInternal>) -> Self {
     Self {
       data: HashMap::new(),
       this: Some(this),
+      def_extends,
+      extends: ExtendsInternal::default()
     }
   }
 
   pub fn clear(&mut self) {
-    *self = Self::new();
+    *self = Self::new(self.def_extends.clone());
   }
 
   pub fn inner_heap(&mut self) -> &mut HeapInnerMap {

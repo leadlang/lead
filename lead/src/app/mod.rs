@@ -87,7 +87,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
   let mut application = Application::new(
     &data.entry,
     |path| fs::read(path).expect("Unable to read file"),
-    move |name| {
+    move |name, extends| {
       let mut libs = PT_LIBS.lock()
         .map_or_else(|e| e.into_inner(), |e| e);
 
@@ -99,7 +99,12 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
       if let Some(x) = libs.get(pkg) {
         for module in (x.modules) {
           out.push(RespPackage {
-            methods: module.methods()
+            methods: module.methods(),
+            extends: if extends {
+              Some(module.prototype())
+            } else {
+              None
+            }
           });
         }
       } else {
@@ -107,7 +112,12 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
 
         for module in (pkg.modules) {
           out.push(RespPackage {
-            methods: module.methods()
+            methods: module.methods(),
+            extends: if extends {
+              Some(module.prototype())
+            } else {
+              None
+            }
           });
         }
 

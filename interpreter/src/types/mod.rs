@@ -19,7 +19,7 @@ pub use heap::*;
 pub use heap_wrap::*;
 use tokio::sync::mpsc::UnboundedReceiver;
 
-use crate::runtime::RuntimeValue;
+use crate::{runtime::RuntimeValue, Application};
 
 pub struct RetBufValue(pub BufValue);
 
@@ -96,6 +96,97 @@ impl ToString for StrPointer {
   fn to_string(&self) -> String {
     unsafe { (*self.0).to_string() }
   }
+}
+
+use phf::Map as PhfMap;
+
+macro_rules! extends {
+    (
+      $(
+        $good:ident $x:ident => $y:ty
+      ),*
+    ) => {
+      #[derive(Default, Clone, Debug)]
+      pub(crate) struct ExtendsInternal {
+        $(
+          pub(crate) $x: HashMap<&'static str, fn(*mut $y, Args, HeapWrapper, &String, &mut Options) -> ()>
+        ),*
+      }
+
+      #[derive(Default)]
+      pub struct Extends {
+        $(
+          pub $x: PhfMap<&'static str, fn(*mut $y, Args, HeapWrapper, &String, &mut Options) -> ()>
+        ),*
+      }
+
+      #[derive(Default)]
+      pub struct PrototypeDocs {
+        $(
+          pub $x: HashMap<&'static str, &'static [&'static str; 3]>
+        ),*
+      }
+
+      pub(crate) fn handle_runtime<'a>(
+        app: *mut Application,
+        val: &mut BufValue,
+        caller: &'a str,
+        v: &'a [*const str],
+        a: HeapWrapper,
+        c: &String,
+        o: &'a mut Options,
+      ) -> Option<Output> {
+        let app = unsafe { &mut *app };
+
+        let extends = &app.pkg.extends;
+
+        crate::paste! {
+          match val {
+            $(
+              BufValue::[<$good>](data) => {
+                let scope = &extends.$x;
+
+                let Some(f) = scope.get(caller) else {
+                  return None;
+                };
+
+                f(data as _, v, a, c, o);
+              }
+            )*
+            _ => return None
+          }
+        }
+
+        Some(Output::String("Prototype"))
+      }
+
+      pub(crate) fn set_into_extends(extends: Extends, extends_internal: &mut ExtendsInternal) {
+        $(
+          for (k, v) in extends.$x.into_iter() {
+            if let Some(_) = extends_internal.$x.insert(k, *v) {
+              panic!("{} already exists. Please ensure that you do not have two prototypes with the same name FOR THE WHOLE APPLICATION", k);
+            }
+          }
+        )*
+      }
+    };
+}
+
+extends! {
+  Int int => i64,
+  U_Int uint => u64,
+  Float float => f64,
+  Str str_slice => String,
+  Bool boolean => bool,
+  Array array => Vec<BufValue>,
+  Object object => HashMap<String, Box<BufValue>>,
+  Faillable faillable => Result<Box<BufValue>, String>,
+  StrPointer str_ptr => StrPointer,
+  Pointer ptr => *const BufValue,
+  PointerMut mut_ptr => *mut BufValue,
+  Runtime rt_any => AnyWrapper,
+  AsyncTask async_task => AppliesEq<JoinHandle<BufValue>>,
+  Listener listener => AppliesEq<UnboundedReceiver<BufValue>>
 }
 
 #[allow(non_camel_case_types)]

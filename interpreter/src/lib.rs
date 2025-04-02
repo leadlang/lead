@@ -2,12 +2,10 @@
 #![feature(trait_alias)]
 #![feature(concat_idents)]
 #![feature(macro_metavar_expr)]
+#![feature(get_mut_unchecked)]
 
 use std::{
-  collections::HashMap,
-  process,
-  time::{Duration, Instant},
-  sync::LazyLock
+  collections::HashMap, mem::zeroed, process, sync::LazyLock, time::{Duration, Instant}
 };
 
 pub use paste::paste;
@@ -29,7 +27,7 @@ pub mod val;
 
 pub(crate) use package::*;
 use tokio::runtime::{Builder, Runtime};
-use types::{Heap, LanguagePackages, MethodRes};
+use types::{Extends, ExtendsInternal, Heap, LanguagePackages, MethodRes, PrototypeDocs};
 pub use val::*;
 
 pub use tokio;
@@ -54,6 +52,14 @@ pub trait Package: Sync {
     HashMap::new()
   }
 
+  fn prototype_docs(&self) -> PrototypeDocs {
+    PrototypeDocs::default()
+  }
+
+  fn prototype(&self) -> Extends {
+    Extends::default()
+  }
+
   fn methods(&self) -> MethodRes {
     &[]
   }
@@ -61,18 +67,19 @@ pub trait Package: Sync {
 
 pub struct RespPackage {
   pub methods: MethodRes,
+  pub extends: Option<Extends>
 }
 
 pub struct Application<'a> {
   code: HashMap<String, String>,
-  pkg: LanguagePackages<'a>,
+  pub(crate) pkg: LanguagePackages<'a>,
   entry: &'a str,
   heap: Heap,
 
   // Resolve files
   module_resolver: Box<dyn FnMut(&str) -> Vec<u8>>,
   // Resolve path from mod name
-  pkg_resolver: Box<dyn FnMut(&str) -> Vec<RespPackage>>,
+  pkg_resolver: Box<dyn FnMut(&str, bool) -> Vec<RespPackage>>,
   // Log in case of full access request
   log_info: Box<dyn FnMut(&str) -> ()>,
   pub(crate) runtime: &'static Runtime,
@@ -85,7 +92,7 @@ unsafe impl Sync for Application<'_> {}
 impl<'a> Application<'a> {
   pub fn new<
     T: FnMut(&str) -> Vec<u8> + 'static,
-    F: FnMut(&str) -> Vec<RespPackage> + 'static,
+    F: FnMut(&str, bool) -> Vec<RespPackage> + 'static,
     R: FnMut(&str) -> () + 'static,
   >(
     file: &'a str,
@@ -100,7 +107,10 @@ impl<'a> Application<'a> {
     Self {
       code,
       pkg: LanguagePackages::new(),
-      heap: Heap::new(),
+      // SAFETY: It is Initialized before being used
+      // Basically its me being lazy & Wanting to reduce computation time
+      #[allow(invalid_value)]
+      heap: unsafe { zeroed() },
       entry: &file,
       module_resolver: Box::new(fs_resolver),
       pkg_resolver: Box::new(dll_resolver),
@@ -163,7 +173,8 @@ impl<'a> Application<'a> {
     self.inst.elapsed()
   }
 
-  pub fn run(self, time: bool) -> ! {
+  pub fn run(mut self, time: bool) -> ! {
+    self.heap = Heap::new(self.pkg.extends.clone());
     let dur = self.run_non();
 
     if time {

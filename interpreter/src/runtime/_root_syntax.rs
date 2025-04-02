@@ -1,15 +1,12 @@
 use tokio::task::spawn_blocking;
 
 use crate::{
-  error,
-  ipreter::{interpret, tok_parse},
-  types::{make_unsafe_send_future, set_runtime_val, BufValue, Heap, Options, RawRTValue},
-  Application, RespPackage,
+  error, ipreter::{interpret, tok_parse}, types::{make_unsafe_send_future, set_into_extends, set_runtime_val, BufValue, Heap, Options, RawRTValue}, Application, ExtendsInternal, RespPackage
 };
 use std::{
   borrow::Cow,
   collections::HashMap,
-  mem::{take, transmute},
+  mem::{take, transmute}, sync::Arc,
 };
 
 #[derive(Debug)]
@@ -31,8 +28,8 @@ impl RTCreatedModule {
     heap: &mut Heap,
     opt: &mut Options,
   ) {
-    let mut temp_heap = Heap::new_with_this(&mut self.heap);
     let app = unsafe { &mut *app };
+    let mut temp_heap = Heap::new_with_this(&mut self.heap, app.pkg.extends.clone());
 
     let (args, method_code) = self
       .methods
@@ -122,7 +119,7 @@ pub fn insert_into_application(
           let app_ptr: &'static mut Application = unsafe { transmute(&mut *app) };
 
           let future = async move {
-            let mut dummy_heap = Heap::new();
+            let mut dummy_heap = Heap::new(app_ptr.pkg.extends.clone());
             let app = app_ptr as *mut _;
 
             let mut opt = Options::new();
@@ -181,14 +178,23 @@ pub fn insert_into_application(
       "*goto" => {
         *line = *markers.get(*v as &str).expect("No marker was found!");
       }
+      "*prototype" => {
+        let packages = app.pkg_resolver.call_mut((v,true,));
+
+        for pkg in packages {
+          // SAFETY: Infaillable
+          set_into_extends(pkg.extends.unwrap(), &mut heap.extends);
+        }
+      }
       "*import" => {
-        let packages = app.pkg_resolver.call_mut((v,));
+        let packages = app.pkg_resolver.call_mut((v,false,));
 
         let mut pkg = HashMap::new();
 
         for package in packages {
           let RespPackage {
             methods,
+            ..
           } = package;
 
           for (sig, call) in methods {
@@ -215,7 +221,7 @@ pub fn insert_into_application(
           panic!("Unable to read {v}.mod.pb");
         });
 
-        let Some(m) = parse_into_modules(code) else {
+        let Some(m) = parse_into_modules(app.pkg.extends.clone(), code) else {
           panic!("No RTC Module found in the module file");
         };
 
@@ -226,11 +232,11 @@ pub fn insert_into_application(
   }
 }
 
-pub(crate) fn parse_into_modules(code: String) -> Option<RTCreatedModule> {
+pub(crate) fn parse_into_modules(entry: Arc<ExtendsInternal>, code: String) -> Option<RTCreatedModule> {
   let mut data = RTCreatedModule {
     code,
     lines: vec![],
-    heap: Heap::new(),
+    heap: Heap::new(entry),
     methods: HashMap::new(),
     name: "%none",
   };
