@@ -19,7 +19,7 @@ pub use heap::*;
 pub use heap_wrap::*;
 use tokio::sync::mpsc::UnboundedReceiver;
 
-use crate::{runtime::RuntimeValue, Application};
+use crate::runtime::RuntimeValue;
 
 pub struct RetBufValue(pub BufValue);
 
@@ -128,7 +128,7 @@ macro_rules! extends {
       }
 
       pub(crate) fn handle_runtime<'a>(
-        app: *mut Application,
+        heap: &mut Heap,
         val: &mut BufValue,
         caller: &'a str,
         v: &'a [*const str],
@@ -136,18 +136,22 @@ macro_rules! extends {
         c: &String,
         o: &'a mut Options,
       ) -> Option<Output> {
-        let app = unsafe { &mut *app };
-
-        let extends = &app.pkg.extends;
+        let ar = heap.get_extends_arc();
+        let ext = heap.get_extends();
 
         crate::paste! {
           match val {
             $(
               BufValue::[<$good>](data) => {
-                let scope = &extends.$x;
+                let scope1 = &ext.$x;
+                let scope2 = &ar.$x;
 
-                let Some(f) = scope.get(caller) else {
-                  return None;
+                let f = match scope1.get(caller) {
+                  Some(v) => v,
+                  None => match scope2.get(caller) {
+                      Some(v) => v,
+                      None => { return None }
+                  },
                 };
 
                 f(data as _, v, a, c, o);

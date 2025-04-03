@@ -59,7 +59,7 @@ pub fn call_runtime_val<'a>(
 
   let (ai, bi) = match ptr.get_mut(key)? {
     BufValue::RuntimeRaw(ai, bi) => (ai, bi),
-    val => return handle_runtime(app, val, caller, v, a, c, o),
+    val => return handle_runtime(unsafe { &mut *hp }, val, caller, v, a, c, o),
   };
 
   let data = (ai, bi);
@@ -146,6 +146,14 @@ impl Heap {
       def_extends,
       extends: ExtendsInternal::default()
     }
+  }
+
+  pub(crate) fn get_extends(&self) -> &ExtendsInternal {
+    &self.extends
+  }
+
+  pub(crate) fn get_extends_arc(&self) -> &Arc<ExtendsInternal> {
+    &self.def_extends
   }
 
   pub fn clear(&mut self) {

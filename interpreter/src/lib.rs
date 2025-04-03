@@ -5,7 +5,7 @@
 #![feature(get_mut_unchecked)]
 
 use std::{
-  collections::HashMap, mem::zeroed, process, sync::LazyLock, time::{Duration, Instant}
+  collections::HashMap, process, sync::LazyLock, time::{Duration, Instant}
 };
 
 pub use paste::paste;
@@ -74,7 +74,7 @@ pub struct Application<'a> {
   code: HashMap<String, String>,
   pub(crate) pkg: LanguagePackages<'a>,
   entry: &'a str,
-  heap: Heap,
+  heap: Option<Heap>,
 
   // Resolve files
   module_resolver: Box<dyn FnMut(&str) -> Vec<u8>>,
@@ -107,10 +107,7 @@ impl<'a> Application<'a> {
     Self {
       code,
       pkg: LanguagePackages::new(),
-      // SAFETY: It is Initialized before being used
-      // Basically its me being lazy & Wanting to reduce computation time
-      #[allow(invalid_value)]
-      heap: unsafe { zeroed() },
+      heap: None,
       entry: &file,
       module_resolver: Box::new(fs_resolver),
       pkg_resolver: Box::new(dll_resolver),
@@ -174,7 +171,7 @@ impl<'a> Application<'a> {
   }
 
   pub fn run(mut self, time: bool) -> ! {
-    self.heap = Heap::new(self.pkg.extends.clone());
+    self.heap = Some(Heap::new(self.pkg.extends.clone()));
     let dur = self.run_non();
 
     if time {

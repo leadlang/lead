@@ -452,7 +452,8 @@ mod ipreter {
                         }),
                         content,
                         &mut app,
-                        &mut app2.heap,
+                        // SAFETY: It'll always unwrap
+                        &mut app2.heap.as_mut().unwrap(),
                         &mut line,
                         &mut markers,
                         false,

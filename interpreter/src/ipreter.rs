@@ -46,7 +46,7 @@ pub fn interpret<'a>(file: &str, mut app: &mut Application<'a>) {
           format!("{}:{}", &file_name, line + 1),
           content,
           &mut app,
-          &mut app2.heap,
+          app2.heap.as_mut().unwrap(),
           &mut line,
           &mut markers,
           false,
@@ -199,11 +199,7 @@ pub(crate) unsafe fn tok_parse<'a>(
       r#async,
     ) {
       None => {
-        if &caller != &"" {
-          error(&format!("Unexpected `{}`", &caller), &file);
-        }
-
-        None
+        error(&format!("Unexpected `{}`", &caller), &file);
       }
       Some(Output::String(v)) => {
         let runt = opt.rem_r_runtime();
