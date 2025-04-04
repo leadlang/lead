@@ -148,12 +148,8 @@ impl Heap {
     }
   }
 
-  pub(crate) fn get_extends(&self) -> &ExtendsInternal {
-    &self.extends
-  }
-
-  pub(crate) fn get_extends_arc(&self) -> &Arc<ExtendsInternal> {
-    &self.def_extends
+  pub(crate) fn get_extends(&self) -> (&ExtendsInternal, &Arc<ExtendsInternal>) {
+    (&self.extends, &self.def_extends)
   }
 
   pub fn clear(&mut self) {

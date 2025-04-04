@@ -136,8 +136,7 @@ macro_rules! extends {
         c: &String,
         o: &'a mut Options,
       ) -> Option<Output> {
-        let ar = heap.get_extends_arc();
-        let ext = heap.get_extends();
+        let (ext, ar) = heap.get_extends();
 
         crate::paste! {
           match val {
@@ -146,6 +145,7 @@ macro_rules! extends {
                 let scope1 = &ext.$x;
                 let scope2 = &ar.$x;
 
+                // Optimized approach
                 let f = match scope1.get(caller) {
                   Some(v) => v,
                   None => match scope2.get(caller) {
