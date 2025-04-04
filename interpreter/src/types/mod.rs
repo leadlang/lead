@@ -3,14 +3,7 @@ mod fns;
 mod heap;
 mod heap_wrap;
 use std::{
-  any::Any,
-  collections::HashMap,
-  fmt::Debug,
-  future::Future,
-  ops::{Deref, DerefMut},
-  pin::Pin,
-  task::{Context, Poll},
-  thread::JoinHandle
+  any::Any, collections::HashMap, fmt::Debug, future::Future, ops::{Deref, DerefMut}, pin::Pin, sync::{Arc, Mutex}, task::{Context, Poll}, thread::JoinHandle
 };
 
 pub use alloc::*;
@@ -190,7 +183,9 @@ extends! {
   PointerMut mut_ptr => *mut BufValue,
   Runtime rt_any => AnyWrapper,
   AsyncTask async_task => AppliesEq<JoinHandle<BufValue>>,
-  Listener listener => AppliesEq<UnboundedReceiver<BufValue>>
+  Listener listener => AppliesEq<UnboundedReceiver<BufValue>>,
+  ArcPointer arc_ptr => Arc<Box<BufValue>>,
+  ArcMutexPointer arc_mut_ptr => AppliesEq<Arc<Mutex<Box<BufValue>>>>
 }
 
 #[allow(non_camel_case_types)]
@@ -207,6 +202,8 @@ pub enum BufValue {
   StrPointer(StrPointer),
   Pointer(*const Self),
   PointerMut(*mut Self),
+  ArcPointer(Arc<Box<Self>>),
+  ArcMutexPointer(AppliesEq<Arc<Mutex<Box<Self>>>>),
   Runtime(AnyWrapper),
   AsyncTask(AppliesEq<JoinHandle<Self>>),
   Listener(AppliesEq<UnboundedReceiver<Self>>),
@@ -323,6 +320,8 @@ impl BufValue {
         }
       }
       BufValue::RuntimeRaw(_, _) => "<runtime rt>".into(),
+      BufValue::ArcPointer(a) => a.type_of(),
+      BufValue::ArcMutexPointer(_) => format!("<mutex *>")
     }
   }
 

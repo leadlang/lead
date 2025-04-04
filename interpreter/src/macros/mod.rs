@@ -18,6 +18,16 @@ macro_rules! get_state {
 }
 
 #[macro_export]
+/// Defines a Lead Package
+/// 
+/// ```rust
+/// use interpreter::{module, pkg_name};
+/// 
+/// module! { 
+///   MyPackage,
+///   pkg_name! { "📦 MyPackage" }
+/// }
+/// ```
 macro_rules! module {
   ($struct:ident, $($x:tt)*) => {
     pub struct $struct;
@@ -28,6 +38,13 @@ macro_rules! module {
 }
 
 #[macro_export]
+/// This is a very simple macro
+/// 
+/// ```rust
+/// use interpreter::pkg_name;
+/// 
+/// pkg_name! { "MyPackageName" }
+/// ```
 macro_rules! pkg_name {
   ($($x:tt)*) => {
     fn name(&self) -> &'static [u8] {
@@ -37,6 +54,13 @@ macro_rules! pkg_name {
 }
 
 #[macro_export]
+/// This is a very simple macro
+/// 
+/// ```rust
+/// use interpreter::rtval_name;
+/// 
+/// rtval_name! { "MyPackageName" }
+/// ```
 macro_rules! rtval_name {
   ($x:literal) => {
     fn name(&self) -> &'static str {
@@ -46,6 +70,17 @@ macro_rules! rtval_name {
 }
 
 #[macro_export]
+/// Defines a RuntimeValue
+/// 
+/// ```rust
+/// use interpreter::{runtime_value, rtval_name};
+/// 
+/// runtime_value! { 
+///   MyPackage,
+///   {  },
+///   rtval_name! { "📦 MyPackage" }
+/// }
+/// ```
 macro_rules! runtime_value {
   (
     $struct:ident, 

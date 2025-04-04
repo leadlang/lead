@@ -1,6 +1,57 @@
 #![feature(proc_macro_diagnostic)]
 #![allow(dead_code)]
 
+//! <div class="warning">
+//! A few rules:
+//! 
+//! - The variables are only valid till the function execution.
+//! - Storage of LeadLang variable data **(except the moved ones)** requires cloning.
+//! - You shouldn't store the **mutable or immutable** reference of a variable.
+//! 
+//! </div>
+//! 
+//! Got to [define](./attr.define.html) function
+//! 
+//! ## Simple LeadLang Package
+//! ```rust
+//! use interpreter::{generate, module, pkg_name};
+//! use lead_lang_macros::{define, methods};
+//! 
+//! use interpreter::BufValue;
+//! 
+//! module! {
+//!   Module1,
+//!   pkg_name! { "Module" },
+//!   methods! {
+//!     foo
+//!   }
+//! }
+//! 
+//! generate! {
+//!   Module1
+//! }
+//! 
+//! #[define((
+//!   desc: "Prints a variable",
+//!   notes: Some("Optional Note"),
+//!   params: [
+//!    // "my-custom-regex, see example below",
+//!    r"\$[a-z0-9_]*" // This is a regex of a lead variable
+//!   ],
+//!   returns: Some("%null"), // %null means that it returns nothing
+//!   usage: [
+//!    (
+//!     desc: "Prints $hello",
+//!     code: "print $hello"
+//!    )
+//!   ]
+//!   root: Some("MyNewRT"), // This is a method on a RuntimeValue
+//! ))]
+//! fn foo(var: &BufValue) {
+//!   println!("{}", var.display());
+//! }
+//! ```
+
 mod utils;
 extern crate proc_macro;
 
@@ -68,8 +119,11 @@ impl Documentation {
 
 #[proc_macro_attribute]
 /// Defines a callable lead function
+/// <div class="warning">
+///   Please read the full documentation
+/// </div>
 /// 
-/// ```rs
+/// ```rust
 /// use interpreter::BufValue;
 /// 
 /// #[define((
@@ -93,33 +147,78 @@ impl Documentation {
 /// }
 /// ```
 /// 
+/// ## Creating a prototype function
+/// You just need to update the `root` variable
+/// 
+/// These special values are :-
+/// | Value | Type |
+/// |-------|------|
+/// | `int` |  [`i64`] |
+/// | `uint`| [`u64`] |
+/// | `float`| [`f64`] |
+/// | `str_slice`| [`String`] |
+/// | `boolean`| [`bool`] |
+/// | `array`| [`Vec<interpreter::types::BufValue>`] |
+/// | `object`| [`std::collections::HashMap<String, Box<interpreter::types::BufValue>>`] |
+/// | `faillable` | [`Result<Box<interpreter::types::BufValue>, String>`] |
+/// | `str_ptr` | [`interpreter::types::StrPointer`] |
+/// | `ptr` | [`*const`] [`interpreter::types::BufValue`] |
+/// | `mut_ptr` | [`*mut`] [`interpreter::types::BufValue`] |
+/// | `rt_any` | [`interpreter::types::AnyWrapper`] | 
+/// | `async_task` | [`interpreter::types::AppliesEq<JoinHandle<BufValue>>`] |
+/// | `listener` | [`interpreter::types::AppliesEq<UnboundedReceiver<BufValue>>`] |
+/// | `arc_mut` | [`std::sync::Arc<std::sync::Mutex<Box<interpreter::types::BufValue>>>`] |
+/// | `arc_mut_ptr` | [`interpreter::types::AppliesEq<std::sync::Arc<std::sync::Mutex<Box<interpreter::types::BufValue>>>>`] |
+/// 
 /// ## `returns` field
-/// A few command returns field values are
-/// - `*`: Returns Anything / Runtime Type
-/// - `%null`: Returns Nothing
-/// - `@rt:name`: Returns the RuntimeValue named `name`
-/// - `int`: Int
-/// - `u_int`: UInt
-/// - `F`: Float
-/// - `S`: String
-/// - `B`: boolean
-/// - `Arr`: Array
-/// - `Obj`: Object
-/// - `Fa`: Faillable
-/// - `*ptr`: Raw **Immutable** Pointer
-/// - `*m ptr`: Raw **Mutable** Pointer
-/// - `JoinHandle`: Async Task
-/// - `Listener`: Returns Listener that can be used to listen for events
-/// - `RtRAW`: Returns RAWRuntime Values (You shouldn't return a RawRTValue::PKG and should focus on RuntimeValues ONLY!)
+/// The standardized values are :-
+/// | Value| Description |
+/// |------|-------------|
+/// | `*` | Returns Anything / Runtime Type |
+/// | `%null` | Returns Nothing |
+/// | `@rt:name` | Returns the RuntimeValue named `name` |
+/// | `int` | Int |
+/// | `u_int` | UInt |
+/// | `F` | Float |
+/// | `S` | String |
+/// | `B` | boolean |
+/// | `Arr` | Array |
+/// | `Obj` | Object |
+/// | `Fa` | Faillable |
+/// | `*ptr` | Raw **Immutable** Pointer |
+/// | `*m ptr` | Raw **Mutable** Pointer |
+/// | `JoinHandle` | Async Task |
+/// | `Listener` | Returns Listener that can be used to listen for events |
+/// | `RtRAW` | Returns RAWRuntime Values (You shouldn't return a RawRTValue::PKG and should focus on RuntimeValues ONLY!) |
 pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
   let Either::Ok((mut doc, regex_params, ret, root)) = utils::parse_args(args.to_string().as_str()) else {
     return TokenStream::new();
   };
 
-  let arg0_tokens = match &root {
-    Some(x) => TokenStream2::from_str(&format!("me: &mut {x},")).unwrap(),
-    None => TokenStream2::new()
-  };
+  let arg0_tokens = TokenStream2::from_str(&match &root {
+    Some(x) => match x.as_str() {
+      "int" => { format!("me: &mut i64") }
+      "uint" => { format!("me: &mut u64") }
+      "float" => { format!("me: &mut f64") }
+      "str_slice" => { format!("me: &mut String") }
+      "boolean" => { format!("me: &mut bool") }
+      "array" => { format!("me: &mut Vec<interpreter::types::BufValue>") }
+      "object" => { format!("me: &mut std::collections::HashMap<String, Box<interpreter::types::BufValue>>") }
+      "faillable" => { format!("me: &mut Result<Box<interpreter::types::BufValue>, String>") }
+      "str_ptr" => { format!("me: &mut interpreter::types::StrPointer") }
+      "ptr" => { format!("me: &mut *const interpreter::types::BufValue") }
+      "mut_ptr" => { format!("me: &mut *mut interpreter::types::BufValue") }
+      "rt_any" => { format!("me: &mut interpreter::types::AnyWrapper") } 
+      "async_task" => { format!("me: &mut interpreter::types::AppliesEq<interpreter::JoinHandle<interpreter::types::BufValue>>") }
+      "listener" => { format!("me: &mut interpreter::types::AppliesEq<interpreter::types::UnboundedReceiver<interpreter::types::BufValue>>") }
+      "arc_ptr" => format!("me: &mut std::sync::Arc<Box<interpreter::types::BufValue>>"),
+      "arc_mut_ptr" => format!("me: &mut interpreter::types::AppliesEq<std::sync::Arc<std::sync::Mutex<Box<interpreter::types::BufValue>>>>"),
+      e => { format!("me: &mut {e}") }
+    }
+    _ => {
+      format!("")
+    }
+  }).unwrap();
 
   let call0 = match &root {
     Some(_) => TokenStream2::from_str(&format!("me,")).unwrap(),
@@ -275,6 +374,9 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
 
 
 #[proc_macro_attribute]
+/// <div class="warning">
+/// This is not recommended to be used
+/// </div>
 pub fn gendoc(args: TokenStream, input: TokenStream) -> TokenStream {
   let Either::Ok((mut doc, a_vec, b, _root)) = utils::parse_args(args.to_string().as_str()) else {
     return TokenStream::new();
@@ -340,6 +442,21 @@ pub fn gendoc(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
+/// Define the Methods of the RuntimeValue
+/// 
+/// ```rust
+/// use interpreter::{runtime_value, rtval_name};
+/// use lead_lang_macros::methods;
+/// 
+/// runtime_value! {
+///   MyModule,
+///   { },
+///   rtval_name! { "📦 MyModule" }
+///   methods! {
+///     mod::load=myfn
+///   }
+/// }
+/// ```
 pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
   let item = item.to_string();
 
@@ -389,6 +506,20 @@ pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
+/// Define the Module Methods
+/// 
+/// ```rust
+/// use interpreter::{module, pkg_name};
+/// use lead_lang_macros::methods;
+/// 
+/// module! {
+///   MyModule,
+///   pkg_name! { "📦 MyModule" }
+///   methods! {
+///     mod::load=myfn
+///   }
+/// }
+/// ```
 pub fn methods(item: TokenStream) -> TokenStream {
   let item = item.to_string();
 

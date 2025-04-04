@@ -22,6 +22,18 @@ impl Package for ImplPackage {
 }
 
 #[macro_export]
+/// Exports a leadlang package
+/// 
+/// ```rust
+/// use interpreter::exports;
+/// 
+/// exports! {
+///   packages = MyPkg1,MyPkg2;
+///   runtimes = {
+///     "rt1" = MyRuntime1
+///   }
+/// }
+/// ```
 macro_rules! exports {
   (
     packages = $($x:ident),*;
@@ -70,6 +82,13 @@ macro_rules! exports {
 }
 
 #[macro_export]
+/// Exports a leadlang package (module-only)
+/// 
+/// ```rust
+/// use interpreter::generate;
+/// 
+/// generate! { Module1, Module2 }
+/// ```
 macro_rules! generate {
   ($($x:ident),*) => {
     interpreter::exports!(

@@ -27,6 +27,7 @@ pub mod val;
 
 pub(crate) use package::*;
 use tokio::runtime::{Builder, Runtime};
+pub use tokio::task::JoinHandle;
 use types::{Extends, ExtendsInternal, Heap, LanguagePackages, MethodRes, PrototypeDocs};
 pub use val::*;
 
@@ -34,7 +35,7 @@ pub use tokio;
 
 pub use lealang_chalk_rs::Chalk;
 
-pub static VERSION_INT: u16 = 7;
+pub static VERSION_INT: u16 = 8;
 
 static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| 
   Builder::new_multi_thread()
