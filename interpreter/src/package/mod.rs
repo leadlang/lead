@@ -1,14 +1,11 @@
-use crate::{
-  types::MethodRes,
-  Package,
-};
+use crate::{types::MethodRes, Package};
 
 #[derive(Default)]
 /// ImplPackage is meant to create a package out of Box<dyn Package>
 pub(crate) struct ImplPackage {
   pub(crate) name: &'static [u8],
 
-  pub(crate) methods: MethodRes
+  pub(crate) methods: MethodRes,
 }
 
 impl Package for ImplPackage {
@@ -23,10 +20,10 @@ impl Package for ImplPackage {
 
 #[macro_export]
 /// Exports a leadlang package
-/// 
+///
 /// ```rust
 /// use interpreter::exports;
-/// 
+///
 /// exports! {
 ///   packages = MyPkg1,MyPkg2;
 ///   runtimes = {
@@ -54,7 +51,7 @@ macro_rules! exports {
       $(
         static [<$val _STATIC>]: &'static dyn interpreter::runtime::RuntimeValue = &$val::new_const();
       )*
-      
+
       static RUNTIMES: interpreter::phf::Map<&'static str, &'static dyn interpreter::runtime::RuntimeValue> = interpreter::phf::phf_map! {
         $($key => [<$val _STATIC>]),*
       };
@@ -83,10 +80,10 @@ macro_rules! exports {
 
 #[macro_export]
 /// Exports a leadlang package (module-only)
-/// 
+///
 /// ```rust
 /// use interpreter::generate;
-/// 
+///
 /// generate! { Module1, Module2 }
 /// ```
 macro_rules! generate {

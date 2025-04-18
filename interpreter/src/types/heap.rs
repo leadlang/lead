@@ -6,7 +6,9 @@ use crate::{
   Application,
 };
 
-use super::{handle_runtime, AppliesEq, BufValue, ExtendsInternal, HeapWrapper, Options, PackageCallback};
+use super::{
+  handle_runtime, AppliesEq, BufValue, ExtendsInternal, HeapWrapper, Options, PackageCallback,
+};
 
 pub type HeapInnerMap = HashMap<Cow<'static, str>, BufValue>;
 
@@ -19,7 +21,7 @@ pub enum RawRTValue {
 
 impl Debug for RawRTValue {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      write!(f, "RawRTValue {{ 0x... }}")
+    write!(f, "RawRTValue {{ 0x... }}")
   }
 }
 
@@ -123,7 +125,7 @@ pub struct Heap {
   data: HeapInnerMap,
   this: Option<*mut Self>,
   pub(crate) def_extends: Arc<ExtendsInternal>,
-  pub(crate) extends: ExtendsInternal
+  pub(crate) extends: ExtendsInternal,
 }
 
 unsafe impl Send for Heap {}
@@ -135,7 +137,7 @@ impl Heap {
       data: HashMap::new(),
       this: None,
       def_extends,
-      extends: ExtendsInternal::default()
+      extends: ExtendsInternal::default(),
     }
   }
 
@@ -144,7 +146,7 @@ impl Heap {
       data: HashMap::new(),
       this: Some(this),
       def_extends,
-      extends: ExtendsInternal::default()
+      extends: ExtendsInternal::default(),
     }
   }
 

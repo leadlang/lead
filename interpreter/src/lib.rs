@@ -5,7 +5,9 @@
 #![feature(get_mut_unchecked)]
 
 use std::{
-  collections::HashMap, process, sync::LazyLock, time::{Duration, Instant}
+  collections::HashMap,
+  process,
+  time::{Duration, Instant},
 };
 
 pub use paste::paste;
@@ -20,31 +22,28 @@ pub use runtime::RuntimeValue;
 pub use phf;
 
 mod ipreter;
+
+#[cfg(feature = "parallel")]
+mod parallel_ipreter;
+
+#[cfg(feature = "parallel")]
+mod scheduler;
+#[cfg(feature = "parallel")]
+pub use scheduler::Scheduler;
+
 #[macro_use]
 pub mod package;
 pub mod types;
 pub mod val;
 
 pub(crate) use package::*;
-use tokio::runtime::{Builder, Runtime};
-pub use tokio::task::JoinHandle;
-use types::{Extends, ExtendsInternal, Heap, LanguagePackages, MethodRes, PrototypeDocs};
+pub use types::{Extends, Heap, LanguagePackages, MethodRes, PrototypeDocs};
+use types::ExtendsInternal;
 pub use val::*;
-
-pub use tokio;
 
 pub use lealang_chalk_rs::Chalk;
 
 pub static VERSION_INT: u16 = 8;
-
-static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| 
-  Builder::new_multi_thread()
-    .worker_threads(2)
-    .enable_all()
-    
-    .build()
-    .expect("Unable to build async runtime")
-);
 
 pub trait Package: Sync {
   fn name(&self) -> &'static [u8];
@@ -68,11 +67,13 @@ pub trait Package: Sync {
 
 pub struct RespPackage {
   pub methods: MethodRes,
-  pub extends: Option<Extends>
+  pub extends: Option<Extends>,
 }
 
 pub struct Application<'a> {
   code: HashMap<String, String>,
+  #[cfg(feature = "parallel")]
+  scheduler: scheduler::Scheduler,
   pub(crate) pkg: LanguagePackages<'a>,
   entry: &'a str,
   heap: Option<Heap>,
@@ -83,7 +84,6 @@ pub struct Application<'a> {
   pkg_resolver: Box<dyn FnMut(&str, bool) -> Vec<RespPackage>>,
   // Log in case of full access request
   log_info: Box<dyn FnMut(&str) -> ()>,
-  pub(crate) runtime: &'static Runtime,
   inst: Instant,
 }
 
@@ -107,13 +107,14 @@ impl<'a> Application<'a> {
     code.insert(":entry".to_string(), main);
     Self {
       code,
+      #[cfg(feature = "parallel")]
+      scheduler: Scheduler::new(),
       pkg: LanguagePackages::new(),
       heap: None,
       entry: &file,
       module_resolver: Box::new(fs_resolver),
       pkg_resolver: Box::new(dll_resolver),
       log_info: Box::new(requested_perm),
-      runtime: &*RUNTIME,
       inst: Instant::now(),
     }
   }
@@ -138,15 +139,8 @@ impl<'a> Application<'a> {
     self
   }
 
-  pub fn add_pkg_raw(
-    &mut self,
-    name: &'static [u8],
-    methods: MethodRes,
-  ) -> &mut Self {
-    let pkg = ImplPackage {
-      name,
-      methods,
-    };
+  pub fn add_pkg_raw(&mut self, name: &'static [u8], methods: MethodRes) -> &mut Self {
+    let pkg = ImplPackage { name, methods };
 
     self.pkg.import(pkg);
 
@@ -171,9 +165,29 @@ impl<'a> Application<'a> {
     self.inst.elapsed()
   }
 
+  #[cfg(feature = "parallel")]
+  /// ⚠️ This function still is panicking
+  pub fn run_non_parallel(mut self) -> Duration {
+    parallel_ipreter::schedule(&mut self);
+
+    self.inst.elapsed()
+  }
+
   pub fn run(mut self, time: bool) -> ! {
     self.heap = Some(Heap::new(self.pkg.extends.clone()));
     let dur = self.run_non();
+
+    if time {
+      println!("\nTime Elasped: {:?}", dur);
+    }
+
+    process::exit(0)
+  }
+
+  #[cfg(feature = "parallel")]
+  pub fn run_parallel(mut self, time: bool) -> ! {
+    self.heap = Some(Heap::new(self.pkg.extends.clone()));
+    let dur = self.run_non_parallel();
 
     if time {
       println!("\nTime Elasped: {:?}", dur);

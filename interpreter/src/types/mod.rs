@@ -3,14 +3,21 @@ mod fns;
 mod heap;
 mod heap_wrap;
 use std::{
-  any::Any, collections::HashMap, fmt::Debug, future::Future, ops::{Deref, DerefMut}, pin::Pin, sync::{Arc, Mutex}, task::{Context, Poll}, thread::JoinHandle
+  any::Any,
+  collections::HashMap,
+  fmt::Debug,
+  ops::{Deref, DerefMut},
+  sync::{
+    mpsc::{Receiver, Sender},
+    Arc, Mutex,
+  },
+  thread::JoinHandle,
 };
 
 pub use alloc::*;
 pub use fns::*;
 pub use heap::*;
 pub use heap_wrap::*;
-use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::runtime::RuntimeValue;
 
@@ -91,8 +98,6 @@ impl ToString for StrPointer {
   }
 }
 
-use phf::Map as PhfMap;
-
 macro_rules! extends {
     (
       $(
@@ -109,7 +114,7 @@ macro_rules! extends {
       #[derive(Default)]
       pub struct Extends {
         $(
-          pub $x: PhfMap<&'static str, fn(*mut $y, Args, HeapWrapper, &String, &mut Options) -> ()>
+          pub $x: &'static [(&'static str, fn(*mut $y, Args, HeapWrapper, &String, &mut Options) -> ())]
         ),*
       }
 
@@ -183,7 +188,8 @@ extends! {
   PointerMut mut_ptr => *mut BufValue,
   Runtime rt_any => AnyWrapper,
   AsyncTask async_task => AppliesEq<JoinHandle<BufValue>>,
-  Listener listener => AppliesEq<UnboundedReceiver<BufValue>>,
+  Sender sender => AppliesEq<Sender<BufValue>>,
+  Listener listener => AppliesEq<Receiver<BufValue>>,
   ArcPointer arc_ptr => Arc<Box<BufValue>>,
   ArcMutexPointer arc_mut_ptr => AppliesEq<Arc<Mutex<Box<BufValue>>>>
 }
@@ -206,7 +212,8 @@ pub enum BufValue {
   ArcMutexPointer(AppliesEq<Arc<Mutex<Box<Self>>>>),
   Runtime(AnyWrapper),
   AsyncTask(AppliesEq<JoinHandle<Self>>),
-  Listener(AppliesEq<UnboundedReceiver<Self>>),
+  Sender(AppliesEq<Sender<Self>>),
+  Listener(AppliesEq<Receiver<Self>>),
   RuntimeRaw(&'static str, AppliesEq<RawRTValue>),
 }
 
@@ -234,26 +241,6 @@ implement_buf! {
   StrPointer => StrPointer,
   Runtime => AnyWrapper,
   AsyncTask => AppliesEq<JoinHandle<Self>>
-}
-
-pub struct UnsafeSend<F>(pub F);
-
-unsafe impl<F> Send for UnsafeSend<F> {}
-unsafe impl<F> Sync for UnsafeSend<F> {}
-
-impl<F: Future> Future for UnsafeSend<F> {
-  type Output = F::Output;
-
-  fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-    unsafe { self.map_unchecked_mut(|s| &mut s.0).poll(cx) }
-  }
-}
-
-pub fn make_unsafe_send_future<F>(fut: F) -> UnsafeSend<F>
-where
-  F: Future,
-{
-  UnsafeSend(fut)
 }
 
 #[derive(Debug)]
@@ -311,6 +298,7 @@ impl BufValue {
 
         unsafe { &**ptr }.type_of()
       }
+      BufValue::Sender(_) => "<sender ?event>".into(),
       BufValue::Listener(_) => "<listener ?event>".into(),
       BufValue::AsyncTask(t) => {
         if t.is_finished() {
@@ -321,7 +309,7 @@ impl BufValue {
       }
       BufValue::RuntimeRaw(_, _) => "<runtime rt>".into(),
       BufValue::ArcPointer(a) => a.type_of(),
-      BufValue::ArcMutexPointer(_) => format!("<mutex *>")
+      BufValue::ArcMutexPointer(_) => format!("<mutex *>"),
     }
   }
 
@@ -335,7 +323,7 @@ impl BufValue {
       BufValue::Object(c) => format!("{c:#?}"),
       BufValue::Str(c) => c.to_string(),
       BufValue::StrPointer(c) => c.to_string(),
-      e => e.type_of()
+      e => e.type_of(),
     }
   }
 

@@ -1,12 +1,17 @@
-use tokio::task::spawn_blocking;
-
 use crate::{
-  error, ipreter::{interpret, tok_parse}, types::{make_unsafe_send_future, set_into_extends, set_runtime_val, BufValue, Heap, Options, RawRTValue}, Application, ExtendsInternal, RespPackage
+  error,
+  ipreter::{interpret, tok_parse},
+  types::{
+    set_into_extends, set_runtime_val, BufValue, Heap, Options, RawRTValue,
+  },
+  Application, ExtendsInternal, RespPackage,
 };
 use std::{
   borrow::Cow,
   collections::HashMap,
-  mem::{take, transmute}, sync::Arc,
+  mem::{take, transmute},
+  sync::Arc,
+  thread,
 };
 
 #[derive(Debug)]
@@ -118,42 +123,38 @@ pub fn insert_into_application(
 
           let app_ptr: &'static mut Application = unsafe { transmute(&mut *app) };
 
-          let future = async move {
+          thread::spawn(move || {
             let mut dummy_heap = Heap::new(app_ptr.pkg.extends.clone());
             let app = app_ptr as *mut _;
 
             let mut opt = Options::new();
 
-            while let Some(event) = listen.recv().await {
-              let app = unsafe { transmute::<&mut Application, &'static mut Application<'static>>(&mut *app) };
+            while let Ok(event) = listen.recv() {
+              let app = unsafe {
+                transmute::<&mut Application, &'static mut Application<'static>>(&mut *app)
+              };
               let opt: &'static mut Options = unsafe { transmute(&mut opt) };
               let dummy_heap: &'static mut Heap = unsafe { transmute(&mut dummy_heap) };
               let module: &'static mut RTCreatedModule = unsafe { transmute(&mut module) };
 
-              spawn_blocking(move || {
-                module
-                  .run_method(
-                    app as _,
-                    "on",
-                    "",
-                    move |fn_heap, _, c| {
-                      if c.len() == 1 {
-                        let arg0: &'static str = unsafe { transmute(&*c[0]) };
+              module.run_method(
+                app as _,
+                "on",
+                "",
+                move |fn_heap, _, c| {
+                  if c.len() == 1 {
+                    let arg0: &'static str = unsafe { transmute(&*c[0]) };
 
-                        fn_heap.set(Cow::Borrowed(&arg0[2..]), event);
-                      } else {
-                        panic!("Expected, exactly 1 argument");
-                      }
-                    },
-                    dummy_heap,
-                    opt,
-                  );
-              }).await;
+                    fn_heap.set(Cow::Borrowed(&arg0[2..]), event);
+                  } else {
+                    panic!("Expected, exactly 1 argument");
+                  }
+                },
+                dummy_heap,
+                opt,
+              );
             }
-          };
-          
-          let future = make_unsafe_send_future(future);
-          app.runtime.spawn(future);
+          });
         }
         _ => panic!("Invalid syntax"),
       }
@@ -179,7 +180,7 @@ pub fn insert_into_application(
         *line = *markers.get(*v as &str).expect("No marker was found!");
       }
       "*prototype" => {
-        let packages = app.pkg_resolver.call_mut((v,true,));
+        let packages = app.pkg_resolver.call_mut((v, true));
 
         for pkg in packages {
           // SAFETY: Infaillable
@@ -187,15 +188,12 @@ pub fn insert_into_application(
         }
       }
       "*import" => {
-        let packages = app.pkg_resolver.call_mut((v,false,));
+        let packages = app.pkg_resolver.call_mut((v, false));
 
         let mut pkg = HashMap::new();
 
         for package in packages {
-          let RespPackage {
-            methods,
-            ..
-          } = package;
+          let RespPackage { methods, .. } = package;
 
           for (sig, call) in methods {
             pkg.insert(sig.to_string(), *call);
@@ -204,12 +202,7 @@ pub fn insert_into_application(
 
         let val = RawRTValue::PKG(pkg);
 
-        set_runtime_val(
-          heap,
-          to_set,
-          "loaded",
-          val,
-        );
+        set_runtime_val(heap, to_set, "loaded", val);
       }
       "*mod" => {
         let code = String::from_utf8(
@@ -232,7 +225,10 @@ pub fn insert_into_application(
   }
 }
 
-pub(crate) fn parse_into_modules(entry: Arc<ExtendsInternal>, code: String) -> Option<RTCreatedModule> {
+pub(crate) fn parse_into_modules(
+  entry: Arc<ExtendsInternal>,
+  code: String,
+) -> Option<RTCreatedModule> {
   let mut data = RTCreatedModule {
     code,
     lines: vec![],

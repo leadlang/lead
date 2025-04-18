@@ -184,7 +184,7 @@ pub(crate) unsafe fn tok_parse<'a>(
       args: unsafe { &*(tokens_ptr as *const _) },
       pkg_name: unsafe { &*caller_ptr },
       app: app_ptr,
-      allow_full: false
+      allow_full: false,
     };
 
     match call_runtime_val(
@@ -251,7 +251,7 @@ pub(crate) unsafe fn tok_parse<'a>(
           args: unsafe { &*(tokens_ptr as *const _) },
           pkg_name: pkg,
           app: app_ptr,
-          allow_full: true
+          allow_full: true,
         };
 
         v(&tokens[start..] as *const _, wrap, &file, &mut opt);

@@ -1,8 +1,22 @@
-use interpreter::types::BufValue;
-use lead_lang_macros::define;
+use interpreter::{
+  module,
+  pkg_name,
+  types::BufValue
+};
+use lead_lang_macros::{define, define_prototypes};
 
 fn main() {
-  println!("Hello, world!");
+  
+}
+
+module! {
+  MyModule,
+  pkg_name! { "📦 MyModule" }
+  define_prototypes! {
+    int: {
+      print=print
+    };
+  }
 }
 
 #[define((
@@ -13,9 +27,8 @@ fn main() {
       code: "$data: print $a $b"
     )
   ],
-  notes: Some("This is a simple print function for macro test"),
-  root: Some("BufValue")
+  root: Some("int")
 ))]
-fn print(_a: &mut BufValue, _b: BufValue, _c: &BufValue) -> BufValue {
+fn print() -> BufValue {
   BufValue::Bool(true)
 }

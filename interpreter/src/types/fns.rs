@@ -12,7 +12,7 @@ pub type MethodRes = &'static [(&'static str, PackageCallback)];
 
 pub struct LanguagePackages<'a> {
   pub inner: HashMap<&'static str, (&'a str, PackageCallback)>,
-  pub(crate) extends: Arc<ExtendsInternal>
+  pub(crate) extends: Arc<ExtendsInternal>,
 }
 
 impl<'a> LanguagePackages<'a> {
@@ -31,9 +31,7 @@ impl<'a> LanguagePackages<'a> {
     }
 
     // SAFETY: These functions cannot be called when the Arc is in use
-    let ext = unsafe {
-      Arc::get_mut_unchecked(&mut self.extends)
-    };
+    let ext = unsafe { Arc::get_mut_unchecked(&mut self.extends) };
 
     set_into_extends(func.prototype(), ext);
 
@@ -48,9 +46,7 @@ impl<'a> LanguagePackages<'a> {
     }
 
     // SAFETY: These functions cannot be called when the Arc is in use
-    let ext = unsafe {
-      Arc::get_mut_unchecked(&mut self.extends)
-    };
+    let ext = unsafe { Arc::get_mut_unchecked(&mut self.extends) };
 
     set_into_extends(func.prototype(), ext);
 

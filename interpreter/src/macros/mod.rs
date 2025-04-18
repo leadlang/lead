@@ -19,11 +19,11 @@ macro_rules! get_state {
 
 #[macro_export]
 /// Defines a Lead Package
-/// 
+///
 /// ```rust
 /// use interpreter::{module, pkg_name};
-/// 
-/// module! { 
+///
+/// module! {
 ///   MyPackage,
 ///   pkg_name! { "📦 MyPackage" }
 /// }
@@ -39,10 +39,10 @@ macro_rules! module {
 
 #[macro_export]
 /// This is a very simple macro
-/// 
+///
 /// ```rust
 /// use interpreter::pkg_name;
-/// 
+///
 /// pkg_name! { "MyPackageName" }
 /// ```
 macro_rules! pkg_name {
@@ -55,10 +55,10 @@ macro_rules! pkg_name {
 
 #[macro_export]
 /// This is a very simple macro
-/// 
+///
 /// ```rust
 /// use interpreter::rtval_name;
-/// 
+///
 /// rtval_name! { "MyPackageName" }
 /// ```
 macro_rules! rtval_name {
@@ -71,11 +71,11 @@ macro_rules! rtval_name {
 
 #[macro_export]
 /// Defines a RuntimeValue
-/// 
+///
 /// ```rust
 /// use interpreter::{runtime_value, rtval_name};
-/// 
-/// runtime_value! { 
+///
+/// runtime_value! {
 ///   MyPackage,
 ///   {  },
 ///   rtval_name! { "📦 MyPackage" }
@@ -83,7 +83,7 @@ macro_rules! rtval_name {
 /// ```
 macro_rules! runtime_value {
   (
-    $struct:ident, 
+    $struct:ident,
     { $(pub $x:ident: $y:ty),* },
     $($t:tt)*
   ) => {
@@ -135,7 +135,7 @@ macro_rules! function {
   ($name:literal, $($x:tt)*) => {
     {
       (
-        $name, 
+        $name,
         $($x)*
       )
     }

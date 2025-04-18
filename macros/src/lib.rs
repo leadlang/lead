@@ -56,7 +56,7 @@ mod utils;
 extern crate proc_macro;
 
 use std::str::FromStr;
-use proc_macro2::TokenStream as TokenStream2;
+use proc_macro2::{Span, TokenStream as TokenStream2};
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, spanned::Spanned, Ident, ItemFn};
@@ -195,30 +195,42 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     return TokenStream::new();
   };
 
-  let arg0_tokens = TokenStream2::from_str(&match &root {
+  let tok = match &root {
     Some(x) => match x.as_str() {
-      "int" => { format!("me: &mut i64") }
-      "uint" => { format!("me: &mut u64") }
-      "float" => { format!("me: &mut f64") }
-      "str_slice" => { format!("me: &mut String") }
-      "boolean" => { format!("me: &mut bool") }
-      "array" => { format!("me: &mut Vec<interpreter::types::BufValue>") }
-      "object" => { format!("me: &mut std::collections::HashMap<String, Box<interpreter::types::BufValue>>") }
-      "faillable" => { format!("me: &mut Result<Box<interpreter::types::BufValue>, String>") }
-      "str_ptr" => { format!("me: &mut interpreter::types::StrPointer") }
-      "ptr" => { format!("me: &mut *const interpreter::types::BufValue") }
-      "mut_ptr" => { format!("me: &mut *mut interpreter::types::BufValue") }
-      "rt_any" => { format!("me: &mut interpreter::types::AnyWrapper") } 
-      "async_task" => { format!("me: &mut interpreter::types::AppliesEq<interpreter::JoinHandle<interpreter::types::BufValue>>") }
-      "listener" => { format!("me: &mut interpreter::types::AppliesEq<interpreter::types::UnboundedReceiver<interpreter::types::BufValue>>") }
-      "arc_ptr" => format!("me: &mut std::sync::Arc<Box<interpreter::types::BufValue>>"),
-      "arc_mut_ptr" => format!("me: &mut interpreter::types::AppliesEq<std::sync::Arc<std::sync::Mutex<Box<interpreter::types::BufValue>>>>"),
-      e => { format!("me: &mut {e}") }
+      "int" => { format!("me: *mut i64,") }
+      "uint" => { format!("me: *mut u64,") }
+      "float" => { format!("me: *mut f64,") }
+      "str_slice" => { format!("me: *mut String,") }
+      "boolean" => { format!("me: *mut bool,") }
+      "array" => { format!("me: *mut Vec<interpreter::types::BufValue>,") }
+      "object" => { format!("me: *mut std::collections::HashMap<String, Box<interpreter::types::BufValue>>,") }
+      "faillable" => { format!("me: *mut Result<Box<interpreter::types::BufValue>, String>,") }
+      "str_ptr" => { format!("me: *mut interpreter::types::StrPointer,") }
+      "ptr" => { format!("me: *mut *const interpreter::types::BufValue,") }
+      "mut_ptr" => { format!("me: *mut *mut interpreter::types::BufValue,") }
+      "rt_any" => { format!("me: *mut interpreter::types::AnyWrapper,") } 
+      "async_task" => { format!("me: *mut interpreter::types::AppliesEq<interpreter::JoinHandle<interpreter::types::BufValue>>,") }
+      "listener" => { format!("me: *mut interpreter::types::AppliesEq<interpreter::types::UnboundedReceiver<interpreter::types::BufValue>>,") }
+      "arc_ptr" => format!("me: *mut std::sync::Arc<Box<interpreter::types::BufValue>>,"),
+      "arc_mut_ptr" => format!("me: *mut interpreter::types::AppliesEq<std::sync::Arc<std::sync::Mutex<Box<interpreter::types::BufValue>>>>,"),
+      e => { format!("me: &mut {e},") }
     }
     _ => {
       format!("")
     }
-  }).unwrap();
+  };
+  let arg0_tokens = TokenStream2::from_str(&tok).unwrap();
+
+  let arg0_tokens_parsed = TokenStream2::from_str(&tok.replacen("*mut", "&mut", 1)).unwrap();
+  let ext0 = if tok.contains("*mut") {
+      quote! {
+        let me: &mut _ = unsafe { &mut *me };
+      }
+    } else {
+      quote! {
+
+      }
+    };
 
   let call0 = match &root {
     Some(_) => TokenStream2::from_str(&format!("me,")).unwrap(),
@@ -282,7 +294,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       #vis static #doc_fn: &'static [&'static str; 3] = &[#a, #return_type, #doc];
   
       #[allow(unused)]
-      #vis fn #ident(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
+      #vis fn #ident(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {        
         let _option_code_result = #call_fn(#call0 args, heap, file, opt);
         #other_tokens
       }
@@ -554,4 +566,114 @@ pub fn methods(item: TokenStream) -> TokenStream {
   ");
 
   TokenStream::from_str(&data).unwrap()
+}
+
+
+#[proc_macro]
+/// Define the Package's prototypes
+/// 
+/// ```rust
+/// use interpreter::{module, pkg_name};
+/// use lead_lang_macros::define_prototypes;
+/// 
+/// module! {
+///   MyModule,
+///   pkg_name! { "📦 MyModule" }
+///   define_prototypes! {
+///     int: {
+///       fnname=function,
+///     };
+///   }
+/// }
+/// ```
+pub fn define_prototypes(item: TokenStream) -> TokenStream {
+  let valid = [
+    "int", "uint", "float", "str_slice", "boolean", "array", "object", "faillable", "str_ptr", "ptr", "mut_ptr", "rt_any", "async_task", "listener", "arc_ptr", "arc_mut_ptr"
+  ];
+
+  let item = item.to_string();
+
+  let mut extnds = vec![];
+  let mut proto = vec![];
+
+  item.split(";").into_iter()
+    .map(|x| x.trim())
+    .filter(|x| !x.is_empty())
+    .for_each(|x| {
+      let (class, list) = x.split_once(":").unwrap();
+
+      let class = class.trim();
+
+      if !valid.contains(&class) {
+        panic!("Invalid prototype `{}`", class);
+      }
+
+      let list = list.trim();
+      let list = &list[1..list.len() - 1];
+      let list = list.trim();
+
+      let list = list.split(",")
+        .into_iter()
+        .map(|x| x.trim())
+        .map(|x| {
+          let (name, fname) = x.split_once("=").unwrap();
+
+          let docfn = format!("_inner_callable_{}_doc", fname);
+          let docfn = Ident::new(&docfn, Span::call_site());
+
+          let fname = Ident::new(fname, Span::call_site());
+
+          (
+            quote! {
+              (#name, #fname)
+            },
+            quote! {
+              #name => #docfn
+            }
+          )
+        })
+        .collect::<Vec<_>>();
+
+      let fns = list.iter()
+        .map(|(f,_)| f)
+        .collect::<Vec<_>>();
+
+      let prot = list.iter()
+        .map(|(_,f)| f)
+        .collect::<Vec<_>>();
+      
+      let class = Ident::new(class, Span::call_site());
+
+      extnds.push(
+        quote! {
+          #class: &[
+            #(#fns),*
+          ]
+        }
+      );
+      proto.push(
+        quote! {
+          proto.#class = interpreter::hashmap! {
+            #(#prot),*
+          };
+        }
+      );
+    });
+  
+  quote! {
+    fn prototype_docs(&self) -> interpreter::PrototypeDocs {
+      let mut proto = interpreter::PrototypeDocs::default();
+
+      #(#proto)*
+
+      proto
+    }
+
+    fn prototype(&self) -> interpreter::Extends {
+      interpreter::Extends {
+        #(#extnds,)*
+        ..std::default::Default::default()
+      }
+    }
+  }.into()
 }
