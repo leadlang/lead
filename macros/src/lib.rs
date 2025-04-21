@@ -294,13 +294,13 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       #vis static #doc_fn: &'static [&'static str; 3] = &[#a, #return_type, #doc];
   
       #[allow(unused)]
-      #vis fn #ident(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {        
+      #vis fn #ident(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {        
         let _option_code_result = #call_fn(#call0 args, heap, file, opt);
         #other_tokens
       }
 
       #[allow(unused)]
-      #vis fn #call_fn(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) #out #block
+      #vis fn #call_fn(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) #out #block
     }.into()
   }
 
@@ -355,7 +355,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       #vis static #doc_fn: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
   
       #[allow(unused)]
-      #vis fn #ident(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
+      #vis fn #ident(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
         #parse_macro
 
         let _option_code_result = #call_fn(#call0 #params_to_pass, file, heap, opt);
@@ -372,7 +372,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     #vis static #doc_fn: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
 
     #[allow(unused)]
-    #vis fn #ident(#arg0_tokens args: *const [*const str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
+    #vis fn #ident(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
       #parse_macro
 
       let _option_code_result = #call_fn(#call0 #params_to_pass, file, opt);
@@ -498,7 +498,7 @@ pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
     fn call_ptr(
       &mut self,
       caller: &str,
-      args: *const [*const str],
+      args: *const [&'static str],
       heap: interpreter::types::HeapWrapper,
       file: &String,
       opt: &mut interpreter::types::Options,
