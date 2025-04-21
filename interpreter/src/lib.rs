@@ -24,6 +24,8 @@ mod scheduler;
 
 pub use scheduler::Scheduler;
 
+pub use tokio;
+
 #[macro_use]
 pub mod package;
 pub mod types;

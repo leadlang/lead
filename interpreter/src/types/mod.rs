@@ -8,11 +8,11 @@ use std::{
   fmt::Debug,
   ops::{Deref, DerefMut},
   sync::{
-    mpsc::{Receiver, Sender},
     Arc, Mutex,
   },
   thread::JoinHandle,
 };
+use tokio::sync::mpsc::{Receiver, Sender};
 
 pub use alloc::*;
 pub use fns::*;
