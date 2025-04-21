@@ -85,8 +85,6 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
 
   // We are guaranteed that the closures run in the single thread & NOT AT THE SAME TIME.
   let mut application = Application::new(
-    &data.entry,
-    |path| fs::read(path).expect("Unable to read file"),
     move |name, extends| {
       let mut libs = PT_LIBS.lock()
         .map_or_else(|e| e.into_inner(), |e| e);
@@ -157,6 +155,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
         }
       }
     },
+    || HashMap::new()
   );
 
   load_lib();
