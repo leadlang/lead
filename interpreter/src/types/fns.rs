@@ -5,8 +5,8 @@ use std::{collections::HashMap, sync::Arc};
 use super::{set_into_extends, ExtendsInternal, HeapWrapper, Options};
 
 //pub trait DynPackageCallback = FnMut(&Args, &mut Heap, &mut bool);
-pub type Args = *const [*const str];
-pub type PackageCallback = fn(Args, HeapWrapper, &String, &mut Options) -> ();
+pub type Args = *const [&'static str];
+pub type PackageCallback = fn(Args, HeapWrapper, &str, &mut Options) -> ();
 
 pub type MethodRes = &'static [(&'static str, PackageCallback)];
 

@@ -107,14 +107,14 @@ macro_rules! extends {
       #[derive(Default, Clone, Debug)]
       pub(crate) struct ExtendsInternal {
         $(
-          pub(crate) $x: HashMap<&'static str, fn(*mut $y, Args, HeapWrapper, &String, &mut Options) -> ()>
+          pub(crate) $x: HashMap<&'static str, fn(*mut $y, Args, HeapWrapper, &str, &mut Options) -> ()>
         ),*
       }
 
       #[derive(Default)]
       pub struct Extends {
         $(
-          pub $x: &'static [(&'static str, fn(*mut $y, Args, HeapWrapper, &String, &mut Options) -> ())]
+          pub $x: &'static [(&'static str, fn(*mut $y, Args, HeapWrapper, &str, &mut Options) -> ())]
         ),*
       }
 
@@ -125,15 +125,46 @@ macro_rules! extends {
         ),*
       }
 
+      pub(crate) fn get_handle_runtime_ptr<'a>(
+        heap: &mut Heap,
+        val: &BufValue,
+        caller: &'a str,
+      ) -> Option<*const ()> {
+        let (ext, ar) = heap.get_extends();
+
+        crate::paste! {
+          match val {
+            $(
+              BufValue::[<$good>](_) => {
+                let scope1 = &ext.$x;
+                let scope2 = &ar.$x;
+
+                // Optimized approach
+                let f = match scope1.get(caller) {
+                  Some(v) => v,
+                  None => match scope2.get(caller) {
+                      Some(v) => v,
+                      None => { return None }
+                  },
+                };
+
+                return Some(f as *const _ as *const ());
+              }
+            )*
+            _ => return None
+          }
+        }
+      }
+
       pub(crate) fn handle_runtime<'a>(
         heap: &mut Heap,
         val: &mut BufValue,
         caller: &'a str,
-        v: &'a [*const str],
+        v: &'a [&'static str],
         a: HeapWrapper,
-        c: &String,
+        c: &str,
         o: &'a mut Options,
-      ) -> Option<Output> {
+      ) -> Option<()> {
         let (ext, ar) = heap.get_extends();
 
         crate::paste! {
@@ -159,7 +190,7 @@ macro_rules! extends {
           }
         }
 
-        Some(Output::String("Prototype"))
+        Some(())
       }
 
       pub(crate) fn set_into_extends(extends: Extends, extends_internal: &mut ExtendsInternal) {
@@ -214,7 +245,7 @@ pub enum BufValue {
   AsyncTask(AppliesEq<JoinHandle<Self>>),
   Sender(AppliesEq<Sender<Self>>),
   Listener(AppliesEq<Receiver<Self>>),
-  RuntimeRaw(&'static str, AppliesEq<RawRTValue>),
+  RuntimeRaw(AppliesEq<RawRTValue>),
 }
 
 unsafe impl Send for BufValue {}
@@ -307,7 +338,7 @@ impl BufValue {
           "<async pending...>".into()
         }
       }
-      BufValue::RuntimeRaw(_, _) => "<runtime rt>".into(),
+      BufValue::RuntimeRaw(_) => "<runtime rt>".into(),
       BufValue::ArcPointer(a) => a.type_of(),
       BufValue::ArcMutexPointer(_) => format!("<mutex *>"),
     }

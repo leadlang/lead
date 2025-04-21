@@ -1,10 +1,5 @@
 use crate::{
-  error,
-  ipreter::{interpret, tok_parse},
-  types::{
-    set_into_extends, set_runtime_val, BufValue, Heap, Options, RawRTValue,
-  },
-  Application, ExtendsInternal, RespPackage,
+  error, parallel_ipreter::{interpret, Wrapped}, types::{set_into_extends, set_runtime_val, BufValue, Heap, Options, RawRTValue, SafePtr, SafePtrMut}, Application, ExtendsInternal, LeadCode, RespPackage
 };
 use std::{
   borrow::Cow,
@@ -16,7 +11,6 @@ use std::{
 
 #[derive(Debug)]
 pub(crate) struct RTCreatedModule {
-  pub(crate) code: String,
   pub(crate) lines: Vec<&'static str>,
   pub(crate) name: &'static str,
   pub(crate) heap: Heap,
@@ -24,9 +18,9 @@ pub(crate) struct RTCreatedModule {
 }
 
 impl RTCreatedModule {
-  pub(crate) fn run_method<T: FnOnce(&mut Heap, &mut Heap, &Vec<&str>) -> ()>(
+  pub(crate) async fn run_method<T: FnOnce(&mut Heap, &mut Heap, &Vec<&str>) -> ()>(
     &mut self,
-    app: *mut Application,
+    app: *mut Application<'static>,
     method: &str,
     file: &str,
     into_heap: T,
@@ -49,23 +43,23 @@ impl RTCreatedModule {
 
     let mut line = 0usize;
 
-    let mut markers = HashMap::new();
+    //let mut markers = HashMap::new();
 
     while line < file.len() {
       let content = file[line];
 
       if !content.starts_with("#") {
         unsafe {
-          tok_parse(
-            format!("{}:{}", &file_name, line),
-            content,
-            app,
-            &mut temp_heap,
-            &mut line,
-            &mut markers,
-            false,
-            Some(opt),
-          );
+          // tok_parse(
+          //   format!("{}:{}", &file_name, line),
+          //   content,
+          //   app,
+          //   &mut temp_heap,
+          //   &mut line,
+          //   &mut markers,
+          //   false,
+          //   Some(opt),
+          // );
         }
       }
 
@@ -77,15 +71,19 @@ impl RTCreatedModule {
 }
 
 #[allow(unused)]
-pub fn insert_into_application(
-  app: *mut Application,
-  args: &[*const str],
-  line: &mut usize,
+pub(crate) async fn insert_into_application(
+  app: SafePtrMut<Application<'static>>,
+  args: SafePtr<[*const str]>,
+  line: SafePtrMut<usize>,
   to_set: Cow<'static, str>,
-  heap: &mut Heap,
-  markers: &mut HashMap<Cow<'static, str>, usize>,
+  heap: SafePtrMut<Heap>,
+  markers: SafePtrMut<HashMap<Cow<'static, str>, usize>>,
 ) {
-  let app = unsafe { &mut *app };
+  let app = unsafe { &mut *app.0 };
+  let heap = unsafe { &mut *heap.0 };
+  let markers = unsafe { &mut *markers.0 };
+  let args = unsafe { &*args.0 };
+  let line = unsafe { &mut *line.0 };
 
   if args.len() == 3 {
     let [a, v, v2] = &args[..] else {
@@ -105,12 +103,12 @@ pub fn insert_into_application(
             .expect("Invalid Format")
             .expect("Unable to capture Runtime");
 
-          let BufValue::RuntimeRaw(name, module) = module else {
+          let BufValue::RuntimeRaw(module) = module else {
             panic!("Expected, Lead Module");
           };
 
           let RawRTValue::RTCM(mut module) = module.0 else {
-            panic!("Expected, Lead Module, not {name}");
+            panic!("Expected, Lead Module only");
           };
 
           let BufValue::Listener(mut listen) = heap
@@ -171,7 +169,7 @@ pub fn insert_into_application(
     let v = &&**v;
     match &**a {
       "*run" => {
-        interpret(&v, app);
+        interpret(&v, unsafe { Wrapped(app) }).await;
       }
       "*mark" => {
         markers.insert(Cow::Borrowed(*v as &str), *line);
@@ -202,23 +200,24 @@ pub fn insert_into_application(
 
         let val = RawRTValue::PKG(pkg);
 
-        set_runtime_val(heap, to_set, "loaded", val);
+        set_runtime_val(heap, to_set, val);
       }
       "*mod" => {
-        let code = String::from_utf8(
-          app
-            .module_resolver
-            .call_mut((format!("./{v}.mod.pb").as_str(),)),
-        )
-        .unwrap_or_else(|_| {
-          panic!("Unable to read {v}.mod.pb");
-        });
+        let file = format!("./{v}.mod.pb");
 
-        let Some(m) = parse_into_modules(app.pkg.extends.clone(), code) else {
+        let LeadCode::LeadModule(code) = app.code.get(
+          file.as_str()
+        ).unwrap_or_else(|| {
+          panic!("Unable to read {v}.mod.pb");
+        }) else {
+          panic!("Expected LeadModule, found Lead Code");
+        };
+
+        let Some(m) = parse_into_modules(app.pkg.extends.clone(), *code) else {
           panic!("No RTC Module found in the module file");
         };
 
-        set_runtime_val(heap, to_set, m.name, RawRTValue::RTCM(m));
+        set_runtime_val(heap, to_set, RawRTValue::RTCM(m));
       }
       a => panic!("Unknown {}", a),
     };
@@ -227,17 +226,16 @@ pub fn insert_into_application(
 
 pub(crate) fn parse_into_modules(
   entry: Arc<ExtendsInternal>,
-  code: String,
+  code: &'static str,
 ) -> Option<RTCreatedModule> {
   let mut data = RTCreatedModule {
-    code,
     lines: vec![],
     heap: Heap::new(entry),
     methods: HashMap::new(),
     name: "%none",
   };
 
-  let split = data.code.split("\n");
+  let split = code.split("\n");
   let split = split
     .map(|x| unsafe { transmute::<&str, &'static str>(x.trim()) })
     .filter(|x| x != &"" && !x.starts_with("#"))

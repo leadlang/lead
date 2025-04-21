@@ -1,16 +1,17 @@
-use std::ptr;
-
 use crate::Application;
 
 use super::{BufValue, Heap};
 
 pub struct HeapWrapper<'a> {
   pub(crate) heap: &'a mut Heap,
-  pub(crate) args: &'a [*const str],
+  pub(crate) args: &'a [&'static str],
   pub(crate) pkg_name: &'a str,
   pub(crate) app: *mut Application<'a>,
   pub(crate) allow_full: bool,
 }
+
+unsafe impl<'a> Send for HeapWrapper<'a> {}
+unsafe impl<'a> Sync for HeapWrapper<'a> {}
 
 impl<'a> HeapWrapper<'a> {
   pub fn upgrade(self) -> &'a mut Heap {
@@ -26,7 +27,7 @@ impl<'a> HeapWrapper<'a> {
   }
 
   pub fn get(&self, key: &str) -> Option<&BufValue> {
-    if self.args.iter().any(|&x| unsafe { &*x } == key) {
+    if self.args.contains(&key) {
       return self.heap.get(key);
     }
 
@@ -34,7 +35,7 @@ impl<'a> HeapWrapper<'a> {
   }
 
   pub fn get_mut(&mut self, key: &str) -> Option<&mut BufValue> {
-    if self.args.iter().any(|&x| ptr::eq(x, key)) {
+    if self.args.contains(&key) {
       return self.heap.get_mut(key);
     }
 
@@ -42,7 +43,7 @@ impl<'a> HeapWrapper<'a> {
   }
 
   pub fn remove(&mut self, key: &str) -> Option<Option<BufValue>> {
-    if self.args.iter().any(|&x| ptr::eq(x, key)) {
+    if self.args.contains(&key) {
       return self.heap.remove(key);
     }
 

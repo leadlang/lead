@@ -1,13 +1,22 @@
-use std::{borrow::Cow, collections::HashMap, fmt::Debug, future::Future, pin::Pin, sync::Arc};
+use std::{
+  borrow::Cow,
+  collections::HashMap,
+  fmt::Debug,
+  future::Future,
+  ops::{Deref, DerefMut},
+  sync::Arc,
+};
 
 use crate::{
   error,
+  parallel_ipreter::AsyncHeapHelper,
   runtime::{RuntimeValue, _root_syntax::RTCreatedModule},
   Application,
 };
 
 use super::{
-  handle_runtime, AppliesEq, BufValue, ExtendsInternal, HeapWrapper, Options, PackageCallback,
+  get_handle_runtime_ptr, handle_runtime, AppliesEq, BufValue, ExtendsInternal, HeapWrapper,
+  Options, PackageCallback,
 };
 
 pub type HeapInnerMap = HashMap<Cow<'static, str>, BufValue>;
@@ -29,57 +38,111 @@ fn get_ptr(heap: &mut Heap) -> &mut HashMap<Cow<'static, str>, BufValue> {
   &mut heap.data
 }
 
-pub fn set_runtime_val(
-  heap: &mut Heap,
-  key: Cow<'static, str>,
-  module: &'static str,
-  val: RawRTValue,
-) {
-  let _ = get_ptr(heap).insert(key, BufValue::RuntimeRaw(module, AppliesEq(val)));
+pub fn set_runtime_val(heap: &mut Heap, key: Cow<'static, str>, val: RawRTValue) {
+  let _ = get_ptr(heap).insert(key, BufValue::RuntimeRaw(AppliesEq(val)));
 }
 
-pub enum Output {
-  String(&'static str),
-  Future(Pin<Box<dyn Future<Output = &'static str>>>),
-}
-
-pub fn call_runtime_val<'a>(
-  app: *mut Application,
-  heap: &'a mut Heap,
+pub fn get_runtime_ptr<'a>(
+  heap: &'a mut AsyncHeapHelper,
   key: &'a str,
-  v: &'a [*const str],
-  a: HeapWrapper,
-  c: &String,
-  o: &'a mut Options,
   file: &'a str,
-  r#async: bool,
-) -> Option<Output> {
-  let hp = heap as *mut Heap;
+  line: &usize,
+) -> Option<*const ()> {
+  let hp = heap.deref_mut() as *mut Heap;
   let ptr = get_ptr(heap);
 
   let (key, caller) = key.split_once("::")?;
 
-  let (ai, bi) = match ptr.get_mut(key)? {
-    BufValue::RuntimeRaw(ai, bi) => (ai, bi),
-    val => return handle_runtime(unsafe { &mut *hp }, val, caller, v, a, c, o),
+  let data = match ptr.get(key)? {
+    BufValue::RuntimeRaw(bi) => bi,
+    val => return get_handle_runtime_ptr(unsafe { &mut *hp }, val, caller),
   };
 
-  let data = (ai, bi);
+  match &data.0 {
+    RawRTValue::RT(data) => Some(&*data as *const _ as _),
+    RawRTValue::PKG(pkg) => match pkg.get(caller) {
+      Some(x) => Some(x as *const _ as *const ()),
+      None => error(
+        &format!("Unexpected `{}`", &caller),
+        format!("{file}:{line}"),
+      ),
+    },
+    RawRTValue::RTCM(pkg) => Some(pkg as *const _ as *const ()),
+  }
+}
 
-  match &mut data.1 .0 {
-    RawRTValue::RT(data) => data.call_ptr(caller, v as _, a, c, o)?,
-    RawRTValue::PKG(pkg) => match pkg.get_mut(caller) {
-      Some(x) => x.call_mut((v as *const [*const str], a, c, o)),
-      None => error(&format!("Unexpected `{}`", &caller), &file),
+macro_rules! implement {
+  ($($struct:ident),*) => {
+    $(
+      impl<T: ?Sized> Clone for $struct<T> {
+        fn clone(&self) -> Self {
+          Self(self.0)
+        }
+      }
+
+      impl<T: ?Sized> Copy for $struct<T> {}
+      unsafe impl<T: ?Sized> Send for $struct<T> {}
+      unsafe impl<T: ?Sized> Sync for $struct<T> {}
+      impl<T: ?Sized> Deref for $struct<T> {
+        type Target = T;
+
+        fn deref(&self) -> &Self::Target {
+          unsafe { &*self.0 }
+        }
+      }
+    )*
+  };
+}
+
+pub(crate) struct SafePtrMut<T: ?Sized>(pub(crate) *mut T);
+pub(crate) struct SafePtr<T: ?Sized>(pub(crate) *const T);
+
+implement! {
+  SafePtr,
+  SafePtrMut
+}
+
+pub(crate) fn call_runtime_val(
+  app: SafePtrMut<Application<'static>>,
+  heap: SafePtrMut<Heap>,
+  key: SafePtr<str>,
+  v: SafePtr<[&'static str]>,
+  a: HeapWrapper<'static>,
+  o: SafePtrMut<Options>,
+  file: SafePtr<str>,
+  line: SafePtr<usize>,
+) -> Option<impl Future<Output = ()>> {
+  let c = format!("{}:{}", &*file, &*line);
+
+  let hp = heap.0;
+  let ptr = get_ptr(unsafe { &mut *hp });
+
+  let (key, caller) = unsafe { &*key.0 }.split_once("::")?;
+
+  let data = match ptr.get_mut(key)? {
+    BufValue::RuntimeRaw(bi) => bi,
+    val => {
+      _ = handle_runtime(unsafe { &mut *hp }, val, caller, v.deref(), a, &c, unsafe {
+        &mut *o.0
+      });
+      return None;
+    }
+  };
+
+  match &mut data.0 {
+    RawRTValue::RT(data) => data.call_ptr(caller, v.0, a, &c, unsafe { &mut *o.0 })?,
+    RawRTValue::PKG(pkg) => match pkg.get(caller) {
+      Some(x) => x.call((v.0, a, &c, unsafe { &mut *o.0 })),
+      None => error(&format!("Unexpected `{}`", &caller), &c),
     },
     RawRTValue::RTCM(pkg) => {
-      let tkns = &v[1..];
+      return Some(async move {
+        let tkns = &unsafe { &*v.0 }[1..];
 
-      if !r#async {
         pkg.run_method(
-          app as *mut Application<'static>,
+          app.0,
           caller,
-          file,
+          file.deref(),
           |fn_heap, app_heap, args| {
             if tkns.len() != args.len() {
               error(
@@ -89,7 +152,7 @@ pub fn call_runtime_val<'a>(
             }
 
             tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
-              let token = unsafe { &**token };
+              let token = *token;
               let from = app_heap
                 .remove(token)
                 .unwrap_or_else(|| {
@@ -111,14 +174,39 @@ pub fn call_runtime_val<'a>(
             });
           },
           unsafe { &mut *hp },
-          o,
-        );
-      }
+          unsafe { &mut *o.0 },
+        ).await
+      });
     }
   }
 
-  Some(Output::String(data.0))
+  None
 }
+
+// pub fn call_runtime_val<'a>(
+//   app: *mut Application<'static>,
+//   heap: &'a mut Heap,
+//   key: &'a str,
+//   v: &'a [&'static str],
+//   a: HeapWrapper<'a>,
+//   o: &'a mut Options,
+//   file: &'a str,
+//   line: &usize,
+// ) -> Option<impl Future<Output = ()>> {
+//   let c = format!("{file}:{line}");
+
+//   let hp = heap as *mut Heap;
+//   let ptr = get_ptr(heap);
+
+//   let (key, caller) = key.split_once("::")?;
+
+//   let data = match ptr.get_mut(key)? {
+//     BufValue::RuntimeRaw(bi) => bi,
+//     val => return handle_runtime(unsafe { &mut *hp }, val, caller, v, a, &c, o)
+//       .map(|x| async { x }),
+//   };
+//   None
+// }
 
 #[derive(Debug)]
 pub struct Heap {

@@ -3,12 +3,9 @@
 #![feature(concat_idents)]
 #![feature(macro_metavar_expr)]
 #![feature(get_mut_unchecked)]
+#![feature(impl_trait_in_bindings)]
 
-use std::{
-  collections::HashMap,
-  process,
-  time::{Duration, Instant},
-};
+use std::{collections::HashMap, process, sync::Arc, time::Instant};
 
 pub use paste::paste;
 
@@ -21,14 +18,10 @@ pub use runtime::RuntimeValue;
 #[cfg(feature = "phf")]
 pub use phf;
 
-mod ipreter;
-
-#[cfg(feature = "parallel")]
 mod parallel_ipreter;
 
-#[cfg(feature = "parallel")]
 mod scheduler;
-#[cfg(feature = "parallel")]
+
 pub use scheduler::Scheduler;
 
 #[macro_use]
@@ -37,8 +30,8 @@ pub mod types;
 pub mod val;
 
 pub(crate) use package::*;
-pub use types::{Extends, Heap, LanguagePackages, MethodRes, PrototypeDocs};
 use types::ExtendsInternal;
+pub use types::{Extends, Heap, LanguagePackages, MethodRes, PrototypeDocs};
 pub use val::*;
 
 pub use lealang_chalk_rs::Chalk;
@@ -71,57 +64,51 @@ pub struct RespPackage {
 }
 
 pub struct Application<'a> {
-  code: HashMap<String, String>,
-  #[cfg(feature = "parallel")]
-  scheduler: scheduler::Scheduler,
+  code: Arc<Structure>,
   pub(crate) pkg: LanguagePackages<'a>,
-  entry: &'a str,
-  heap: Option<Heap>,
-
-  // Resolve files
-  module_resolver: Box<dyn FnMut(&str) -> Vec<u8>>,
   // Resolve path from mod name
   pkg_resolver: Box<dyn FnMut(&str, bool) -> Vec<RespPackage>>,
   // Log in case of full access request
   log_info: Box<dyn FnMut(&str) -> ()>,
-  inst: Instant,
 }
 
 unsafe impl Send for Application<'_> {}
 unsafe impl Sync for Application<'_> {}
 
+pub type Args = Vec<&'static str>;
+
+pub enum LeadCode {
+  // Lead Modules will be lazily used
+  LeadModule(&'static str),
+  // Lead Code should be instantly made ready
+  Code(Vec<Args>),
+}
+
+pub type Structure = HashMap<
+  // File
+  &'static str,
+  // Code
+  LeadCode,
+>;
+
 impl<'a> Application<'a> {
   pub fn new<
-    T: FnMut(&str) -> Vec<u8> + 'static,
+    T: FnOnce() -> Structure,
     F: FnMut(&str, bool) -> Vec<RespPackage> + 'static,
     R: FnMut(&str) -> () + 'static,
   >(
-    file: &'a str,
-    mut fs_resolver: T,
     dll_resolver: F,
     requested_perm: R,
+    structure: T,
   ) -> Self {
-    let main = String::from_utf8(fs_resolver(file)).expect("Invalid utf8");
+    let code = Arc::new(structure());
 
-    let mut code = HashMap::new();
-    code.insert(":entry".to_string(), main);
     Self {
       code,
-      #[cfg(feature = "parallel")]
-      scheduler: Scheduler::new(),
       pkg: LanguagePackages::new(),
-      heap: None,
-      entry: &file,
-      module_resolver: Box::new(fs_resolver),
       pkg_resolver: Box::new(dll_resolver),
       log_info: Box::new(requested_perm),
-      inst: Instant::now(),
     }
-  }
-
-  pub fn add_file(&mut self, name: String, file: String) -> &mut Self {
-    self.code.insert(name, file);
-    self
   }
 
   pub fn add_pkg<T: Package + 'static>(&mut self, package: T) -> &mut Self {
@@ -159,35 +146,17 @@ impl<'a> Application<'a> {
   }
 
   /// ⚠️ This function still is panicking
-  pub fn run_non(mut self) -> Duration {
-    ipreter::interpret(":entry", &mut self);
-
-    self.inst.elapsed()
+  pub fn run_non(mut self) {
+    parallel_ipreter::schedule(&mut self)
   }
 
-  #[cfg(feature = "parallel")]
-  /// ⚠️ This function still is panicking
-  pub fn run_non_parallel(mut self) -> Duration {
-    parallel_ipreter::schedule(&mut self);
+  pub fn run(self, time: bool) -> ! {
+    // Start the Timer NOW!!!
+    let inst = Instant::now();
 
-    self.inst.elapsed()
-  }
+    self.run_non();
 
-  pub fn run(mut self, time: bool) -> ! {
-    self.heap = Some(Heap::new(self.pkg.extends.clone()));
-    let dur = self.run_non();
-
-    if time {
-      println!("\nTime Elasped: {:?}", dur);
-    }
-
-    process::exit(0)
-  }
-
-  #[cfg(feature = "parallel")]
-  pub fn run_parallel(mut self, time: bool) -> ! {
-    self.heap = Some(Heap::new(self.pkg.extends.clone()));
-    let dur = self.run_non_parallel();
+    let dur = inst.elapsed();
 
     if time {
       println!("\nTime Elasped: {:?}", dur);

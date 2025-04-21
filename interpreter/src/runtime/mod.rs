@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::types::{Args, Heap, HeapWrapper, Options};
-
-pub type PackageCallback = fn(Args, &mut Heap, HeapWrapper, &String, &mut Options) -> ();
-pub type RuntimeMethodRes = HashMap<&'static str, (&'static str, PackageCallback)>;
+use crate::types::{HeapWrapper, Options};
 
 pub mod _root_syntax;
 
@@ -15,40 +12,9 @@ pub trait RuntimeValue: Sync {
   fn call_ptr(
     &mut self,
     caller: &str,
-    v: *const [*const str],
+    v: *const [&'static str],
     a: HeapWrapper,
-    c: &String,
+    c: &str,
     o: &mut Options,
   ) -> Option<()>;
 }
-
-// #[derive(Debug)]
-// pub struct RuntimeValue {
-//   pub r#type: String,
-//   pub _inner: Heap,
-//   pub fn_ptr: RuntimeMethodRes,
-// }
-
-// impl RuntimeValue {
-//   pub fn new(r#type: &str, fn_ptr: RuntimeMethodRes) -> Self {
-//     Self {
-//       r#type: format!("{}", r#type),
-//       _inner: Heap::new(),
-//       fn_ptr,
-//     }
-//   }
-
-//   pub fn call_ptr(
-//     &mut self,
-//     caller: &str,
-//     v: *const [*const str],
-//     a: HeapWrapper,
-//     c: &String,
-//     o: &mut Options,
-//   ) -> Option<()> {
-//     let (_, f) = self.fn_ptr.get(caller)?;
-
-//     f(v, &mut self._inner, a, c, o);
-//     Some(())
-//   }
-// }
