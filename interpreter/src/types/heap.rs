@@ -139,43 +139,45 @@ pub(crate) fn call_runtime_val(
       return Some(async move {
         let tkns = &unsafe { &*v.0 }[1..];
 
-        pkg.run_method(
-          app.0,
-          caller,
-          file.deref(),
-          |fn_heap, app_heap, args| {
-            if tkns.len() != args.len() {
-              error(
-                "Not all arguments provided",
-                ":interpreter:loadmodule:heap:check",
-              );
-            }
+        pkg
+          .run_method(
+            app.0,
+            caller,
+            file.deref(),
+            |fn_heap, app_heap, args| {
+              if tkns.len() != args.len() {
+                error(
+                  "Not all arguments provided",
+                  ":interpreter:loadmodule:heap:check",
+                );
+              }
 
-            tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
-              let token = *token;
-              let from = app_heap
-                .remove(token)
-                .unwrap_or_else(|| {
-                  error(
-                    format!("Unable to get {token} from Heap"),
-                    ":interpreter:loadmodule",
-                  )
-                })
-                .unwrap_or_else(|| {
-                  error(
-                    format!("Unable to get {token} from Heap"),
-                    ":interpreter:loadmodule",
-                  )
-                });
+              tkns.into_iter().zip(args.iter()).for_each(|(token, arg)| {
+                let token = *token;
+                let from = app_heap
+                  .remove(token)
+                  .unwrap_or_else(|| {
+                    error(
+                      format!("Unable to get {token} from Heap"),
+                      ":interpreter:loadmodule",
+                    )
+                  })
+                  .unwrap_or_else(|| {
+                    error(
+                      format!("Unable to get {token} from Heap"),
+                      ":interpreter:loadmodule",
+                    )
+                  });
 
-              fn_heap
-                .set(Cow::Borrowed(unsafe { &*(&arg[2..] as *const str) }), from)
-                .unwrap();
-            });
-          },
-          unsafe { &mut *hp },
-          unsafe { &mut *o.0 },
-        ).await
+                fn_heap
+                  .set(Cow::Borrowed(unsafe { &*(&arg[2..] as *const str) }), from)
+                  .unwrap();
+              });
+            },
+            unsafe { &mut *hp },
+            unsafe { &mut *o.0 },
+          )
+          .await
       });
     }
   }

@@ -1,20 +1,28 @@
+use tokio::task::yield_now;
+
 use crate::{
-  error, parallel_ipreter::{interpret, Wrapped}, types::{set_into_extends, set_runtime_val, BufValue, Heap, Options, RawRTValue, SafePtr, SafePtrMut}, Application, ExtendsInternal, LeadCode, RespPackage
+  error,
+  parallel_ipreter::{check_state, interpret, tok_run, Args, AsyncHeapHelper, Wrapped},
+  types::{
+    set_into_extends, set_runtime_val, BufValue, Heap, Options, RawRTValue, SafePtr, SafePtrMut,
+  },
+  Application, ExtendsInternal, LeadCode, RespPackage,
 };
 use std::{
   borrow::Cow,
   collections::HashMap,
+  future::Future,
   mem::{take, transmute},
+  pin::Pin,
   sync::Arc,
-  thread,
+  task::{Context, Poll},
 };
 
 #[derive(Debug)]
 pub(crate) struct RTCreatedModule {
   pub(crate) lines: Vec<&'static str>,
-  pub(crate) name: &'static str,
   pub(crate) heap: Heap,
-  pub(crate) methods: HashMap<&'static str, (Vec<&'static str>, &'static [&'static str])>,
+  pub(crate) methods: HashMap<&'static str, (Vec<&'static str>, &'static [&'static [&'static str]])>,
 }
 
 impl RTCreatedModule {
@@ -27,7 +35,8 @@ impl RTCreatedModule {
     heap: &mut Heap,
     opt: &mut Options,
   ) {
-    let app = unsafe { &mut *app };
+    let opt = SafePtrMut(opt);
+    let app = Wrapped(app);
     let mut temp_heap = Heap::new_with_this(&mut self.heap, app.pkg.extends.clone());
 
     let (args, method_code) = self
@@ -43,37 +52,67 @@ impl RTCreatedModule {
 
     let mut line = 0usize;
 
-    //let mut markers = HashMap::new();
+    let mut markers: HashMap<Cow<'static, str>, usize> = HashMap::new();
 
-    while line < file.len() {
-      let content = file[line];
+    let len = file.len();
 
-      if !content.starts_with("#") {
-        unsafe {
-          // tok_parse(
-          //   format!("{}:{}", &file_name, line),
-          //   content,
-          //   app,
-          //   &mut temp_heap,
-          //   &mut line,
-          //   &mut markers,
-          //   false,
-          //   Some(opt),
-          // );
-        }
+    let mut total: i8 = 8;
+
+    let mut heap = AsyncHeapHelper::from(temp_heap);
+
+    while line < len {
+      let args = file[line];
+
+      let t = SafePtrMut(&mut total);
+
+      if let Args::Args(x, to_set, val_type) =
+        check_state(unsafe { &mut *t.0 }, args, file_name, &mut heap, &mut line)
+      {
+        tokio::spawn(Sendify(tok_run(
+          unsafe { &mut *t.0 },
+          unsafe { transmute(x) },
+          to_set,
+          val_type,
+          ":fn",
+          SafePtrMut(app.0),
+          unsafe { transmute(&mut heap) },
+          unsafe { transmute(&mut line) },
+          unsafe { transmute(&mut markers) },
+          Some(unsafe { &mut *opt.0 }),
+        )))
+        .await
+        .expect("Expected no errors");
       }
 
       line += 1;
-    }
 
-    drop(temp_heap);
+      if total <= 0 {
+        total = 8;
+        // Did a heavy task. Yielding...
+        yield_now().await;
+      }
+    }
+  }
+}
+
+pub struct Sendify<Fut>(Fut);
+
+unsafe impl<Fut: Future> Send for Sendify<Fut> {}
+
+impl<Fut: Future> Future for Sendify<Fut> {
+  type Output = Fut::Output;
+
+  fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    let f = &mut self.as_mut();
+
+    unsafe { Pin::new_unchecked(f) }.poll(cx)
   }
 }
 
 #[allow(unused)]
 pub(crate) async fn insert_into_application(
   app: SafePtrMut<Application<'static>>,
-  args: SafePtr<[*const str]>,
+  args: SafePtr<[&'static str]>,
   line: SafePtrMut<usize>,
   to_set: Cow<'static, str>,
   heap: SafePtrMut<Heap>,
@@ -121,13 +160,13 @@ pub(crate) async fn insert_into_application(
 
           let app_ptr: &'static mut Application = unsafe { transmute(&mut *app) };
 
-          thread::spawn(move || {
+          tokio::spawn(Sendify(async move {
             let mut dummy_heap = Heap::new(app_ptr.pkg.extends.clone());
             let app = app_ptr as *mut _;
 
             let mut opt = Options::new();
 
-            while let Ok(event) = listen.recv() {
+            while let Some(event) = listen.recv().await {
               let app = unsafe {
                 transmute::<&mut Application, &'static mut Application<'static>>(&mut *app)
               };
@@ -152,7 +191,7 @@ pub(crate) async fn insert_into_application(
                 opt,
               );
             }
-          });
+          }));
         }
         _ => panic!("Invalid syntax"),
       }
@@ -169,7 +208,14 @@ pub(crate) async fn insert_into_application(
     let v = &&**v;
     match &**a {
       "*run" => {
-        interpret(&v, unsafe { Wrapped(app) }).await;
+        let v = SafePtr(*v);
+        let app = SafePtrMut(app);
+        tokio::spawn(Sendify(async move {
+          let app = app;
+          let app = Wrapped(app.0);
+          interpret(&v, app).await;
+        }))
+        .await;
       }
       "*mark" => {
         markers.insert(Cow::Borrowed(*v as &str), *line);
@@ -205,9 +251,7 @@ pub(crate) async fn insert_into_application(
       "*mod" => {
         let file = format!("./{v}.mod.pb");
 
-        let LeadCode::LeadModule(code) = app.code.get(
-          file.as_str()
-        ).unwrap_or_else(|| {
+        let LeadCode::LeadModule(code) = app.code.get(file.as_str()).unwrap_or_else(|| {
           panic!("Unable to read {v}.mod.pb");
         }) else {
           panic!("Expected LeadModule, found Lead Code");
@@ -232,7 +276,6 @@ pub(crate) fn parse_into_modules(
     lines: vec![],
     heap: Heap::new(entry),
     methods: HashMap::new(),
-    name: "%none",
   };
 
   let split = code.split("\n");
@@ -266,7 +309,6 @@ pub(crate) fn parse_into_modules(
           }
 
           mod_id += 1;
-          data.name = tok.remove(0);
         }
         "fn" => {
           ctx = tok.remove(0);
@@ -293,14 +335,15 @@ pub(crate) fn parse_into_modules(
           panic!("Something is wrong!");
         }
 
-        let lines: &'static [&'static str] =
+        // TODO
+        let _lines: &'static [&'static str] =
           unsafe { transmute(&data.lines[..] as &[&'static str]) };
 
         let begin = start as usize;
 
         let None = data
           .methods
-          .insert(ctx, (std::mem::take(&mut tok_arg), &lines[begin..id]))
+          .insert(ctx, (std::mem::take(&mut tok_arg), &[]))
         else {
           panic!("Method overlap");
         };

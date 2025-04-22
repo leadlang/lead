@@ -20,10 +20,6 @@ pub use phf;
 
 mod parallel_ipreter;
 
-mod scheduler;
-
-pub use scheduler::Scheduler;
-
 pub use tokio;
 
 #[macro_use]

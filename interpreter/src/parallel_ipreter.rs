@@ -3,7 +3,6 @@ use std::{
   collections::HashMap,
   mem::transmute,
   ops::{Deref, DerefMut},
-  time::Duration,
 };
 
 use tokio::{
@@ -19,7 +18,7 @@ use crate::{
     call_runtime_val, get_runtime_ptr, mkbuf, set_runtime_val, BufValue, Heap, HeapWrapper,
     Options, RawRTValue, SafePtr, SafePtrMut,
   },
-  Application, LeadCode, Scheduler,
+  Application, LeadCode,
 };
 
 pub(crate) struct Wrapped<T>(pub(crate) *mut T);
@@ -69,15 +68,9 @@ pub fn schedule<'a>(app: &mut Application<'a>) {
     .expect("Unable to build async runtime");
 
   let app: Wrapped<Application<'static>> = unsafe { Wrapped::new(app) };
-  let mut scheduler: Wrapped<Scheduler> = unsafe { Wrapped::new(&mut Scheduler::new(app)) };
 
   runtime.block_on(async move {
-    loop {
-      scheduler.manage().await;
-      // We instantly go to sleep to allow LeadLang to evaluate function and code
-      // This also means that there's at least a 10 millis time frame when you can expect scheduler to give you a Mutex<T>
-      tokio::time::sleep(Duration::from_millis(10)).await;
-    }
+    interpret(":entry", app).await;
   });
 }
 
@@ -144,7 +137,7 @@ pub async fn interpret(file: &str, app: Wrapped<Application<'static>>) {
         to_set,
         val_type,
         unsafe { transmute(file) },
-        app.0,
+        SafePtrMut(app.0),
         unsafe { transmute(&mut heap) },
         unsafe { transmute(&mut line) },
         unsafe { transmute(&mut markers) },
@@ -156,19 +149,20 @@ pub async fn interpret(file: &str, app: Wrapped<Application<'static>>) {
     line += 1;
 
     if total <= 0 {
+      total = 8;
       // Did a heavy task. Yielding...
       yield_now().await;
     }
   }
 }
 
-enum Args<'a> {
+pub(crate) enum Args<'a> {
   Ignore,
   Args(&'a [&'static str], &'static str, bool),
 }
 
 /// This (sync) function quickly runs a recursive scan to check for state
-pub fn check_state<'a>(
+pub(crate) fn check_state<'a>(
   complexity: &mut i8,
   args: &'a [&'static str],
   file: &str,
@@ -232,12 +226,13 @@ pub async fn tok_run(
   to_set: &'static str,
   val_type: bool,
   file: &'static str,
-  app: *mut Application<'static>,
+  app: SafePtrMut<Application<'static>>,
   heap: &'static mut AsyncHeapHelper,
   line: &'static mut usize,
   markers: &'static mut HashMap<Cow<'static, str>, usize>,
   orig_opt: Option<&'static mut Options>,
 ) {
+  let app = app.0;
   let args: &'static [&'static str] = unsafe { transmute(args) };
 
   let app = unsafe { &mut *app };
@@ -272,6 +267,22 @@ pub async fn tok_run(
     if val_type {
       let _ = heap.set(Cow::Borrowed(to_set), mkbuf(&caller, &file));
     }
+
+    return ();
+  }
+
+  if &caller[0..1] == "*" {
+    *total -= 1;
+
+    insert_into_application(
+      SafePtrMut(app),
+      SafePtr(args),
+      SafePtrMut(line),
+      Cow::Borrowed(to_set),
+      SafePtrMut(heap.deref_mut()),
+      SafePtrMut(markers),
+    )
+    .await;
 
     return ();
   }
@@ -313,17 +324,8 @@ pub async fn tok_run(
 
     let run = async move || {
       let _opt = SafePtrMut(&mut opt);
-      
-      match call_runtime_val(
-        app,
-        hp,
-        caller,
-        args,
-        wrap,
-        _opt,
-        file,
-        line,
-      ) {
+
+      match call_runtime_val(app, hp, caller, args, wrap, _opt, file, line) {
         None => {
           let runt = opt.rem_r_runtime();
 
@@ -359,7 +361,10 @@ pub async fn tok_run(
     let Some(x) = blocking else {
       let t0 = Instant::now();
 
-      spawn_blocking(run).await;
+      spawn_blocking(run)
+        .await
+        .expect("Didn't expect an error")
+        .await;
 
       // 10ms at max should be the blocking time
       heap.blockmap.insert(ptr, t0.elapsed().as_millis() > 10);
@@ -367,11 +372,14 @@ pub async fn tok_run(
     };
 
     if x {
-      spawn_blocking(run).await;
+      spawn_blocking(run)
+        .await
+        .expect("Didn't expect an error")
+        .await;
       return ();
     }
 
-    run();
+    run().await;
 
     return ();
   }
