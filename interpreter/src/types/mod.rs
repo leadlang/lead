@@ -10,7 +10,7 @@ use std::{
   sync::{Arc, Mutex},
   thread::JoinHandle,
 };
-use tokio::sync::mpsc::{Receiver, Sender};
+pub use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 pub use alloc::*;
 pub use fns::*;
@@ -217,8 +217,8 @@ extends! {
   PointerMut mut_ptr => *mut BufValue,
   Runtime rt_any => AnyWrapper,
   AsyncTask async_task => AppliesEq<JoinHandle<BufValue>>,
-  Sender sender => AppliesEq<Sender<BufValue>>,
-  Listener listener => AppliesEq<Receiver<BufValue>>,
+  Sender sender => AppliesEq<UnboundedSender<BufValue>>,
+  Listener listener => AppliesEq<UnboundedReceiver<BufValue>>,
   ArcPointer arc_ptr => Arc<Box<BufValue>>,
   ArcMutexPointer arc_mut_ptr => AppliesEq<Arc<Mutex<Box<BufValue>>>>
 }
@@ -241,8 +241,8 @@ pub enum BufValue {
   ArcMutexPointer(AppliesEq<Arc<Mutex<Box<Self>>>>),
   Runtime(AnyWrapper),
   AsyncTask(AppliesEq<JoinHandle<Self>>),
-  Sender(AppliesEq<Sender<Self>>),
-  Listener(AppliesEq<Receiver<Self>>),
+  Sender(AppliesEq<UnboundedSender<Self>>),
+  Listener(AppliesEq<UnboundedReceiver<Self>>),
   RuntimeRaw(AppliesEq<RawRTValue>),
 }
 

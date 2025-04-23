@@ -17,12 +17,12 @@ module!(
   ],
   returns: Some("")
 ))]
-fn print(args: *const [*const str], heap: HeapWrapper, _: &std::string::String, _: &mut Options) {
+fn print(args: *const [&'static str], heap: HeapWrapper, _: &str, _: &mut Options) {
   let args = &(unsafe { &*args })[1..];
   let args = args
     .iter()
     .map(|x| {
-      let x = unsafe { &**x };
+      let x = *x;
       let mut chalk = Chalk::new();
 
       match heap.get(x) {

@@ -210,6 +210,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       "mut_ptr" => { format!("me: *mut *mut interpreter::types::BufValue,") }
       "rt_any" => { format!("me: *mut interpreter::types::AnyWrapper,") } 
       "async_task" => { format!("me: *mut interpreter::types::AppliesEq<interpreter::JoinHandle<interpreter::types::BufValue>>,") }
+      "sender" => { format!("me: *mut interpreter::types::AppliesEq<interpreter::types::UnboundedSender<interpreter::types::BufValue>>,") }
       "listener" => { format!("me: *mut interpreter::types::AppliesEq<interpreter::types::UnboundedReceiver<interpreter::types::BufValue>>,") }
       "arc_ptr" => format!("me: *mut std::sync::Arc<Box<interpreter::types::BufValue>>,"),
       "arc_mut_ptr" => format!("me: *mut interpreter::types::AppliesEq<std::sync::Arc<std::sync::Mutex<Box<interpreter::types::BufValue>>>>,"),
@@ -294,13 +295,15 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       #vis static #doc_fn: &'static [&'static str; 3] = &[#a, #return_type, #doc];
   
       #[allow(unused)]
-      #vis fn #ident(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {        
+      #vis fn #ident(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &str, opt: &mut interpreter::types::Options) {        
+        #ext0
+
         let _option_code_result = #call_fn(#call0 args, heap, file, opt);
         #other_tokens
       }
 
       #[allow(unused)]
-      #vis fn #call_fn(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) #out #block
+      #vis fn #call_fn(#arg0_tokens_parsed args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &str, opt: &mut interpreter::types::Options) #out #block
     }.into()
   }
 
@@ -355,7 +358,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       #vis static #doc_fn: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
   
       #[allow(unused)]
-      #vis fn #ident(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
+      #vis fn #ident(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &str, opt: &mut interpreter::types::Options) {
         #parse_macro
 
         let _option_code_result = #call_fn(#call0 #params_to_pass, file, heap, opt);
@@ -363,7 +366,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       }
   
       #[allow(unused)]
-      #vis fn #call_fn(#arg0_tokens #orig_params, file: &String, mut heap: interpreter::types::HeapWrapper, opt: &mut interpreter::types::Options) #out #block
+      #vis fn #call_fn(#arg0_tokens #orig_params, file: &str, mut heap: interpreter::types::HeapWrapper, opt: &mut interpreter::types::Options) #out #block
     }.into()
   }
 
@@ -372,7 +375,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     #vis static #doc_fn: &'static [&'static str; 3] = &[#params_on_static, #return_type, #doc];
 
     #[allow(unused)]
-    #vis fn #ident(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &String, opt: &mut interpreter::types::Options) {
+    #vis fn #ident(#arg0_tokens args: *const [&'static str], mut heap: interpreter::types::HeapWrapper, file: &str, opt: &mut interpreter::types::Options) {
       #parse_macro
 
       let _option_code_result = #call_fn(#call0 #params_to_pass, file, opt);
@@ -380,7 +383,7 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 
     #[allow(unused)]
-    #vis fn #call_fn(#arg0_tokens #orig_params, file: &String, opt: &mut interpreter::types::Options) #out #block
+    #vis fn #call_fn(#arg0_tokens #orig_params, file: &str, opt: &mut interpreter::types::Options) #out #block
   }.into()
 }
 
@@ -500,7 +503,7 @@ pub fn runtime_value_methods(item: TokenStream) -> TokenStream {
       caller: &str,
       args: *const [&'static str],
       heap: interpreter::types::HeapWrapper,
-      file: &String,
+      file: &str,
       opt: &mut interpreter::types::Options,
     ) -> Option<()> {{
       match caller {{

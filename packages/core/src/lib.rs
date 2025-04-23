@@ -162,7 +162,7 @@ fn fmt_optimized() -> BufValue {
   ],
   returns: Some("*")
 ))]
-fn malloc(args: *const [*const str], _: HeapWrapper, file: &String, opt: &mut Options) {
+fn malloc(args: *const [&'static str], _: HeapWrapper, file: &str, opt: &mut Options) {
   let [_, typ, ..] = &(unsafe { &*args })[..] else {
     error(
       r#"Invalid arguments in :malloc
@@ -180,11 +180,11 @@ Types ---
     );
   };
 
-  let typ = unsafe { &**typ };
+  let typ = *typ;
 
   let data = unsafe { &*args }[2..]
     .iter()
-    .map(|x| unsafe { &**x })
+    .map(|x| *x)
     .collect::<Vec<_>>()
     .join(" ");
 

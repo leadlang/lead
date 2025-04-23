@@ -6,13 +6,13 @@ use crate::{
   types::{
     set_into_extends, set_runtime_val, BufValue, Heap, Options, RawRTValue, SafePtr, SafePtrMut,
   },
-  Application, ExtendsInternal, LeadCode, RespPackage,
+  Application, ExtendsInternal, LeadCode, RespPackage, StaticLeadModule,
 };
 use std::{
   borrow::Cow,
   collections::HashMap,
   future::Future,
-  mem::{take, transmute},
+  mem::transmute,
   pin::Pin,
   sync::Arc,
   task::{Context, Poll},
@@ -20,13 +20,12 @@ use std::{
 
 #[derive(Debug)]
 pub(crate) struct RTCreatedModule {
-  pub(crate) lines: Vec<&'static str>,
   pub(crate) heap: Heap,
-  pub(crate) methods: HashMap<&'static str, (Vec<&'static str>, &'static [&'static [&'static str]])>,
+  pub(crate) methods: StaticLeadModule,
 }
 
 impl RTCreatedModule {
-  pub(crate) async fn run_method<T: FnOnce(&mut Heap, &mut Heap, &Vec<&str>) -> ()>(
+  pub(crate) async fn run_method<T: FnOnce(&mut Heap, &mut Heap, &[&str]) -> ()>(
     &mut self,
     app: *mut Application<'static>,
     method: &str,
@@ -257,9 +256,7 @@ pub(crate) async fn insert_into_application(
           panic!("Expected LeadModule, found Lead Code");
         };
 
-        let Some(m) = parse_into_modules(app.pkg.extends.clone(), *code) else {
-          panic!("No RTC Module found in the module file");
-        };
+        let m = parse_into_modules(app.pkg.extends.clone(), code);
 
         set_runtime_val(heap, to_set, RawRTValue::RTCM(m));
       }
@@ -270,92 +267,85 @@ pub(crate) async fn insert_into_application(
 
 pub(crate) fn parse_into_modules(
   entry: Arc<ExtendsInternal>,
-  code: &'static str,
-) -> Option<RTCreatedModule> {
-  let mut data = RTCreatedModule {
-    lines: vec![],
+  methods: &StaticLeadModule,
+) -> RTCreatedModule {
+  return RTCreatedModule {
     heap: Heap::new(entry),
-    methods: HashMap::new(),
+    methods: methods.clone()
   };
 
-  let split = code.split("\n");
-  let split = split
-    .map(|x| unsafe { transmute::<&str, &'static str>(x.trim()) })
-    .filter(|x| x != &"" && !x.starts_with("#"))
-    .collect::<Vec<_>>();
+  // let split = code.split("\n");
+  // let split = split
+  //   .map(|x| unsafe { transmute::<&str, &'static str>(x.trim()) })
+  //   .filter(|x| x != &"" && !x.starts_with("#"))
+  //   .collect::<Vec<_>>();
 
-  data.lines = split;
+  // data.lines = split;
 
-  let mut mod_id: u8 = 0;
+  // let mut mod_id: u8 = 0;
 
-  let mut ctx = "";
+  // let mut ctx = "";
 
-  let mut tok_arg: Vec<&str> = vec![];
+  // let mut tok_arg: Vec<&str> = vec![];
 
-  let mut start: usize = 0;
+  // let mut start: usize = 0;
 
-  let mut in_ctx = false;
+  // let mut in_ctx = false;
 
-  for (id, tokens) in data.lines.iter().enumerate() {
-    let mut tok = tokens.split(" ").collect::<Vec<_>>();
+  // for (id, tokens) in data.lines.iter().enumerate() {
+  //   let mut tok = tokens.split(" ").collect::<Vec<_>>();
 
-    if !in_ctx {
-      let caller = tok.remove(0);
+  //   if !in_ctx {
+  //     let caller = tok.remove(0);
 
-      match caller {
-        "declare" => {
-          if mod_id != 0 {
-            panic!("More than 1 module found in a single lead module file");
-          }
+  //     match caller {
+  //       "declare" => {
+  //         if mod_id != 0 {
+  //           panic!("More than 1 module found in a single lead module file");
+  //         }
 
-          mod_id += 1;
-        }
-        "fn" => {
-          ctx = tok.remove(0);
-          in_ctx = true;
-          start = id + 1;
+  //         mod_id += 1;
+  //       }
+  //       "fn" => {
+  //         ctx = tok.remove(0);
+  //         in_ctx = true;
+  //         start = id + 1;
 
-          for t in &tok {
-            if (!t.starts_with("->")) || (t.starts_with("->&")) {
-              error(
-                format!("Arguments of module parameters can ONLY be move! {t} is not move!"),
-                ":core:parser",
-              );
-            }
-          }
-          tok_arg = take(&mut tok);
-        }
-        a => panic!("Unknown NON-CONTEXT {a}"),
-      };
-    } else {
-      if tok[0] == "*end" {
-        in_ctx = false;
+  //         for t in &tok {
+  //           if (!t.starts_with("->")) || (t.starts_with("->&")) {
+  //             error(
+  //               format!("Arguments of module parameters can ONLY be move! {t} is not move!"),
+  //               ":core:parser",
+  //             );
+  //           }
+  //         }
+  //         tok_arg = take(&mut tok);
+  //       }
+  //       a => panic!("Unknown NON-CONTEXT {a}"),
+  //     };
+  //   } else {
+  //     if tok[0] == "*end" {
+  //       in_ctx = false;
 
-        if start == usize::MAX {
-          panic!("Something is wrong!");
-        }
+  //       if start == usize::MAX {
+  //         panic!("Something is wrong!");
+  //       }
 
-        // TODO
-        let _lines: &'static [&'static str] =
-          unsafe { transmute(&data.lines[..] as &[&'static str]) };
+  //       // TODO
+  //       let _lines: &'static [&'static str] =
+  //         unsafe { transmute(&data.lines[..] as &[&'static str]) };
 
-        let begin = start as usize;
+  //       let begin = start as usize;
 
-        let None = data
-          .methods
-          .insert(ctx, (std::mem::take(&mut tok_arg), &[]))
-        else {
-          panic!("Method overlap");
-        };
+  //       let None = data
+  //         .methods
+  //         .insert(ctx, (std::mem::take(&mut tok_arg), &[]))
+  //       else {
+  //         panic!("Method overlap");
+  //       };
 
-        start = usize::MAX;
-      }
-    }
-  }
-
-  if mod_id == 0 {
-    None
-  } else {
-    Some(data)
-  }
+  //       start = usize::MAX;
+  //     }
+  //   }
+  // }
 }

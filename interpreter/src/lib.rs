@@ -73,13 +73,17 @@ pub struct Application<'a> {
 unsafe impl Send for Application<'_> {}
 unsafe impl Sync for Application<'_> {}
 
-pub type Args = Vec<&'static str>;
+pub type Args = &'static [&'static str];
+
+pub type ModuleArgs = &'static [&'static str];
+
+pub type StaticLeadModule = Arc<HashMap<&'static str, (ModuleArgs, &'static [Args])>>;
 
 pub enum LeadCode {
   // Lead Modules will be lazily used
-  LeadModule(&'static str),
+  LeadModule(StaticLeadModule),
   // Lead Code should be instantly made ready
-  Code(Vec<Args>),
+  Code(&'static [Args]),
 }
 
 pub type Structure = HashMap<
