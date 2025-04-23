@@ -42,11 +42,7 @@ pub static LEAD_ROOT_DIR: LazyLock<String> =
 pub static TARGET: &'static str = env!("TARGET");
 
 pub static OTHER_TARGET: LazyLock<&'static str> = LazyLock::new(|| {
-  if TARGET == "x86_64-20.04-linux-gnu" {
-    "x86_64-unknown-linux-gnu"
-  } else {
-    TARGET
-  }
+  TARGET
 });
 
 static BUILD: u64 = include!("../build");

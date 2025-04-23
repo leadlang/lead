@@ -188,7 +188,7 @@ fn get(arr: &str, index: &str) -> BufValue {
     },
   };
 
-  if arr_parsed.len() >= index {
+  if index >= arr_parsed.len() {
     return BufValue::Pointer(ptr::null());
   } else {
     return BufValue::Pointer(&arr_parsed[index]);

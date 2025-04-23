@@ -3,7 +3,6 @@ mod fns;
 mod heap;
 mod heap_wrap;
 use std::{
-  any::Any,
   collections::HashMap,
   fmt::Debug,
   ops::{Deref, DerefMut},
@@ -67,23 +66,6 @@ impl Options {
 
   pub fn set_r_runtime(&mut self, val: Box<dyn RuntimeValue>) {
     self.r_runtime = Some(val);
-  }
-}
-
-#[derive(Debug)]
-pub struct AnyWrapper(pub Box<dyn Any>);
-
-impl Deref for AnyWrapper {
-  type Target = dyn Any;
-
-  fn deref(&self) -> &Self::Target {
-    self.0.deref()
-  }
-}
-
-impl PartialEq for AnyWrapper {
-  fn eq(&self, _other: &Self) -> bool {
-    false
   }
 }
 
@@ -215,7 +197,6 @@ extends! {
   StrPointer str_ptr => StrPointer,
   Pointer ptr => *const BufValue,
   PointerMut mut_ptr => *mut BufValue,
-  Runtime rt_any => AnyWrapper,
   AsyncTask async_task => AppliesEq<JoinHandle<BufValue>>,
   Sender sender => AppliesEq<UnboundedSender<BufValue>>,
   Listener listener => AppliesEq<UnboundedReceiver<BufValue>>,
@@ -239,7 +220,6 @@ pub enum BufValue {
   PointerMut(*mut Self),
   ArcPointer(Arc<Box<Self>>),
   ArcMutexPointer(AppliesEq<Arc<Mutex<Box<Self>>>>),
-  Runtime(AnyWrapper),
   AsyncTask(AppliesEq<JoinHandle<Self>>),
   Sender(AppliesEq<UnboundedSender<Self>>),
   Listener(AppliesEq<UnboundedReceiver<Self>>),
@@ -268,7 +248,6 @@ implement_buf! {
   Float => f64,
   Bool => bool,
   StrPointer => StrPointer,
-  Runtime => AnyWrapper,
   AsyncTask => AppliesEq<JoinHandle<Self>>
 }
 
@@ -312,7 +291,6 @@ impl BufValue {
         Ok(t) => format!("<success {}>", t.type_of()),
         Err(t) => format!("<err {}>", &t),
       },
-      BufValue::Runtime(d) => format!("<runtime {:?}>", d.type_id()),
       BufValue::Pointer(ptr) => {
         if ptr.is_null() {
           return "<ptr *ref NULL>".into();

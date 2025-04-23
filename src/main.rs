@@ -8,11 +8,7 @@ use std::{
 fn main() {
   let c_target = env!("TARGET");
 
-  let target = if c_target == "x86_64-20.04-linux-gnu" {
-    "x86_64-unknown-linux-gnu"
-  } else {
-    c_target
-  };
+  let target = c_target;
 
   let cross = option_env!("USE_CROSS").map_or(false, |_| true);
 

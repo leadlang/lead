@@ -121,10 +121,6 @@ jobs:
           - target: aarch64-unknown-linux-gnu
             runner: ubuntu-22.04-arm
 
-          - target: x86_64-20.04-linux-gnu
-            ctarget: x86_64-unknown-linux-gnu
-            runner: ubuntu-20.04
-
           - target: x86_64-apple-darwin
             runner: macos-latest
 

@@ -164,8 +164,8 @@ impl Documentation {
 /// | `str_ptr` | [`interpreter::types::StrPointer`] |
 /// | `ptr` | [`*const`] [`interpreter::types::BufValue`] |
 /// | `mut_ptr` | [`*mut`] [`interpreter::types::BufValue`] |
-/// | `rt_any` | [`interpreter::types::AnyWrapper`] | 
 /// | `async_task` | [`interpreter::types::AppliesEq<JoinHandle<BufValue>>`] |
+/// | `sender` | [`interpreter::types::AppliesEq<UnboundedSender<BufValue>>`] |
 /// | `listener` | [`interpreter::types::AppliesEq<UnboundedReceiver<BufValue>>`] |
 /// | `arc_mut` | [`std::sync::Arc<std::sync::Mutex<Box<interpreter::types::BufValue>>>`] |
 /// | `arc_mut_ptr` | [`interpreter::types::AppliesEq<std::sync::Arc<std::sync::Mutex<Box<interpreter::types::BufValue>>>>`] |
@@ -174,7 +174,6 @@ impl Documentation {
 /// The standardized values are :-
 /// | Value| Description |
 /// |------|-------------|
-/// | `*` | Returns Anything / Runtime Type |
 /// | `%null` | Returns Nothing |
 /// | `@rt:name` | Returns the RuntimeValue named `name` |
 /// | `int` | Int |
@@ -208,7 +207,6 @@ pub fn define(args: TokenStream, input: TokenStream) -> TokenStream {
       "str_ptr" => { format!("me: *mut interpreter::types::StrPointer,") }
       "ptr" => { format!("me: *mut *const interpreter::types::BufValue,") }
       "mut_ptr" => { format!("me: *mut *mut interpreter::types::BufValue,") }
-      "rt_any" => { format!("me: *mut interpreter::types::AnyWrapper,") } 
       "async_task" => { format!("me: *mut interpreter::types::AppliesEq<interpreter::JoinHandle<interpreter::types::BufValue>>,") }
       "sender" => { format!("me: *mut interpreter::types::AppliesEq<interpreter::types::UnboundedSender<interpreter::types::BufValue>>,") }
       "listener" => { format!("me: *mut interpreter::types::AppliesEq<interpreter::types::UnboundedReceiver<interpreter::types::BufValue>>,") }
@@ -591,7 +589,7 @@ pub fn methods(item: TokenStream) -> TokenStream {
 /// ```
 pub fn define_prototypes(item: TokenStream) -> TokenStream {
   let valid = [
-    "int", "uint", "float", "str_slice", "boolean", "array", "object", "faillable", "str_ptr", "ptr", "mut_ptr", "rt_any", "async_task", "listener", "arc_ptr", "arc_mut_ptr"
+    "int", "uint", "float", "str_slice", "boolean", "array", "object", "faillable", "str_ptr", "ptr", "mut_ptr", "async_task", "sender", "listener", "arc_ptr", "arc_mut_ptr"
   ];
 
   let item = item.to_string();
