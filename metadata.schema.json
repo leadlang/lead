@@ -9,10 +9,15 @@
       "description": "Name of your project",
       "examples": ["package", "myproject"]
     },
-    "entry": {
+    "srcDir": {
       "type": "string",
-      "description": "Entry file of the project",
-      "examples": ["./index.pb"]
+      "description": "The directory to search for source files",
+      "examples": ["src"]
+    },
+    "entryFile": {
+      "type": "string",
+      "description": "Entry file of the project withou `./`",
+      "examples": ["index.pb"]
     },
     "version": {
       "type": "string",

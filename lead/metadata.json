@@ -1,6 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/leadlang/lead/refs/heads/main/metadata.schema.json",
-  "entry": "./test/app.pb",
+  "srcDir": "test",
+  "entryFile": "app.pb",
   "name": "package",
   "version": "1.0.0",
   "description": "",

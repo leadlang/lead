@@ -1,14 +1,17 @@
-use lealang_chalk_rs::Chalk;
 use interpreter::types::MethodRes;
 use interpreter::{Application, Package as Pkg, RespPackage};
+use lealang_chalk_rs::Chalk;
 use std::env;
 use std::env::consts::{DLL_EXTENSION, DLL_PREFIX};
 use std::ptr::addr_of_mut;
 use std::sync::{Arc, LazyLock, Mutex};
+use std::time::Instant;
 use std::{collections::HashMap, fs};
 
 use super::metadata;
 use libloading::Library;
+
+mod structure;
 
 enum FullAccessLevel {
   SilentlyAllow,
@@ -22,13 +25,14 @@ struct Options {
   full_access: FullAccessLevel,
   log: bool,
   time: bool,
-  prod: bool
+  prod: bool,
 }
 
 mod logo;
 
 static mut LIBS: Option<HashMap<usize, Package>> = None;
-static PT_LIBS: LazyLock<Arc<Mutex<HashMap<String, Package>>>> = LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
+static PT_LIBS: LazyLock<Arc<Mutex<HashMap<String, Package>>>> =
+  LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 struct Package {
   modules: &'static [&'static dyn Pkg],
@@ -50,7 +54,10 @@ impl Package {
         let ver = ver();
 
         if ver != interpreter::VERSION_INT {
-          panic!("`{path}` uses v{ver} which is not compatible with `v{}` of LeadLang Interpreter", interpreter::VERSION_INT);
+          panic!(
+            "`{path}` uses v{ver} which is not compatible with `v{}` of LeadLang Interpreter",
+            interpreter::VERSION_INT
+          );
         }
       }
 
@@ -67,13 +74,21 @@ impl Package {
 }
 
 pub async fn run(args: &[String], chalk: &mut Chalk) {
+  let options = parse(args);
+
+  if options.time {
+    println!("🏃🏼‍♂️ Pre-processing code...");
+  }
+
   unsafe {
     LIBS = Some(HashMap::new());
   }
 
-  let options = parse(args);
+  let instant = Instant::now();
 
   let data = metadata::get_meta().await;
+
+  let structure = structure::parse(&data);
 
   if options.sysinfo {
     logo::render_lead_logo(options.monochrome);
@@ -86,13 +101,11 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
   // We are guaranteed that the closures run in the single thread & NOT AT THE SAME TIME.
   let mut application = Application::new(
     move |name, extends| {
-      let mut libs = PT_LIBS.lock()
-        .map_or_else(|e| e.into_inner(), |e| e);
+      let mut libs = PT_LIBS.lock().map_or_else(|e| e.into_inner(), |e| e);
 
       let mut out = vec![];
 
-      let pkg = pkgmap.get(name)
-        .expect("Unable to get package name");
+      let pkg = pkgmap.get(name).expect("Unable to get package name");
 
       if let Some(x) = libs.get(pkg) {
         for module in (x.modules) {
@@ -102,7 +115,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
               Some(module.prototype())
             } else {
               None
-            }
+            },
           });
         }
       } else {
@@ -115,7 +128,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
               Some(module.prototype())
             } else {
               None
-            }
+            },
           });
         }
 
@@ -155,7 +168,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
         }
       }
     },
-    || HashMap::new()
+    || structure,
   );
 
   load_lib();
@@ -168,6 +181,11 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
     for pkg in pkgs {
       application.add_pkg_static(*pkg);
     }
+  }
+
+  if options.time {
+    let dur = instant.elapsed();
+    println!("✅ Preprocessed in {:?}", dur);
   }
 
   application.run(options.time);
@@ -199,8 +217,12 @@ fn create_pkg_map() -> HashMap<&'static str, String> {
     for entry in dir {
       let entry = entry.expect("OS Error");
 
-      let name = entry.file_name().into_string().expect("Error reading hash").leak();
-      
+      let name = entry
+        .file_name()
+        .into_string()
+        .expect("Error reading hash")
+        .leak();
+
       let lookup = &name[65..];
 
       let mut path: std::path::PathBuf = entry.path();
@@ -208,7 +230,13 @@ fn create_pkg_map() -> HashMap<&'static str, String> {
       let libpath = format!("{DLL_PREFIX}{lookup}.{DLL_EXTENSION}");
       path.push(libpath);
 
-      pkgmap.insert(lookup, path.into_os_string().into_string().expect("Unable to convert to string"));
+      pkgmap.insert(
+        lookup,
+        path
+          .into_os_string()
+          .into_string()
+          .expect("Unable to convert to string"),
+      );
     }
   }
 
@@ -222,7 +250,7 @@ fn parse(args: &[String]) -> Options {
     full_access: FullAccessLevel::Warn,
     monochrome: false,
     time: true,
-    prod: false
+    prod: false,
   };
 
   args.iter().for_each(|v| match v.as_str() {

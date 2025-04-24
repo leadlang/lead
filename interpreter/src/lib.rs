@@ -15,6 +15,9 @@ pub mod macros;
 pub mod runtime;
 pub use runtime::RuntimeValue;
 
+#[cfg(feature = "parser")]
+pub mod parser;
+
 #[cfg(feature = "phf")]
 pub use phf;
 
@@ -79,6 +82,7 @@ pub type ModuleArgs = &'static [&'static str];
 
 pub type StaticLeadModule = Arc<HashMap<&'static str, (ModuleArgs, &'static [Args])>>;
 
+#[derive(Debug)]
 pub enum LeadCode {
   // Lead Modules will be lazily used
   LeadModule(StaticLeadModule),
@@ -153,6 +157,10 @@ impl<'a> Application<'a> {
   }
 
   pub fn run(self, time: bool) -> ! {
+    if time {
+      println!("⚒️ Runtime execution starting...");
+    }
+
     // Start the Timer NOW!!!
     let inst = Instant::now();
 
@@ -161,7 +169,7 @@ impl<'a> Application<'a> {
     let dur = inst.elapsed();
 
     if time {
-      println!("\nTime Elasped: {:?}", dur);
+      println!("✅ Runtime Time Elasped: {:?}", dur);
     }
 
     process::exit(0)

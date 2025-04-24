@@ -53,7 +53,7 @@ fn print(args: *const [&'static str], heap: HeapWrapper, _: &str, _: &mut Option
             x.is_closed(),
             x.is_empty()
           )),
-          &BufValue::Runtime(_) | &BufValue::RuntimeRaw(_) => {
+          &BufValue::RuntimeRaw(_) => {
             chalk.blue().string(&"<runtime *>")
           }
           x => chalk.cyan().string(&format!("{:?}", &x)),

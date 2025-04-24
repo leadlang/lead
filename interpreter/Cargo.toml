@@ -19,5 +19,6 @@ phf = { version = "0.11.3", features = ["macros"], optional = true }
 tokio = { version = "1.44.2", features = ["rt", "sync", "time"] }
 
 [features]
-default = ["phf"]
+default = ["phf", "parser"]
 phf = ["dep:phf"]
+parser = []
