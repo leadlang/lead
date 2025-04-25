@@ -5,6 +5,7 @@ use std::env;
 use std::env::consts::{DLL_EXTENSION, DLL_PREFIX};
 use std::ptr::addr_of_mut;
 use std::sync::{Arc, LazyLock, Mutex};
+use std::thread::spawn;
 use std::time::Instant;
 use std::{collections::HashMap, fs};
 
@@ -77,7 +78,7 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
   let options = parse(args);
 
   if options.time {
-    println!("🏃🏼‍♂️ Pre-processing code...");
+    println!("🏃 Pre-processing code...");
   }
 
   unsafe {
@@ -188,7 +189,8 @@ pub async fn run(args: &[String], chalk: &mut Chalk) {
     println!("✅ Preprocessed in {:?}", dur);
   }
 
-  application.run(options.time);
+  let _ = spawn(move || { application.run(options.time) })
+    .join();
 }
 
 fn load_lib() {

@@ -37,7 +37,7 @@ pub use val::*;
 
 pub use lealang_chalk_rs::Chalk;
 
-pub static VERSION_INT: u16 = 9;
+pub static VERSION_INT: u16 = 10;
 
 pub trait Package: Sync {
   fn name(&self) -> &'static [u8];
@@ -158,7 +158,7 @@ impl<'a> Application<'a> {
 
   pub fn run(self, time: bool) -> ! {
     if time {
-      println!("⚒️ Runtime execution starting...");
+      println!("⚒️  Runtime execution starting...");
     }
 
     // Start the Timer NOW!!!

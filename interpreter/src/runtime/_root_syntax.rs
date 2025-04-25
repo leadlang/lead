@@ -248,7 +248,7 @@ pub(crate) async fn insert_into_application(
         set_runtime_val(heap, to_set, val);
       }
       "*mod" => {
-        let file = format!("./{v}.mod.pb");
+        let file = format!("{v}.mod.pb");
 
         let LeadCode::LeadModule(code) = app.code.get(file.as_str()).unwrap_or_else(|| {
           panic!("Unable to read {v}.mod.pb");
@@ -271,6 +271,6 @@ pub(crate) fn parse_into_modules(
 ) -> RTCreatedModule {
   return RTCreatedModule {
     heap: Heap::new(entry),
-    methods: methods.clone()
+    methods: methods.clone(),
   };
 }

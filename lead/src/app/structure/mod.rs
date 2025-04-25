@@ -5,28 +5,39 @@ use std::{collections::HashMap, fs, sync::Arc};
 pub fn parse(metadata: &Metadata) -> Structure {
   let mut res = HashMap::new();
 
+  let entry: &str = &metadata.entry_file;
   let data = get_files(&metadata.src_dir, "");
 
   for (file, code) in data {
     // Lead Module Parsing
     if file.ends_with(".mod.pb") {
-      let mut map = HashMap::new();
-
       let lines = code
         .lines()
-        .filter(|x| !x.trim().is_empty())
+        .filter_map(|x| {
+          let trimmed = x.trim();
+          
+          if trimmed.is_empty() {
+            None
+          } else {
+            Some(trimmed)
+          }
+        })
         .map(|x| x.split(" ").collect::<Vec<_>>().leak() as &'static [_])
         .collect::<Vec<_>>()
         .leak() as &'static [_];
 
-      let out = interpreter::parser::parse_lead_module(lines);
+      let out = interpreter::parser::parse_lead_module(lines).expect("Unable to parse Lead Module");
 
-      _ = res.insert(file, LeadCode::LeadModule(Arc::new(map)));
+      _ = res.insert(file, LeadCode::LeadModule(Arc::new(out.data)));
     }
     // Lead Code Parsing
     else {
       _ = res.insert(
-        file,
+        if file == entry {
+          ":entry"
+        } else {
+          file
+        },
         LeadCode::Code(
           code
             .lines()
@@ -46,8 +57,6 @@ pub fn parse(metadata: &Metadata) -> Structure {
       );
     }
   }
-
-  println!("{res:#?}");
 
   res
 }

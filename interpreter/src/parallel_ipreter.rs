@@ -74,6 +74,7 @@ pub fn schedule<'a>(app: &mut Application<'a>) {
   });
 }
 
+#[derive(Debug)]
 pub struct AsyncHeapHelper {
   inner: Heap,
   blockmap: HashMap<*const (), bool>,
@@ -197,7 +198,7 @@ pub(crate) fn check_state<'a>(
   if r#if || r#else {
     let caller = &*args[start];
 
-    let caller = &caller[2..];
+    let caller = if r#if { &caller[3..] } else { &caller[5..] };
 
     let BufValue::Bool(x) = heap.get(&caller).expect("Unable to get value") else {
       error(
@@ -217,7 +218,7 @@ pub(crate) fn check_state<'a>(
     return Args::Ignore;
   }
 
-  Args::Args(args, to_set, val_type)
+  Args::Args(&args[start..], to_set, val_type)
 }
 
 pub async fn tok_run(
@@ -345,6 +346,8 @@ pub async fn tok_run(
 
           let runt = opt.rem_r_runtime();
 
+          println!("{to_set} {opt:?}");
+
           if val_type && opt.r_val.is_some() {
             let _ = heap.set(Cow::Borrowed(to_set), opt.r_val());
           } else if val_type && runt.is_some() {
@@ -382,5 +385,46 @@ pub async fn tok_run(
     run().await;
 
     return ();
+  }
+
+  let app = SafePtrMut(app);
+  let hp = SafePtrMut(&mut heap.inner);
+  let file = SafePtr(file as *const str);
+
+  match unsafe { &mut *app.0 }.pkg.inner.get_mut(caller) {
+    Some((p, v)) => {
+      let pkg: *const str = *p as *const _;
+      let pkg = unsafe { &*pkg };
+
+      let wrap = HeapWrapper {
+        heap: unsafe { &mut *hp.0 },
+        args: &args[1..],
+        pkg_name: pkg,
+        app: app.0,
+        allow_full: true,
+      };
+
+      let v_ptr = v as *const _;
+      heap.blockmap.get(&(v_ptr as *const ()));
+
+      let f = || v(args as *const _, wrap, &file, &mut opt);
+
+      let runt = opt.rem_r_runtime();
+
+      if val_type && opt.r_val.is_some() {
+        let _ = heap.set(Cow::Borrowed(to_set), opt.r_val());
+      } else if val_type && runt.is_some() {
+        let _ = set_runtime_val(heap, Cow::Borrowed(to_set), RawRTValue::RT(runt.unwrap()));
+      }
+
+      return ();
+    }
+    _ => {
+      if &caller != &"" {
+        error(&format!("Unexpected `{}`", &caller), &file.deref());
+      }
+
+      return ();
+    }
   }
 }

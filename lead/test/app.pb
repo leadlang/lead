@@ -1,25 +1,19 @@
 $a: malloc string "This is a string"
 
+print $a
+
 $c: fmt "Data: ${a}"
 
 print $c
 
-$hello: *mod test/hello
+$hello: *mod hello
 
 $a: malloc string "12"
 $b: malloc bool false
 
-*else$b print $b
+print $b
 
-print $a
+# *else$b print $b
+
 print $hello
-
-$a: str::to_int ->$a
-
-$a: unwrap ->$a
-
-print $a
-
 $hello::init ->$a
-
-print $a
