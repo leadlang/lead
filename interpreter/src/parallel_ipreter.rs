@@ -6,14 +6,14 @@ use std::{
 };
 
 use tokio::{
-  runtime::Builder,
+  runtime::Runtime,
   task::{spawn_blocking, yield_now},
   time::Instant,
 };
 
 use crate::{
   error,
-  runtime::_root_syntax::insert_into_application,
+  runtime::_root_syntax::{insert_into_application, Sendify},
   types::{
     call_runtime_val, get_runtime_ptr, mkbuf, set_runtime_val, BufValue, Heap, HeapWrapper,
     Options, RawRTValue, SafePtr, SafePtrMut,
@@ -61,12 +61,7 @@ impl<E> DerefMut for Wrapped<E> {
   }
 }
 
-pub fn schedule<'a>(app: &mut Application<'a>) {
-  let runtime = Builder::new_current_thread()
-    .enable_all()
-    .build()
-    .expect("Unable to build async runtime");
-
+pub fn schedule<'a>(runtime: Runtime, app: &mut Application<'a>) {
   let app: Wrapped<Application<'static>> = unsafe { Wrapped::new(app) };
 
   runtime.block_on(async move {
@@ -75,9 +70,50 @@ pub fn schedule<'a>(app: &mut Application<'a>) {
 }
 
 #[derive(Debug)]
-pub struct AsyncHeapHelper {
+pub(crate) struct Timing {
+  curr: u8,
+  // We store `10` readings to compare
+  times: [u128; 10],
+}
+
+impl Default for Timing {
+  fn default() -> Self {
+    Self {
+      curr: 0,
+      times: [0; 10],
+    }
+  }
+}
+
+#[derive(Debug)]
+pub(crate) struct AsyncHeapHelper {
   inner: Heap,
   blockmap: HashMap<*const (), bool>,
+  timings: HashMap<*const (), Timing>,
+}
+
+impl AsyncHeapHelper {
+  pub(crate) fn is_blocking(&self, f: *const ()) -> Option<&bool> {
+    self.blockmap.get(&f)
+  }
+
+  pub(crate) fn report(&mut self, f: *const (), micros: u128) {
+    let timing = self.timings.entry(f).or_insert(Timing::default());
+
+    timing.times[timing.curr as usize] = micros;
+    timing.curr += 1;
+
+    // Compare
+    if timing.curr == 10 {
+      let data = self.timings.remove(&f).expect("Timing MUST exist");
+
+      let avg = data.times.into_iter().sum::<u128>() / 10u128;
+
+      // If less than `200 micro sec`, it is non blocking
+      // 40 micro sec penatly for spawn_blocking
+      self.blockmap.insert(f, avg >= 240);
+    }
+  }
 }
 
 impl From<Heap> for AsyncHeapHelper {
@@ -85,6 +121,7 @@ impl From<Heap> for AsyncHeapHelper {
     Self {
       inner: value,
       blockmap: HashMap::new(),
+      timings: HashMap::new(),
     }
   }
 }
@@ -314,7 +351,7 @@ pub async fn tok_run(
       );
     };
 
-    let blocking = heap.blockmap.get(&ptr).map_or_else(|| None, |x| Some(*x));
+    let blocking = heap.is_blocking(ptr).map(|x| *x);
 
     let app = SafePtrMut(app);
     let hp = SafePtrMut(&mut heap.inner);
@@ -323,10 +360,10 @@ pub async fn tok_run(
     let file = SafePtr(file as *const str);
     let line = SafePtr(line);
 
-    let run = async move || {
+    let run = move || {
       let _opt = SafePtrMut(&mut opt);
 
-      match call_runtime_val(app, hp, caller, args, wrap, _opt, file, line) {
+      return match call_runtime_val(app, hp, caller, args, wrap, _opt, file, line) {
         None => {
           let runt = opt.rem_r_runtime();
 
@@ -341,12 +378,10 @@ pub async fn tok_run(
           }
           None
         }
-        Some(fut) => Some(async move {
+        Some(fut) => Some(Box::pin(Sendify(async move {
           fut.await;
 
           let runt = opt.rem_r_runtime();
-
-          println!("{to_set} {opt:?}");
 
           if val_type && opt.r_val.is_some() {
             let _ = heap.set(Cow::Borrowed(to_set), opt.r_val());
@@ -357,32 +392,42 @@ pub async fn tok_run(
               RawRTValue::RT(runt.unwrap()),
             );
           }
-        }),
+        }))),
       };
     };
 
     let Some(x) = blocking else {
       let t0 = Instant::now();
 
-      spawn_blocking(run)
-        .await
-        .expect("Didn't expect an error")
-        .await;
+      let run = Sendify(run);
 
-      // 10ms at max should be the blocking time
-      heap.blockmap.insert(ptr, t0.elapsed().as_millis() > 10);
+      let out = spawn_blocking(move || (run.0)())
+        .await
+        .expect("Didn't expect an error");
+
+      // Report before await
+      heap.report(ptr, t0.elapsed().as_micros());
+      if let Some(out) = out {
+        out.await;
+      }
+
       return ();
     };
 
     if x {
-      spawn_blocking(run)
+      let run = Sendify(run);
+      if let Some(x) = spawn_blocking(move || (run.0)())
         .await
         .expect("Didn't expect an error")
-        .await;
+      {
+        x.await;
+      }
       return ();
     }
 
-    run().await;
+    if let Some(x) = run() {
+      x.await;
+    }
 
     return ();
   }
@@ -404,10 +449,33 @@ pub async fn tok_run(
         allow_full: true,
       };
 
-      let v_ptr = v as *const _;
-      heap.blockmap.get(&(v_ptr as *const ()));
+      let v_ptr = v as *const _ as *const ();
 
-      let f = || v(args as *const _, wrap, &file, &mut opt);
+      let blocking = heap.is_blocking(v_ptr).map(|x| *x);
+
+      let opt_ptr = SafePtrMut(&mut opt);
+
+      let f = move || {
+        let opt_ptr = opt_ptr;
+
+        v(args as *const _, wrap, &file.deref(), unsafe {
+          &mut *opt_ptr.0
+        })
+      };
+
+      match blocking {
+        Some(true) => {
+          spawn_blocking(f).await.expect("Didn't expect an error");
+        }
+        Some(false) => {
+          f();
+        }
+        None => {
+          let t0 = Instant::now();
+          spawn_blocking(f).await.expect("Didn't expect an error");
+          heap.report(v_ptr, t0.elapsed().as_micros());
+        }
+      };
 
       let runt = opt.rem_r_runtime();
 

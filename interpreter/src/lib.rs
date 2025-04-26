@@ -4,6 +4,7 @@
 #![feature(macro_metavar_expr)]
 #![feature(get_mut_unchecked)]
 #![feature(impl_trait_in_bindings)]
+#![feature(unboxed_closures)]
 
 use std::{collections::HashMap, process, sync::Arc, time::Instant};
 
@@ -31,6 +32,7 @@ pub mod types;
 pub mod val;
 
 pub(crate) use package::*;
+use tokio::runtime::{Builder, Runtime};
 use types::ExtendsInternal;
 pub use types::{Extends, Heap, LanguagePackages, MethodRes, PrototypeDocs};
 pub use val::*;
@@ -152,19 +154,34 @@ impl<'a> Application<'a> {
   }
 
   /// ⚠️ This function still is panicking
-  pub fn run_non(mut self) {
-    parallel_ipreter::schedule(&mut self)
+  pub fn run_non(mut self, runtime: Runtime) {
+    parallel_ipreter::schedule(runtime, &mut self)
   }
 
   pub fn run(self, time: bool) -> ! {
     if time {
-      println!("⚒️  Runtime execution starting...");
+      println!("⚒️  Building execution Runtime...");
     }
 
     // Start the Timer NOW!!!
     let inst = Instant::now();
 
-    self.run_non();
+    let runtime = Builder::new_multi_thread()
+      .enable_all()
+      .build()
+      .expect("Unable to build async runtime");
+
+    let dur = inst.elapsed();
+
+    if time {
+      println!("✅ Runtime Ready in {:?}", dur);
+      println!("⚒️  Executing...");
+    }
+
+    // Start the Timer NOW!!!
+    let inst = Instant::now();
+
+    self.run_non(runtime);
 
     let dur = inst.elapsed();
 

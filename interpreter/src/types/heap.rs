@@ -42,7 +42,7 @@ pub fn set_runtime_val(heap: &mut Heap, key: Cow<'static, str>, val: RawRTValue)
   let _ = get_ptr(heap).insert(key, BufValue::RuntimeRaw(AppliesEq(val)));
 }
 
-pub fn get_runtime_ptr<'a>(
+pub(crate) fn get_runtime_ptr<'a>(
   heap: &'a mut AsyncHeapHelper,
   key: &'a str,
   file: &'a str,

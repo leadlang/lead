@@ -94,17 +94,16 @@ impl RTCreatedModule {
   }
 }
 
-pub struct Sendify<Fut>(Fut);
+pub struct Sendify<Fut>(pub(crate) Fut);
 
-unsafe impl<Fut: Future> Send for Sendify<Fut> {}
+unsafe impl<Fut> Send for Sendify<Fut> {}
+unsafe impl<Fut> Sync for Sendify<Fut> {}
 
 impl<Fut: Future> Future for Sendify<Fut> {
   type Output = Fut::Output;
 
-  fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-    let f = &mut self.as_mut();
-
-    unsafe { Pin::new_unchecked(f) }.poll(cx)
+  fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    unsafe { self.map_unchecked_mut(|s| &mut s.0) }.poll(cx)
   }
 }
 
@@ -248,10 +247,8 @@ pub(crate) async fn insert_into_application(
         set_runtime_val(heap, to_set, val);
       }
       "*mod" => {
-        let file = format!("{v}.mod.pb");
-
-        let LeadCode::LeadModule(code) = app.code.get(file.as_str()).unwrap_or_else(|| {
-          panic!("Unable to read {v}.mod.pb");
+        let LeadCode::LeadModule(code) = app.code.get(v).unwrap_or_else(|| {
+          panic!("Unable to read {v}, did you mean {v}.mod.pb?");
         }) else {
           panic!("Expected LeadModule, found Lead Code");
         };
